@@ -3,9 +3,9 @@ for learning neural network based on c++ 11
 
 30 epoch, 10 batch size, 3.0 learning rate, the result on mnist dataset
 
-epoch 0: 0.8995 (8995 / 10000)
-epoch 1: 0.9132 (9132 / 10000)
-epoch 2: 0.913 (9130 / 10000)
+epoch 0: 0.8995 (8995 / 10000)\<br> 
+epoch 1: 0.9132 (9132 / 10000)\<br> 
+epoch 2: 0.913 (9130 / 10000)\<br> 
 epoch 3: 0.9153 (9153 / 10000)
 epoch 4: 0.9257 (9257 / 10000)
 epoch 5: 0.9243 (9243 / 10000)
