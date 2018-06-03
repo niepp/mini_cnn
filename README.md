@@ -1,2 +1,2 @@
 # mini_nn
-for learning neutral network based on c++ 11
+for learning neural network based on c++ 11
