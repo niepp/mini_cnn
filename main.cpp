@@ -242,7 +242,6 @@ unsigned char* ReadFile(const char *filePath)
 	fsread.seekg(0, std::ios::end);
 	size = (long)fsread.tellg();
 	fsread.seekg(0, std::ios::beg);
-	std::cout << "length:" << size << std::endl;
 
 	buffer = new unsigned char[size];
 	fsread.read(reinterpret_cast<char*>(buffer), size);
@@ -335,9 +334,9 @@ int main()
 
 	init(nrand);
 
-	float learning_rate = 1.25f;
+	float learning_rate = 3.0f;
 	int epoch = 30;
-	int batch_size = 1;
+	int batch_size = 10;
 
 	std::vector<int> idx_vec(img_count);
 	for (int k = 0; k < img_count; ++k)
