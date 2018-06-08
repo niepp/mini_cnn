@@ -78,7 +78,7 @@ public:
 	{
 		_size = size;
 		_buf = new T[size];
-		::memset(_buf, 0, size * sizeof(T));
+		MakeZero();
 	}
 
 	void MakeZero()
@@ -206,6 +206,38 @@ public:
 			}
 		}
 		return result;
+	}
+
+	uint32_t ArgMax() const
+	{
+		assert(_size > 0);
+		uint32_t idx = 0;
+		T maxv = _buf[0];
+		for (unsigned long i = 1; i < _size; ++i)
+		{
+			if (_buf[i] > maxv)
+			{
+				maxv = _buf[i];
+				idx = i;
+			}
+		}
+		return idx;
+	}
+
+	uint32_t ArgMin() const
+	{
+		assert(_size > 0);
+		uint32_t idx = 0;
+		T minv = _buf[0];
+		for (unsigned long i = 1; i < _size; ++i)
+		{
+			if (_buf[i] < minv)
+			{
+				minv = _buf[i];
+				idx = i;
+			}
+		}
+		return idx;
 	}
 
 private:

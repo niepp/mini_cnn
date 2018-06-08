@@ -14,6 +14,9 @@
 #include "math/vectorn.h"
 #include "math/matrixmxn.h"
 #include "math/mathdef.h"
+#include "layer.h"
+#include "network.h"
+
 
 using namespace std;
 
@@ -24,199 +27,6 @@ const int C = 10;
 // N -> M -> C
 // z = w * a + b
 // a = f(z)
-
-// input layer
-VectorN x(N);		// input(from image data)
-
-// middle layer	
-MatrixMN w(M, N);  // weight
-VectorN b(M);		// bias
-VectorN z(M);		// middle value
-VectorN a(M);		// output of this layer
-
-VectorN delta(M);	// equal to dJ/d(bias)
-MatrixMN dw(M, N);
-
-// output layer
-
-MatrixMN wo(C, M);		// weight
-VectorN bo(C);		// bias
-VectorN zo(C);		// middle value
-VectorN ao(C);		// output of this layer
-
-VectorN deltao(C);    // equal to dJ/d(bias)
-MatrixMN dwo(C, M);
-
-VectorN y(C);		// label value form image data(one hot code)
-
-// init weight and bias of all layers
-// 使用均值0，方差1的归一化高斯分布
-void init(NormalRandom nrand)
-{
-	for (int i = 0; i < M; ++i)
-	{
-		for (int j = 0; j < N; ++j)
-		{
-			w(i, j) = nrand.GetRandom();
-		}
-	}
-
-	for (int i = 0; i < M; ++i)
-	{
-		b[i] = nrand.GetRandom();
-	}
-
-	//
-	for (int i = 0; i < C; ++i)
-	{
-		for (int j = 0; j < M; ++j)
-		{
-			wo(i, j) = nrand.GetRandom();
-		}
-	}
-
-	for (int i = 0; i < C; ++i)
-	{
-		bo[i] = nrand.GetRandom();
-	}
-
-}
-
-VectorN active_func(VectorN z)
-{
-	// sigmoid
-	VectorN v(z.GetSize());
-	for (unsigned int i = 0; i < z.GetSize(); ++i)
-	{
-		v[i] = 1.0f / (1.0f + exp(-z[i]));
-	}
-	return v;
-}
-
-VectorN active_func_prime(VectorN z)
-{
-	VectorN v(z.GetSize());
-	for (unsigned int i = 0; i < z.GetSize(); ++i)
-	{
-		auto f = 1.0f / (1.0f + exp(-z[i]));
-		v[i] = f * (1.0f - f);
-	}
-	return v;
-}
-
-// 损失函数对输出层的输出值的偏导数 （这里用均方误差函数MSE为例）
-VectorN lost_derivate_aL()
-{
-	// nn output is ao[C]
-	// label value form image is y[C]
-	return ao - y;
-}
-
-void forward()
-{
-	// nn input is x[N]
-	// z = w * a + b
-	// a' = f(z)
-
-	// middle layer
-	z = (w * x) + b;
-	a = active_func(z);
-
-	// output layer
-	zo = (wo * a) + bo;
-	ao = active_func(zo);
-
-}
-
-void backprop()
-{
-	// output layer
-	deltao = lost_derivate_aL() ^ active_func_prime(zo);
-
-	// middle layer
-	delta = (wo.Transpose() * deltao) ^ active_func_prime(z);
-
-	// gradient of weight and bias
-	dwo = deltao * a;
-
-	dw = delta * x;
-
-}
-
-void train(const std::vector<VectorN> &batch_img_vec, const std::vector<VectorN> &batch_label_vec, float eta)
-{
-
-	MatrixMN edwo(dwo.GetRowCount(), dwo.GetColCount());
-	edwo.MakeZero();
-	VectorN edbo(deltao.GetSize());
-	edbo.MakeZero();
-
-	MatrixMN edw(dw.GetRowCount(), dw.GetColCount());
-	edw.MakeZero();
-	VectorN edb(delta.GetSize());
-	edb.MakeZero();
-
-	assert(batch_img_vec.size() == batch_label_vec.size());
-
-	int batch_size = batch_img_vec.size();
-	for (int i = 0; i < batch_size; ++i)
-	{
-		x = batch_img_vec[i];
-		y = batch_label_vec[i];
-
-		forward();
-		backprop();
-
-		edwo = edwo + dwo;
-		edbo = edbo + deltao;
-
-		edw = edw + dw;
-		edb = edb + delta;
-	}
-
-	float r = eta / batch_size;
-
-	// output layer
-	wo = wo - edwo * r;
-	bo = bo - edbo * r;
-
-	// middle layer
-	w = w - edw * r;
-	b = b - edb * r;
-
-}
-
-uint32_t test(const std::vector<VectorN> &test_img_vec, const std::vector<int> &test_lab_vec)
-{
-	
-	assert(test_img_vec.size() == test_lab_vec.size());
-
-	int test_count = test_img_vec.size();
-	uint32_t correct = 0;
-	for (int k = 0; k < test_count; ++k)
-	{
-		x = test_img_vec[k];
-		forward();
-		auto maxlab = -1.0;
-		int lab = -1;
-		for (int i = 0; i < C; ++i)
-		{
-			if (ao[i] > maxlab)
-			{
-				maxlab = ao[i];
-				lab = i;
-			}
-		}
-		int std_lab = test_lab_vec[k];
-		if (lab == std_lab)
-		{
-			++correct;
-		}
-	}
-
-	return correct;
-
-}
 
 int ReadInt(unsigned char *buffer, int &index)
 {
@@ -332,7 +142,12 @@ int main()
 	// random init
 	NormalRandom nrand(0, 1.0f);
 
-	init(nrand);
+	// define neural network
+	Network nn(N);
+	nn.AddLayer(new FullyConnectedLayer(M, Sigmoid));
+	nn.AddLayer(new OutputLayer(C, Sigmoid));
+
+	nn.Init(nrand);
 
 	float learning_rate = 3.0f;
 	int epoch = 30;
@@ -360,10 +175,10 @@ int main()
 				batch_img_vec[k] = img_vec[j];
 				batch_label_vec[k] = lab_vec[j];
 			}
-			train(batch_img_vec, batch_label_vec, learning_rate);
+			nn.SGD(batch_img_vec, batch_label_vec, learning_rate);
 		}
 
-		uint32_t correct = test(test_img_vec, test_lab_vec);
+		uint32_t correct = nn.Test(test_img_vec, test_lab_vec);
 		float correct_rate = (1.0f * correct / test_img_count);
 		cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
 	}

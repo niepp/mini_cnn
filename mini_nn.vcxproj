@@ -67,7 +67,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="layer.h" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="network.h" />
     <ClCompile Include="utils.h" />
   </ItemGroup>
   <ItemGroup>

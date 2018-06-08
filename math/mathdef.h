@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef __MATH_DEF_H__
 #define __MATH_DEF_H__
 
