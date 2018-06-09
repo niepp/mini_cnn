@@ -143,14 +143,14 @@ public:
 
 	virtual void Forward()
 	{
-		*m_middle = *m_weight * *m_input + *m_bias;
-		*m_output = Sigmoid(*m_middle);
+		m_middle->Copy(*m_weight * *m_input + *m_bias);
+		m_output->Copy(Sigmoid(*m_middle));
 	}
 
 	virtual void BackProp()
 	{
-		*m_delta = (m_next->m_weight->Transpose() * *m_next->m_delta) ^ SigmoidPrime(*m_middle);
-		*m_dw = *m_delta * *m_input;
+		m_delta->Copy((m_next->m_weight->Transpose() * *m_next->m_delta) ^ SigmoidPrime(*m_middle));
+		m_dw->Copy(*m_delta * *m_input);
 	}
 
 	virtual void PreTrain()
@@ -161,8 +161,8 @@ public:
 
 	virtual void SumGradient()
 	{
-		*m_sum_delta = *m_sum_delta + *m_delta;
-		*m_sum_dw = *m_sum_dw + *m_dw;
+		m_sum_delta->Copy(*m_sum_delta + *m_delta);
+		m_sum_dw->Copy(*m_sum_dw + *m_dw);
 	}
 
 };
@@ -182,8 +182,8 @@ public:
 
 	virtual void BackProp()
 	{
-		*m_delta = LostDerivateAtOutlayer() ^ SigmoidPrime(*m_middle);
-		*m_dw = *m_delta * *m_input;
+		m_delta->Copy(LostDerivateAtOutlayer() ^ SigmoidPrime(*m_middle));
+		m_dw->Copy(*m_delta * *m_input);
 	}
 
 	// 损失函数对输出层的输出值的偏导数 （这里用均方误差函数MSE为例）

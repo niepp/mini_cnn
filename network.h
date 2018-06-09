@@ -87,8 +87,8 @@ public:
 		for (unsigned int i = m_layers.size() - 1; i > 0; --i)
 		{
 			LayerBase *layer = m_layers[i];
-			*(layer->m_weight) = *(layer->m_weight) - *(layer->m_sum_dw) * eff;
-			*(layer->m_bias) = *(layer->m_bias) - *(layer->m_sum_delta) * eff;
+			*(layer->m_weight) -= *(layer->m_sum_dw) * eff;
+			*(layer->m_bias) -= *(layer->m_sum_delta) * eff;
 		}
 	}
 
