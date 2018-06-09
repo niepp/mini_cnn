@@ -150,8 +150,8 @@ int main()
 	nn.Init(nrand);
 
 	float learning_rate = 3.0f;
-	int epoch = 30;
-	int batch_size = 10;
+	int epoch = 1;
+	int batch_size = 1;
 
 	std::vector<int> idx_vec(img_count);
 	for (int k = 0; k < img_count; ++k)

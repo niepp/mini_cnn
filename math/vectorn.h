@@ -107,6 +107,16 @@ public:
 		return dot;
 	}
 
+	_VectorN<T>& Copy(const _VectorN<T>& src)
+	{
+		assert(_size == src._size);
+		for (unsigned long i = 0; i < _size; ++i)
+		{
+			_buf[i] = src._buf[i];
+		}
+		return *this;
+	}
+
 	T& operator[](unsigned long index)
 	{
 		return _buf[index];

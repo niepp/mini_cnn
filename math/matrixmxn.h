@@ -37,6 +37,8 @@ public:
 
 	_MatrixMN<T> Transpose() const;
 
+	_MatrixMN<T>& Copy(const _MatrixMN<T>&);
+
 	_VectorN<T> operator*(const _VectorN<T>&);
 	friend _VectorN<T> operator*(const _VectorN<T>&, const _MatrixMN<T>&);
 
@@ -45,6 +47,11 @@ public:
 
 	_MatrixMN<T> operator+(const _MatrixMN<T>&);
 	_MatrixMN<T> operator-(const _MatrixMN<T>&);
+
+	_MatrixMN<T> operator*=(const T &scale);
+
+	_MatrixMN<T> operator+=(const _MatrixMN<T>&);
+	_MatrixMN<T> operator-=(const _MatrixMN<T>&);
 
 private:
 	unsigned long _row, _col;

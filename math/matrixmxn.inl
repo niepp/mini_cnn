@@ -190,6 +190,20 @@ _MatrixMN<T> _MatrixMN<T>::Transpose() const
 }
 
 template <class T>
+_MatrixMN<T>& _MatrixMN<T>::Copy(const _MatrixMN<T>& other)
+{
+	assert(_row == other._row && _col == other._col);
+	for (unsigned long i = 0; i < _row; ++i)
+	{
+		for (unsigned long j = 0; j < _col; ++j)
+		{
+			operator()(i, j) = other(i, j);
+		}
+	}
+	return *this;
+}
+
+template <class T>
 _VectorN<T> _MatrixMN<T>::operator*(const _VectorN<T> &v) 
 {
 	assert(v.GetSize() == _col);
@@ -289,3 +303,44 @@ _MatrixMN<T> _MatrixMN<T>::operator-(const _MatrixMN<T> &other)
 	return result;
 }
 
+template <class T>
+_MatrixMN<T> _MatrixMN<T>::operator*=(const T &scale)
+{
+	assert(this->_row == other._row && this->_col == other._col);
+	for (unsigned long i = 0; i < _row; i++)
+	{
+		for (unsigned long j = 0; j < _col; j++)
+		{
+			operator()(i, j) *= scale;
+		}
+	}
+	return *this;
+}
+
+template <class T>
+_MatrixMN<T> _MatrixMN<T>::operator+=(const _MatrixMN<T> &other)
+{
+	assert(this->_row == other._row && this->_col == other._col);
+	for (unsigned long i = 0; i < _row; ++i)
+	{
+		for (unsigned long j = 0; j < _col; ++j)
+		{
+			operator()(i, j) += other(i, j);
+		}
+	}
+	return *this;
+}
+
+template <class T>
+_MatrixMN<T> _MatrixMN<T>::operator-=(const _MatrixMN<T> &other)
+{
+	assert(this->_row == other._row && this->_col == other._col);
+	for (unsigned long i = 0; i < _row; ++i)
+	{
+		for (unsigned long j = 0; j < _col; ++j)
+		{
+			operator()(i, j) -= other(i, j);
+		}
+	}
+	return *this;
+}

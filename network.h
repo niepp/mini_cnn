@@ -34,13 +34,16 @@ public:
 			throw std::exception("add layer after output!");
 		}
 		LayerBase* lastLayer = *m_layers.rbegin();
+		lastLayer->Connect(layer);
+		m_layers.push_back(layer);
+
 		OutputLayer *ol = dynamic_cast<OutputLayer*>(layer);
 		if (ol != nullptr)
 		{
 			m_outputLayer = ol;
-		}		
-		lastLayer->Connect(layer);
-		m_layers.push_back(layer);
+			m_outputLayer->Connect(nullptr);
+		}
+
 	}
 
 	void Init(NormalRandom nrand)
@@ -70,13 +73,22 @@ public:
 		}
 	}
 
+	void SumGradient()
+	{
+		for (unsigned int i = m_layers.size() - 1; i > 0; --i)
+		{
+			LayerBase *layer = m_layers[i];
+			layer->SumGradient();
+		}
+	}
+
 	void UpdateWeightBias(float eff)
 	{
 		for (unsigned int i = m_layers.size() - 1; i > 0; --i)
 		{
 			LayerBase *layer = m_layers[i];
-			layer->m_weight = layer->m_weight - layer->m_sum_dw * eff;
-			layer->m_bias = layer->m_bias - layer->m_sum_delta * eff;
+			*(layer->m_weight) = *(layer->m_weight) - *(layer->m_sum_dw) * eff;
+			*(layer->m_bias) = *(layer->m_bias) - *(layer->m_sum_delta) * eff;
 		}
 	}
 
@@ -95,20 +107,12 @@ public:
 		{
 			m_inputLayer->SetInputData(batch_img_vec[k]);
 			m_outputLayer->SetLabelValue(batch_label_vec[k]);
-
 			Forward();
 			BackProp();
-
-			for (unsigned int i = 1; i < m_layers.size(); ++i)
-			{
-				LayerBase *layer = m_layers[i];
-				layer->SumGradient();
-			}
-
+			SumGradient();
 		}
 
 		float eff = eta / batch_size;
-
 		UpdateWeightBias(eff);
 
 	}
@@ -125,7 +129,7 @@ public:
 		{
 			m_inputLayer->SetInputData(test_img_vec[k]);
 			Forward();
-			int lab = m_outputLayer->m_output.ArgMax();
+			int lab = m_outputLayer->m_output->ArgMax();
 			int std_lab = test_lab_vec[k];
 			if (lab == std_lab)
 			{
