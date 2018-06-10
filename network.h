@@ -92,7 +92,7 @@ public:
 		}
 	}
 
-	void SGD(const std::vector<VectorN> &batch_img_vec, const std::vector<VectorN> &batch_label_vec, float eta)
+	void SGD(const std::vector<VectorN*> &batch_img_vec, const std::vector<VectorN*> &batch_label_vec, float eta)
 	{
 		for (unsigned int i = 1; i < m_layers.size(); ++i)
 		{
@@ -105,8 +105,8 @@ public:
 		unsigned int batch_size = batch_img_vec.size();
 		for (unsigned int k = 0; k < batch_size; ++k)
 		{
-			m_inputLayer->SetInputData(batch_img_vec[k]);
-			m_outputLayer->SetLabelValue(batch_label_vec[k]);
+			m_inputLayer->SetInputData(*batch_img_vec[k]);
+			m_outputLayer->SetLabelValue(*batch_label_vec[k]);
 			Forward();
 			BackProp();
 			SumGradient();

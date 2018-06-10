@@ -165,15 +165,15 @@ int main()
 	for (int c = 0; c < epoch; ++c)
 	{
 		std::shuffle(std::begin(idx_vec), std::end(idx_vec), generator);
-		for (int i = 0; i < img_count / batch_size; ++i)
+		std::vector<VectorN*> batch_img_vec(batch_size);
+		std::vector<VectorN*> batch_label_vec(batch_size);
+		for (int i = 0; i <= (img_count / batch_size); ++i)
 		{
-			std::vector<VectorN> batch_img_vec(batch_size);
-			std::vector<VectorN> batch_label_vec(batch_size);
 			for (int k = 0; k < batch_size; ++k)
 			{
 				int j = idx_vec[(i * batch_size + k) % img_count];
-				batch_img_vec[k] = img_vec[j];
-				batch_label_vec[k] = lab_vec[j];
+				batch_img_vec[k] = &img_vec[j];
+				batch_label_vec[k] = &lab_vec[j];
 			}
 			nn.SGD(batch_img_vec, batch_label_vec, learning_rate);
 		}

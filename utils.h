@@ -25,53 +25,47 @@ public:
 
 };
 
-typedef VectorN& (*ActiveFunc)(VectorN& vec);
+typedef VectorN (*ActiveFunc)(const VectorN& vec);
 
-inline VectorN& Sigmoid(VectorN& vec)
+inline VectorN Sigmoid(const VectorN& vec)
 {
+	VectorN retV(vec);
 	for (unsigned int i = 0; i < vec.GetSize(); ++i)
 	{
-		vec[i] = 1.0f / (1.0f + exp(-vec[i]));
+		retV[i] = 1.0f / (1.0f + exp(-vec[i]));
 	}
-	return vec;
+	return retV;
 }
 
-inline VectorN& SigmoidPrime(VectorN& vec)
+inline VectorN SigmoidPrime(const VectorN& vec)
 {
+	VectorN retV(vec);
 	for (unsigned int i = 0; i < vec.GetSize(); ++i)
 	{
 		auto f = 1.0f / (1.0f + exp(-vec[i]));
-		vec[i] = f * (1.0f - f);
+		retV[i] = f * (1.0f - f);
 	}
-	return vec;
+	return retV;
 }
 
-inline VectorN& Relu(VectorN& vec)
+inline VectorN Relu(const VectorN& vec)
 {
+	VectorN retV(vec);
 	for (unsigned int i = 0; i < vec.GetSize(); ++i)
 	{
-		if (vec[i] < 0.0f)
-		{
-			vec[i] = 0.0f;
-		}
+		retV[i] = vec[i] > 0.0f ? vec[i] : 0.0f;
 	}
-	return vec;
+	return retV;
 }
 
-inline VectorN& ReluPrime(VectorN& vec)
+inline VectorN ReluPrime(const VectorN& vec)
 {
+	VectorN retV(vec);
 	for (unsigned int i = 0; i < vec.GetSize(); ++i)
 	{
-		if (vec[i] > 0.0f)
-		{ 
-			vec[i] = 1.0f;
-		}
-		else
-		{
-			vec[i] = 0.0f;
-		}
+		retV[i] = vec[i] > 0.0f ? 1.0f : 0.0f;	
 	}
-	return vec;
+	return retV;
 }
 
 #endif //__UTILS_H__
