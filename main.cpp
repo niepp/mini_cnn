@@ -144,7 +144,10 @@ int main()
 
 	// define neural network
 	Network nn(N);
-	nn.AddLayer(new FullyConnectedLayer(M, Sigmoid));
+	nn.AddLayer(new FullyConnectedLayer(120, Relu));
+	nn.AddLayer(new FullyConnectedLayer(60, Relu));
+	nn.AddLayer(new FullyConnectedLayer(30, Relu));
+	nn.AddLayer(new FullyConnectedLayer(15, Relu));
 	nn.AddLayer(new OutputLayer(C, Sigmoid));
 
 	nn.Init(nrand);
@@ -162,6 +165,7 @@ int main()
 	uint32_t seed = (uint32_t)(std::chrono::system_clock::now().time_since_epoch().count());
 	std::mt19937_64 generator(seed);
 
+	float maxCorrectRate = 0;
 	for (int c = 0; c < epoch; ++c)
 	{
 		std::shuffle(std::begin(idx_vec), std::end(idx_vec), generator);
@@ -180,8 +184,14 @@ int main()
 
 		uint32_t correct = nn.Test(test_img_vec, test_lab_vec);
 		float correct_rate = (1.0f * correct / test_img_count);
+		if (correct_rate > maxCorrectRate)
+		{
+			maxCorrectRate = correct_rate;			
+		}
 		cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
 	}
+
+	cout << "maxCorrectRate: " << maxCorrectRate << endl;
 
 	system("pause");
 	return 0;

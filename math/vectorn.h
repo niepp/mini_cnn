@@ -1,6 +1,8 @@
 #ifndef __VECTOR_N_H__
 #define __VECTOR_N_H__
 
+#include <cassert>
+
 template <class T>
 class _MatrixMN;
 

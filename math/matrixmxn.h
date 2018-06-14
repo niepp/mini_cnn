@@ -1,6 +1,8 @@
 #ifndef __MATRIX_MXN_H__
 #define __MATRIX_MXN_H__
 
+#include <cassert>
+
 template <class T>
 class _VectorN;
 

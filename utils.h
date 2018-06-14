@@ -68,4 +68,52 @@ inline VectorN ReluPrime(const VectorN& vec)
 	return retV;
 }
 
+inline VectorN Softmax(const VectorN& vec)
+{
+	VectorN retV(vec);
+	uint32_t idx = retV.ArgMax();
+	float maxv = retV[idx];
+	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	{
+		retV[i] -= maxv;
+	}
+
+	float sum = 0;
+	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	{
+		retV[i] = exp(vec[i]);
+		sum += retV[i];
+	}
+
+	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	{
+		retV[i] /= sum;
+	}
+	return retV;
+}
+
+inline VectorN SoftmaxPrime(const VectorN& vec)
+{
+	VectorN retV(vec);
+	uint32_t idx = retV.ArgMax();
+	float maxv = retV[idx];
+	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	{
+		retV[i] -= maxv;
+	}
+
+	float sum = 0;
+	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	{
+		retV[i] = exp(vec[i]);
+		sum += retV[i];
+	}
+
+	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	{
+		float v = retV[i] / sum;
+		retV[i] = v - v * v;
+	}
+	return retV;
+}
 #endif //__UTILS_H__
