@@ -25,95 +25,89 @@ public:
 
 };
 
-typedef VectorN (*ActiveFunc)(const VectorN& vec);
+typedef void(*ActiveFunc)(const VectorN& vec, VectorN& retV);
 
-inline VectorN Sigmoid(const VectorN& vec)
+inline void Sigmoid(const VectorN& vec, VectorN& retV)
 {
-	VectorN retV(vec);
-	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	assert(vec.GetSize() == retV.GetSize());
+	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
 		retV[i] = 1.0f / (1.0f + exp(-vec[i]));
 	}
-	return retV;
 }
 
-inline VectorN SigmoidPrime(const VectorN& vec)
+inline void SigmoidPrime(const VectorN& vec, VectorN& retV)
 {
-	VectorN retV(vec);
-	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	assert(vec.GetSize() == retV.GetSize());
+	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
 		auto f = 1.0f / (1.0f + exp(-vec[i]));
 		retV[i] = f * (1.0f - f);
 	}
-	return retV;
 }
 
-inline VectorN Relu(const VectorN& vec)
+inline void Relu(const VectorN& vec, VectorN& retV)
 {
-	VectorN retV(vec);
-	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	assert(vec.GetSize() == retV.GetSize());
+	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		retV[i] = vec[i] > 0.0f ? vec[i] : 0.0f;
+		retV[i] = vec[i] > 0.0f ? vec[i] : vec[i] * 0.5f;
 	}
-	return retV;
 }
 
-inline VectorN ReluPrime(const VectorN& vec)
+inline void ReluPrime(const VectorN& vec, VectorN& retV)
 {
-	VectorN retV(vec);
-	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	assert(vec.GetSize() == retV.GetSize());
+	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		retV[i] = vec[i] > 0.0f ? 1.0f : 0.0f;	
+		retV[i] = vec[i] > 0.0f ? 1.0f : 0.5f;
 	}
-	return retV;
 }
 
-inline VectorN Softmax(const VectorN& vec)
+inline void Softmax(const VectorN& vec, VectorN& retV)
 {
-	VectorN retV(vec);
-	uint32_t idx = retV.ArgMax();
-	float maxv = retV[idx];
-	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	assert(vec.GetSize() == retV.GetSize());
+	uint32_t idx = vec.ArgMax();
+	float maxv = vec[idx];
+	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		retV[i] -= maxv;
+		retV[i] = vec[i] - maxv;
 	}
 
 	float sum = 0;
-	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		retV[i] = exp(vec[i]);
+		retV[i] = exp(retV[i]);
 		sum += retV[i];
 	}
 
-	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
 		retV[i] /= sum;
 	}
-	return retV;
 }
 
-inline VectorN SoftmaxPrime(const VectorN& vec)
+inline void SoftmaxPrime(const VectorN& vec, VectorN& retV)
 {
-	VectorN retV(vec);
-	uint32_t idx = retV.ArgMax();
-	float maxv = retV[idx];
-	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	assert(vec.GetSize() == retV.GetSize());
+	uint32_t idx = vec.ArgMax();
+	float maxv = vec[idx];
+	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		retV[i] -= maxv;
+		retV[i] = vec[i] - maxv;
 	}
 
 	float sum = 0;
-	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		retV[i] = exp(vec[i]);
+		retV[i] = exp(retV[i]);
 		sum += retV[i];
 	}
 
-	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
 		float v = retV[i] / sum;
 		retV[i] = v - v * v;
 	}
-	return retV;
 }
 #endif //__UTILS_H__

@@ -14,6 +14,13 @@ using namespace std;
 #include "math/matrixmxn.h"
 #include "math/mathdef.h"
 
+enum eActiveFunc
+{
+	eSigmod,
+	eRelu,
+	eSoftmax,
+};
+
 // z = w * a + b
 // a = f(z)
 class LayerBase
@@ -32,15 +39,18 @@ public:
 	VectorN *m_sum_delta;
 	MatrixMN *m_sum_dw;
 
-public:
+protected:
 	LayerBase *m_prev, *m_next;
+	VectorN *m_outputPrime;
 
+public:
 	LayerBase(uint32_t neuralCount) : m_neuralCount(neuralCount), m_prev(NULL), m_next(NULL)
 	{
 		m_bias = new VectorN(neuralCount);
 		m_middle = new VectorN(neuralCount);
 		m_output = new VectorN(neuralCount);
 
+		m_outputPrime = new VectorN(neuralCount);
 	}
 
 	uint32_t Size()
@@ -114,10 +124,28 @@ class FullyConnectedLayer : public LayerBase
 {
 protected:
 	ActiveFunc m_activeFunc;
+	ActiveFunc m_activePrimeFunc;
 
 public:
-	FullyConnectedLayer(uint32_t neuralCount, ActiveFunc activeFunc) : LayerBase(neuralCount), m_activeFunc(activeFunc)
+	FullyConnectedLayer(uint32_t neuralCount, eActiveFunc act) : LayerBase(neuralCount)
 	{
+		switch (act)
+		{
+		case eSigmod:
+			m_activeFunc = Sigmoid;
+			m_activePrimeFunc = SigmoidPrime;
+			break;
+		case eRelu:
+			m_activeFunc = Relu;
+			m_activePrimeFunc = ReluPrime;
+			break;
+		case eSoftmax:
+			m_activeFunc = Softmax;
+			m_activePrimeFunc = SoftmaxPrime;
+			break;
+		default:
+			break;
+		}
 	}
 
 	virtual void Connect(LayerBase *next)
@@ -144,12 +172,13 @@ public:
 	virtual void Forward()
 	{
 		m_middle->Copy(*m_weight * *m_input + *m_bias);
-		m_output->Copy(Sigmoid(*m_middle));
+		m_activeFunc(*m_middle, *m_output);
 	}
 
 	virtual void BackProp()
 	{
-		m_delta->Copy((m_next->m_weight->Transpose() * *m_next->m_delta) ^ SigmoidPrime(*m_middle));
+		m_activePrimeFunc(*m_middle, *m_outputPrime);
+		m_delta->Copy((m_next->m_weight->Transpose() * (*m_next->m_delta)) ^ (*m_outputPrime));
 		m_dw->Copy(*m_delta * *m_input);
 	}
 
@@ -171,7 +200,7 @@ class OutputLayer : public FullyConnectedLayer
 {
 	const VectorN *m_label;  // 学习的正确值
 public:
-	OutputLayer(unsigned int neuralCount, ActiveFunc activeFunc) : FullyConnectedLayer(neuralCount, activeFunc)
+	OutputLayer(unsigned int neuralCount, eActiveFunc act) : FullyConnectedLayer(neuralCount, act)
 	{
 	}
 
@@ -182,7 +211,8 @@ public:
 
 	virtual void BackProp()
 	{
-		m_delta->Copy(LostDerivateAtOutlayer() ^ SigmoidPrime(*m_middle));
+		m_activePrimeFunc(*m_middle, *m_outputPrime);
+		m_delta->Copy(LostDerivateAtOutlayer() ^ (*m_outputPrime));
 		m_dw->Copy(*m_delta * *m_input);
 	}
 

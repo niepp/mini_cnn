@@ -144,11 +144,8 @@ int main()
 
 	// define neural network
 	Network nn(N);
-	nn.AddLayer(new FullyConnectedLayer(120, Relu));
-	nn.AddLayer(new FullyConnectedLayer(60, Relu));
-	nn.AddLayer(new FullyConnectedLayer(30, Relu));
-	nn.AddLayer(new FullyConnectedLayer(15, Relu));
-	nn.AddLayer(new OutputLayer(C, Sigmoid));
+	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
+	nn.AddLayer(new OutputLayer(C, eActiveFunc::eSigmod));
 
 	nn.Init(nrand);
 
