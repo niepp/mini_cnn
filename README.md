@@ -2,9 +2,9 @@
 for learning neural network based on c++ 11
 
 |---- input layer(784 neural) </br>
-|            |</br>
+|           </br>
 |---- middle layer(30 neural)</br>
-|            |</br>
+|           </br>
 |---- output layer(10 neural)</br>
 </br>
 30 epoch, 10 batch size, 3.0 learning rate, the result on mnist dataset</br>
