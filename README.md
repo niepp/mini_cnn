@@ -1,16 +1,16 @@
 # mini_nn
 for learning neural network based on c++ 11
 
-|---- input layer(784 neural)
-|            |
-|---- middle layer(30 neural)
-|            |
-|---- output layer(10 neural)
-
-30 epoch, 10 batch size, 3.0 learning rate, the result on mnist dataset
-
-epoch 0: 0.9168 (9168 / 10000)
-epoch 1: 0.9297 (9297 / 10000)
+|---- input layer(784 neural) </br>
+|            |</br>
+|---- middle layer(30 neural)</br>
+|            |</br>
+|---- output layer(10 neural)</br>
+</br>
+30 epoch, 10 batch size, 3.0 learning rate, the result on mnist dataset</br>
+</br>
+epoch 0: 0.9168 (9168 / 10000)</br>
+epoch 1: 0.9297 (9297 / 10000)</br>
 epoch 2: 0.9379 (9379 / 10000)
 epoch 3: 0.9386 (9386 / 10000)
 epoch 4: 0.942 (9420 / 10000)
