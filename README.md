@@ -1,6 +1,11 @@
 # mini_nn
 for learning neural network based on c++ 11
 
+
+```math
+E = mc^2
+```
+
 |---- input layer(784 neural) </br>
 |           </br>
 |---- middle layer(30 neural)</br>
