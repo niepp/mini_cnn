@@ -1,7 +1,7 @@
 # mini_nn
 for learning neural network based on c++ 11
 
-(https://github.com/niepp/mini_nn/blob/master/backprop.png)</br>
+![image](https://github.com/niepp/mini_nn/blob/master/backprop.png)</br>
 
 |---- input layer(784 neural) </br>
 |           </br>
