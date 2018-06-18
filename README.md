@@ -2,7 +2,7 @@
 
 基于C++11的神经网络实验，通过造轮子加深对基本原理的理解
 
-有L层神经网络，第1层为输入层，第L层为输出层，对第l层来说</br>
+一个L层的神经网络，第1层为输入层，第L层为输出层，对第l层来说</br>
 ![image](https://github.com/niepp/mini_nn/blob/master/backprop.png)</br>
 
 反向传播总结为:</br>
