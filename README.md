@@ -1,6 +1,9 @@
 # mini_nn
 for learning neural network based on c++ 11
 
+
+$ J_\alpha(x) = \sum_{m=0}^\infty \frac{(-1)^m}{m! \Gamma (m + \alpha + 1)} {\left({ \frac{x}{2} }\right)}^{2m + \alpha} \text {，行内公式示例} $
+
 |---- input layer(784 neural) </br>
 |           </br>
 |---- middle layer(30 neural)</br>
