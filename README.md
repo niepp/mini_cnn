@@ -42,6 +42,7 @@ epoch 29: 0.9554 (9554 / 10000)</br>
 maxCorrectRate: 0.9554</br>
 
 [reference]</br>
-1） [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
-2） [Deep Learning](http://www.deeplearningbook.org/), book by Ian Goodfellow, Yoshua Bengio, and Aaron Courville</br>
-3） http://cs231n.github.io/convolutional-networks/</br>
+1) [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
+2) [Deep Learning](http://www.deeplearningbook.org/), book by Ian Goodfellow, Yoshua Bengio, and Aaron Courville</br>
+3) http://cs231n.github.io/convolutional-networks </br>
+4) http://cs231n.stanford.edu/slides/2018/cs231n_2018_lecture05.pdf](http://cs231n.stanford.edu/slides/2018/cs231n_2018_lecture05.pdf)
