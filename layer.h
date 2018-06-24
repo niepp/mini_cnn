@@ -18,7 +18,14 @@ enum eActiveFunc
 {
 	eSigmod,
 	eRelu,
-	eSoftmax,
+	eSoftMax,
+};
+
+enum eLossFunc
+{
+	eMSE,
+	eSigmod_CrossEntropy,
+	eSoftMax_LogLikelihood,
 };
 
 // z = w * a + b
@@ -123,25 +130,26 @@ public:
 class FullyConnectedLayer : public LayerBase
 {
 protected:
+	eActiveFunc m_activeFuncType;
 	ActiveFunc m_activeFunc;
 	ActiveFunc m_activePrimeFunc;
 
 public:
 	FullyConnectedLayer(uint32_t neuralCount, eActiveFunc act) : LayerBase(neuralCount)
 	{
+		m_activeFuncType = act;
 		switch (act)
 		{
-		case eSigmod:
+		case eActiveFunc::eSigmod:
 			m_activeFunc = Sigmoid;
 			m_activePrimeFunc = SigmoidPrime;
 			break;
-		case eRelu:
+		case eActiveFunc::eRelu:
 			m_activeFunc = Relu;
 			m_activePrimeFunc = ReluPrime;
 			break;
-		case eSoftmax:
+		case eActiveFunc::eSoftMax:
 			m_activeFunc = Softmax;
-			m_activePrimeFunc = SoftmaxPrime;
 			break;
 		default:
 			break;
@@ -198,10 +206,16 @@ public:
 
 class OutputLayer : public FullyConnectedLayer
 {
+protected:
 	const VectorN *m_label;  // 学习的正确值
+	eLossFunc m_lossFuncType;
 public:
-	OutputLayer(unsigned int neuralCount, eActiveFunc act) : FullyConnectedLayer(neuralCount, act)
+	OutputLayer(unsigned int neuralCount, eLossFunc lossFunc, eActiveFunc act) : FullyConnectedLayer(neuralCount, act)
 	{
+		assert(!(lossFunc == eLossFunc::eSigmod_CrossEntropy && act != eActiveFunc::eSigmod)
+			&& !(lossFunc == eLossFunc::eSoftMax_LogLikelihood && act != eActiveFunc::eSoftMax)
+			);
+		m_lossFuncType = lossFunc;
 	}
 
 	void SetLabelValue(const VectorN &label)
@@ -211,13 +225,31 @@ public:
 
 	virtual void BackProp()
 	{
-		m_activePrimeFunc(*m_middle, *m_outputPrime);
-		m_delta->Copy(LostDerivateAtOutlayer() ^ (*m_outputPrime));
-		m_dw->Copy(*m_delta * *m_input);
+		switch (m_lossFuncType)
+		{
+		case eLossFunc::eMSE:
+			{
+				m_activePrimeFunc(*m_middle, *m_outputPrime);
+				m_delta->Copy(MseDerive() ^ (*m_outputPrime));
+				m_dw->Copy(*m_delta * *m_input);
+			}
+			break;
+		case eLossFunc::eSigmod_CrossEntropy:
+		case eLossFunc::eSoftMax_LogLikelihood:
+			// 交叉熵CrossEntropy损失函数和Sigmod激活函数的组合 或者 LogLikelihood损失函数和Softmax激活函数的组合下：
+			// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
+			// ref： http://neuralnetworksanddeeplearning.com/chap3.html#introducing_the_cross-entropy_cost_function
+			m_delta->Copy(*m_output - *m_label);
+			m_dw->Copy(*m_delta * *m_input);
+			break;
+		default:
+			assert(false);
+			break;
+		}
 	}
 
-	// 损失函数对输出层的输出值的偏导数 （这里用均方误差函数MSE为例）
-	VectorN LostDerivateAtOutlayer()
+	// 均方误差损失函数对输出层的输出值的偏导数
+	VectorN MseDerive()
 	{
 		return *m_output - *m_label;
 	}
