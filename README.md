@@ -1,8 +1,6 @@
-# mini_nn
+# 用C++11实现的基于梯度反向传播的随机梯度下降训练的神经网络。
 
-===用C++11实现的基于梯度反向传播的随机梯度下降训练的神经网络。
-
-—简单神经网络
+## 简单神经网络
 一个L层的神经网络，第1层为输入层，第L层为输出层，对第l层来说</br>
 ![image](https://github.com/niepp/mini_nn/blob/master/backprop.png)</br>
 
@@ -55,7 +53,7 @@ epoch 28: 0.955 (9550 / 10000)</br>
 epoch 29: 0.9554 (9554 / 10000)</br>
 maxCorrectRate: 0.9554</br>
 
-—卷积神经网络
+##卷积神经网络
 
 [参考文献]</br>
 1) [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
