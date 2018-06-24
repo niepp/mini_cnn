@@ -61,3 +61,4 @@ maxCorrectRate: 0.9554</br>
 2) [Deep Learning](http://www.deeplearningbook.org/), book by Ian Goodfellow, Yoshua Bengio, and Aaron Courville</br>
 3) http://cs231n.github.io/convolutional-networks </br>
 4) http://cs231n.stanford.edu/slides/2018/cs231n_2018_lecture05.pdf
+5) http://www.cnblogs.com/pinard/p/6483207.html
