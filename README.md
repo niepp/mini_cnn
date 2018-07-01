@@ -1,7 +1,7 @@
 # 用C++11实现的基于反向传播的随机梯度下降神经网络
 
 ## 简单神经网络
-一个L层的神经网络，第1层为输入层，第L层为输出层，对第l层来说</br>
+一个L层的神经网络，第1层为输入层，第L层为输出层，对第l层来说</br> 参考1)
 ![image](https://github.com/niepp/mini_nn/blob/master/backprop.png)</br>
 
 反向传播总结为:</br>
@@ -54,7 +54,7 @@ epoch 29: 0.9554 (9554 / 10000)</br>
 maxCorrectRate: 0.9554</br>
 
 ## 卷积神经网络
-  ![image](https://github.com/niepp/mini_nn/blob/master/convbackprop.png)</br>(3)(4)(5)(6)
+  ![image](https://github.com/niepp/mini_nn/blob/master/convbackprop.png)</br> 参考5)
   
 [参考文献]</br>
 1) [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
