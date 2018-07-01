@@ -54,11 +54,12 @@ epoch 29: 0.9554 (9554 / 10000)</br>
 maxCorrectRate: 0.9554</br>
 
 ## 卷积神经网络
-  todo
+  ![image](https://github.com/niepp/mini_nn/blob/master/convbackprop.png)</br>(3)(4)(5)(6)
   
 [参考文献]</br>
 1) [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
 2) [Deep Learning](http://www.deeplearningbook.org/), book by Ian Goodfellow, Yoshua Bengio, and Aaron Courville</br>
 3) http://cs231n.github.io/convolutional-networks </br>
 4) http://cs231n.stanford.edu/slides/2018/cs231n_2018_lecture05.pdf
-5) http://www.cnblogs.com/pinard/p/6483207.html
+5) http://ufldl.stanford.edu/tutorial/supervised/ConvolutionalNeuralNetwork/
+6) http://www.cnblogs.com/pinard/p/6483207.html
