@@ -12,8 +12,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{11E077A1-FFCA-4174-9376-9BF85220218B}</ProjectGuid>
-    <RootNamespace>mini_nn</RootNamespace>
-    <ProjectName>mini_nn</ProjectName>
+    <RootNamespace>mini_cnn</RootNamespace>
+    <ProjectName>mini_cnn</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
