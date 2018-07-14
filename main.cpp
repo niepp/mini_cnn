@@ -13,19 +13,20 @@
 #include "utils.h"
 #include "math/vectorn.h"
 #include "math/matrixmxn.h"
+#include "math/matrix3d.h"
 #include "math/mathdef.h"
 #include "layer.h"
 #include "input_layer.h"
 #include "fullyconnected_layer.h"
 #include "output_layer.h"
+#include "convolutional_layer.h"
 #include "network.h"
 
 
 using namespace std;
 
-const int N = 784;
-const int M = 30;
-const int C = 10;
+const int N_inputCount = 784;
+const int C_classCount = 10;
 // z = w * a + b
 // a = f(z)
 
@@ -90,10 +91,10 @@ int main()
 	std::vector<VectorN> img_vec(img_count);
 	for (int k = 0; k < img_count; ++k)
 	{
-		img_vec[k].SetSize(N);
-		for (int i = 0; i < N; ++i)
+		img_vec[k].SetSize(N_inputCount);
+		for (int i = 0; i < N_inputCount; ++i)
 		{
-			float v = images[index + k * N + i] * 1.0f / 255.0f;
+			float v = images[index + k * N_inputCount + i] * 1.0f / 255.0f;
 			img_vec[k][i] = v;
 		}
 	}
@@ -101,7 +102,7 @@ int main()
 	std::vector<VectorN> lab_vec(img_count);
 	for (int k = 0; k < img_count; ++k)
 	{
-		lab_vec[k].SetSize(C);
+		lab_vec[k].SetSize(C_classCount);
 		int lab = labels[idx + k];
 		lab_vec[k][lab] = 1.0f;
 	}
@@ -126,10 +127,10 @@ int main()
 	std::vector<VectorN> test_img_vec(test_img_count);
 	for (int k = 0; k < test_img_count; ++k)
 	{
-		test_img_vec[k].SetSize(N);
-		for (int i = 0; i < N; ++i)
+		test_img_vec[k].SetSize(N_inputCount);
+		for (int i = 0; i < N_inputCount; ++i)
 		{
-			float v = test_images[test_idx + k * N + i] * 1.0f / 255.0f;
+			float v = test_images[test_idx + k * N_inputCount + i] * 1.0f / 255.0f;
 			test_img_vec[k][i] = v;
 		}
 	}
@@ -144,15 +145,16 @@ int main()
 	NormalRandom nrand(0, 1.0f);
 
 	// define neural network
-	Network nn(N);
-	nn.AddLayer(new FullyConnectedLayer(M, eActiveFunc::eSigmod));
-	nn.AddLayer(new OutputLayer(C, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
+	Network nn(N_inputCount);
+	nn.AddLayer(new FullyConnectedLayer(128, eActiveFunc::eRelu));
+	nn.AddLayer(new FullyConnectedLayer(32, eActiveFunc::eRelu));
+	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 
 	nn.Init(nrand);
 
-	float learning_rate = 3.0f;
-	int epoch = 30;
-	int batch_size = 10;
+	float learning_rate = 0.01f;
+	int epoch = 50;
+	int batch_size = 200;
 
 	std::vector<int> idx_vec(img_count);
 	for (int k = 0; k < img_count; ++k)

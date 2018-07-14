@@ -6,6 +6,7 @@
 #include "types.h"
 #include "math/vectorn.h"
 #include "math/matrixmxn.h"
+#include "math/matrix3d.h"
 #include "math/mathdef.h"
 
 class NormalRandom
@@ -51,7 +52,7 @@ inline void Relu(const VectorN& vec, VectorN& retV)
 	assert(vec.GetSize() == retV.GetSize());
 	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		retV[i] = vec[i] > 0.0f ? vec[i] : vec[i] * 0.5f;
+		retV[i] = vec[i] > 0.0f ? vec[i] : 0.0f;
 	}
 }
 
@@ -60,7 +61,7 @@ inline void ReluPrime(const VectorN& vec, VectorN& retV)
 	assert(vec.GetSize() == retV.GetSize());
 	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		retV[i] = vec[i] > 0.0f ? 1.0f : 0.5f;
+		retV[i] = vec[i] > 0.0f ? 1.0f : 0.0f;
 	}
 }
 

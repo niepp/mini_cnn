@@ -9,5 +9,6 @@ const float PI = 3.141592653589793f;
 
 typedef _MatrixMN<float32_t> MatrixMN;
 typedef _VectorN<float32_t> VectorN;
+typedef _Matrix3D<float32_t> Matrix3D;
 
 #endif // __MATH_DEF_H__
