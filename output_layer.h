@@ -14,7 +14,7 @@ using namespace std;
 #include "math/matrixmxn.h"
 #include "math/mathdef.h"
 #include "layer.h"
-#include "fullyconnected_layer.h"
+#include "fully_connected_layer.h"
 
 
 class OutputLayer : public FullyConnectedLayer

@@ -15,7 +15,7 @@ using namespace std;
 #include "math/mathdef.h"
 #include "layer.h"
 #include "input_layer.h"
-#include "fullyconnected_layer.h"
+#include "fully_connected_layer.h"
 #include "output_layer.h"
 
 class Network
