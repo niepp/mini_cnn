@@ -15,16 +15,17 @@
 #include "math/matrixmxn.h"
 #include "math/mathdef.h"
 #include "layer.h"
+#include "input_layer.h"
+#include "fullyconnected_layer.h"
+#include "output_layer.h"
 #include "network.h"
 
 
 using namespace std;
 
 const int N = 784;
-const int M = 15;
+const int M = 30;
 const int C = 10;
-
-// N -> M -> C
 // z = w * a + b
 // a = f(z)
 
@@ -144,7 +145,7 @@ int main()
 
 	// define neural network
 	Network nn(N);
-	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
+	nn.AddLayer(new FullyConnectedLayer(M, eActiveFunc::eSigmod));
 	nn.AddLayer(new OutputLayer(C, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 
 	nn.Init(nrand);

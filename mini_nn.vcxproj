@@ -73,9 +73,12 @@
     <ClCompile Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="fullyconnected_layer.h" />
+    <ClInclude Include="input_layer.h" />
     <ClInclude Include="math\mathdef.h" />
     <ClInclude Include="math\matrixmxn.h" />
     <ClInclude Include="math\vectorn.h" />
+    <ClInclude Include="output_layer.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>
   <ItemGroup>
