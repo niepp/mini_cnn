@@ -1,8 +1,7 @@
-# mini_nn
+# 用C++11实现的基于反向传播的随机梯度下降神经网络
 
-基于C++11的神经网络实验，通过造轮子加深对基本原理的理解
-
-一个L层的神经网络，第1层为输入层，第L层为输出层，对第l层来说</br>
+## 简单神经网络
+一个L层的神经网络，第1层为输入层，第L层为输出层，对第l层来说 【参考1)】</br> 
 ![image](https://github.com/niepp/mini_nn/blob/master/backprop.png)</br>
 
 反向传播总结为:</br>
@@ -54,8 +53,14 @@ epoch 28: 0.955 (9550 / 10000)</br>
 epoch 29: 0.9554 (9554 / 10000)</br>
 maxCorrectRate: 0.9554</br>
 
+## 卷积神经网络
+  卷积层的误差反向传播 【参考5)】</br>
+  ![image](https://github.com/niepp/mini_nn/blob/master/convbackprop.png)</br>
+  
 [参考文献]</br>
 1) [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
 2) [Deep Learning](http://www.deeplearningbook.org/), book by Ian Goodfellow, Yoshua Bengio, and Aaron Courville</br>
 3) http://cs231n.github.io/convolutional-networks </br>
 4) http://cs231n.stanford.edu/slides/2018/cs231n_2018_lecture05.pdf
+5) http://ufldl.stanford.edu/tutorial/supervised/ConvolutionalNeuralNetwork/
+6) http://www.cnblogs.com/pinard/p/6483207.html
