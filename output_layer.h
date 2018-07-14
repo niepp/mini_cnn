@@ -36,7 +36,7 @@ public:
 		m_label = &label;
 	}
 
-	virtual void BackProp()
+	virtual void BackProp(LayerBase *next)
 	{
 		switch (m_lossFuncType)
 		{

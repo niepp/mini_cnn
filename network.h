@@ -37,14 +37,14 @@ public:
 			throw std::exception("add layer after output!");
 		}
 		LayerBase* lastLayer = *m_layers.rbegin();
-		lastLayer->Connect(layer);
+		layer->Connect(lastLayer);
 		m_layers.push_back(layer);
 
 		OutputLayer *ol = dynamic_cast<OutputLayer*>(layer);
 		if (ol != nullptr)
 		{
 			m_outputLayer = ol;
-			m_outputLayer->Connect(nullptr);
+			ol->Connect(lastLayer);
 		}
 
 	}
@@ -69,10 +69,11 @@ public:
 
 	void BackProp()
 	{
-		for (unsigned int i = m_layers.size() - 1; i > 0; --i)
+		(*m_layers.rbegin())->BackProp(nullptr);
+		for (unsigned int i = m_layers.size() - 2; i > 0; --i)
 		{
 			LayerBase *layer = m_layers[i];
-			layer->BackProp();
+			layer->BackProp(m_layers[i + 1]);
 		}
 	}
 
@@ -90,8 +91,7 @@ public:
 		for (unsigned int i = m_layers.size() - 1; i > 0; --i)
 		{
 			LayerBase *layer = m_layers[i];
-			*(layer->m_weight) -= *(layer->m_sum_dw) * eff;
-			*(layer->m_bias) -= *(layer->m_sum_delta) * eff;
+			layer->UpdateWeightBias(eff);
 		}
 	}
 

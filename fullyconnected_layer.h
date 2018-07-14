@@ -17,6 +17,18 @@ using namespace std;
 
 class FullyConnectedLayer : public LayerBase
 {
+public:
+	MatrixMN *m_weight;  // m_weight[i][j] : 前一层的第j个神经元到当前层的第i个神经元的连接权重
+	VectorN *m_bias;     // m_bias[i] : 当前层的第i个神经元的偏置
+	VectorN *m_middle;	// middle value
+
+
+	VectorN *m_delta;	// equal to dJ/d(bias)
+	MatrixMN *m_dw;		// equal to dJ/d(w)
+
+	VectorN *m_sum_delta;
+	MatrixMN *m_sum_dw;
+
 protected:
 	eActiveFunc m_activeFuncType;
 	ActiveFunc m_activeFunc;
@@ -25,6 +37,10 @@ protected:
 public:
 	FullyConnectedLayer(uint32_t neuralCount, eActiveFunc act) : LayerBase(neuralCount)
 	{
+		m_bias = new VectorN(neuralCount);
+		m_middle = new VectorN(neuralCount);
+		m_output = new VectorN(neuralCount);
+
 		m_activeFuncType = act;
 		switch (act)
 		{
@@ -44,9 +60,19 @@ public:
 		}
 	}
 
-	virtual void Connect(LayerBase *next)
+	virtual void Connect(LayerBase *prev)
 	{
-		LayerBase::Connect(next);
+
+		m_weight = new MatrixMN(this->Size(), prev->Size());
+
+		m_delta = new VectorN(this->Size());
+		m_dw = new MatrixMN(this->Size(), prev->Size());
+
+		m_sum_delta = new VectorN(this->Size());
+		m_sum_dw = new MatrixMN(this->Size(), prev->Size());
+
+		this->m_input = prev->m_output;
+
 	}
 
 	virtual void Init(NormalRandom nrand)
@@ -71,10 +97,11 @@ public:
 		m_activeFunc(*m_middle, *m_output);
 	}
 
-	virtual void BackProp()
+	virtual void BackProp(LayerBase *next)
 	{
+		FullyConnectedLayer *fc = dynamic_cast<FullyConnectedLayer*>(next);
 		m_activePrimeFunc(*m_middle, *m_outputPrime);
-		m_delta->Copy((m_next->m_weight->Transpose() * (*m_next->m_delta)) ^ (*m_outputPrime));
+		m_delta->Copy((fc->m_weight->Transpose() * (*fc->m_delta)) ^ (*m_outputPrime));
 		m_dw->Copy(*m_delta * *m_input);
 	}
 
@@ -90,6 +117,11 @@ public:
 		m_sum_dw->Copy(*m_sum_dw + *m_dw);
 	}
 
+	virtual void UpdateWeightBias(float eff)
+	{	
+		*m_weight -= *m_sum_dw * eff;
+		*m_bias -= *m_sum_delta * eff;
+	}
 };
 
 #endif //__FULLYCONNECTED_LAYER_H__

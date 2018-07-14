@@ -5,7 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
-#include <algorithm>  
+#include <algorithm>
 using namespace std;
 
 #include "types.h"
@@ -20,6 +20,7 @@ class InputLayer : public LayerBase
 public:
 	InputLayer(uint32_t neuralCount) : LayerBase(neuralCount)
 	{
+		m_output = new VectorN(neuralCount);
 	}
 	
 	void SetInputData(const VectorN &input)
