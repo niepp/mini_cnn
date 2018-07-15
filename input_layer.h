@@ -18,14 +18,16 @@ using namespace std;
 class InputLayer : public LayerBase
 {
 public:
-	InputLayer(uint32_t neuralCount) : LayerBase(neuralCount)
+	InputLayer(uint32_t neuralCount) : LayerBase(neuralCount, new VectorInOut(), new VectorInOut())
 	{
-		m_output = new VectorN(neuralCount);
+		VectorInOut* vec_out = dynamic_cast<VectorInOut*>(m_output);
+		vec_out->m_value = new VectorN(neuralCount);
 	}
 	
 	void SetInputData(const VectorN &input)
 	{
-		m_output->Copy(input);
+		VectorInOut* vec_out = dynamic_cast<VectorInOut*>(m_output);
+		vec_out->m_value->Copy(input);
 	}
 
 };

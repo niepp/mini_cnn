@@ -37,21 +37,22 @@ public:
 			throw std::exception("add layer after output!");
 		}
 		LayerBase* lastLayer = *m_layers.rbegin();
-		layer->Connect(lastLayer);
+		lastLayer->Connect(layer);
 		m_layers.push_back(layer);
 
 		OutputLayer *ol = dynamic_cast<OutputLayer*>(layer);
 		if (ol != nullptr)
 		{
 			m_outputLayer = ol;
-			ol->Connect(lastLayer);
+			m_outputLayer->Connect(nullptr);
 		}
 
 	}
 
 	void Init(NormalRandom nrand)
 	{
-		for (unsigned int i = 0; i < m_layers.size(); ++i)
+		int len = static_cast<int>(m_layers.size());
+		for (int i = 0; i < len; ++i)
 		{
 			LayerBase *layer = m_layers[i];
 			layer->Init(nrand);
@@ -60,7 +61,8 @@ public:
 
 	void Forward()
 	{
-		for (unsigned int i = 1; i < m_layers.size(); ++i)
+		int len = static_cast<int>(m_layers.size());
+		for (int i = 0; i < len; ++i)
 		{
 			LayerBase *layer = m_layers[i];
 			layer->Forward();
@@ -69,17 +71,18 @@ public:
 
 	void BackProp()
 	{
-		(*m_layers.rbegin())->BackProp(nullptr);
-		for (unsigned int i = m_layers.size() - 2; i > 0; --i)
+		m_outputLayer->BackProp();
+		for (int i = (int)m_layers.size() - 2; i >= 0; --i)
 		{
 			LayerBase *layer = m_layers[i];
-			layer->BackProp(m_layers[i + 1]);
+			layer->BackProp();
 		}
 	}
 
 	void SumGradient()
 	{
-		for (unsigned int i = m_layers.size() - 1; i > 0; --i)
+		int len = static_cast<int>(m_layers.size());
+		for (int i = len - 1; i >= 0; --i)
 		{
 			LayerBase *layer = m_layers[i];
 			layer->SumGradient();
@@ -88,7 +91,8 @@ public:
 
 	void UpdateWeightBias(float eff)
 	{
-		for (unsigned int i = m_layers.size() - 1; i > 0; --i)
+		int len = static_cast<int>(m_layers.size());
+		for (int i = len - 1; i >= 0; --i)
 		{
 			LayerBase *layer = m_layers[i];
 			layer->UpdateWeightBias(eff);
@@ -97,7 +101,8 @@ public:
 
 	void SGD(const std::vector<VectorN*> &batch_img_vec, const std::vector<VectorN*> &batch_label_vec, float eta)
 	{
-		for (unsigned int i = 1; i < m_layers.size(); ++i)
+		int len = static_cast<int>(m_layers.size());
+		for (int i = 0; i < len; ++i)
 		{
 			LayerBase *layer = m_layers[i];
 			layer->PreTrain();
@@ -132,7 +137,7 @@ public:
 		{
 			m_inputLayer->SetInputData(test_img_vec[k]);
 			Forward();
-			int lab = m_outputLayer->m_output->ArgMax();
+			int lab = m_outputLayer->GetOutput().ArgMax();
 			int std_lab = test_lab_vec[k];
 			if (lab == std_lab)
 			{

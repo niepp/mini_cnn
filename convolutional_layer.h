@@ -41,7 +41,8 @@ protected:
 	ActiveFunc m_activePrimeFunc;
 
 public:
-	ConvolutionalLayer(uint32_t neuralCount, eActiveFunc act) : LayerBase(neuralCount)
+	ConvolutionalLayer(uint32_t filterWidth, uint32_t filterHeight, uint32_t filterChannels, eActiveFunc act)
+		: LayerBase(filterWidth * filterHeight * filterChannels, new MatrixInOut(), new MatrixInOut())
 	{
 		//m_bias = new VectorN(neuralCount);
 		//m_middle = new VectorN(neuralCount);

@@ -36,7 +36,7 @@ public:
 		m_label = &label;
 	}
 
-	virtual void BackProp(LayerBase *next)
+	virtual void BackProp()
 	{
 		switch (m_lossFuncType)
 		{
@@ -44,7 +44,7 @@ public:
 		{
 			m_activePrimeFunc(*m_middle, *m_outputPrime);
 			m_delta->Copy(MseDerive() ^ (*m_outputPrime));
-			m_dw->Copy(*m_delta * *m_input);
+			m_dw->Copy(*m_delta * GetInput());
 		}
 			break;
 		case eLossFunc::eSigmod_CrossEntropy:
@@ -52,8 +52,8 @@ public:
 			// 交叉熵CrossEntropy损失函数和Sigmod激活函数的组合 或者 LogLikelihood损失函数和Softmax激活函数的组合下：
 			// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
 			// ref： http://neuralnetworksanddeeplearning.com/chap3.html#introducing_the_cross-entropy_cost_function
-			m_delta->Copy(*m_output - *m_label);
-			m_dw->Copy(*m_delta * *m_input);
+			m_delta->Copy(GetOutput() - *m_label);
+			m_dw->Copy(*m_delta * GetInput());
 			break;
 		default:
 			assert(false);
@@ -64,7 +64,7 @@ public:
 	// 均方误差损失函数对输出层的输出值的偏导数
 	VectorN MseDerive()
 	{
-		return *m_output - *m_label;
+		return GetOutput() - *m_label;
 	}
 
 };

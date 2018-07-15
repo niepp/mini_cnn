@@ -22,6 +22,9 @@ public:
 	VectorN *m_bias;     // m_bias[i] : 当前层的第i个神经元的偏置
 	VectorN *m_middle;	// middle value
 
+	//const VectorN *m_input;		// input of this layer, this is a ref to prev layer's output
+	//VectorN *m_output;			// output of this layer
+	VectorN *m_outputPrime;
 
 	VectorN *m_delta;	// equal to dJ/d(bias)
 	MatrixMN *m_dw;		// equal to dJ/d(w)
@@ -35,11 +38,19 @@ protected:
 	ActiveFunc m_activePrimeFunc;
 
 public:
-	FullyConnectedLayer(uint32_t neuralCount, eActiveFunc act) : LayerBase(neuralCount)
+	FullyConnectedLayer(uint32_t neuralCount, eActiveFunc act)
+		: LayerBase(neuralCount, new VectorInOut(), new VectorInOut())
 	{
 		m_bias = new VectorN(neuralCount);
 		m_middle = new VectorN(neuralCount);
-		m_output = new VectorN(neuralCount);
+	
+		//VectorInOut* vec_in = dynamic_cast<VectorInOut*>(m_input);
+		//vec_in->m_value = new VectorN(neuralCount);
+
+		VectorInOut* vec_out = dynamic_cast<VectorInOut*>(m_output);
+		vec_out->m_value = new VectorN(neuralCount);
+
+		m_outputPrime = new VectorN(neuralCount);
 
 		m_activeFuncType = act;
 		switch (act)
@@ -60,18 +71,29 @@ public:
 		}
 	}
 
-	virtual void Connect(LayerBase *prev)
+	const VectorN& GetInput() const
 	{
+		VectorInOut* vec_in = dynamic_cast<VectorInOut*>(m_input);
+		return *(vec_in->m_value);
+	}
 
-		m_weight = new MatrixMN(this->Size(), prev->Size());
+	VectorN& GetOutput() const
+	{
+		VectorInOut* vec_out = dynamic_cast<VectorInOut*>(m_output);
+		return *(vec_out->m_value);
+	}
+
+	virtual void Connect(LayerBase *next)
+	{
+		LayerBase::Connect(next);
+
+		m_weight = new MatrixMN(this->Size(), this->m_prev->Size());
 
 		m_delta = new VectorN(this->Size());
-		m_dw = new MatrixMN(this->Size(), prev->Size());
+		m_dw = new MatrixMN(this->Size(), this->m_prev->Size());
 
 		m_sum_delta = new VectorN(this->Size());
-		m_sum_dw = new MatrixMN(this->Size(), prev->Size());
-
-		this->m_input = prev->m_output;
+		m_sum_dw = new MatrixMN(this->Size(), this->m_prev->Size());
 
 	}
 
@@ -88,21 +110,21 @@ public:
 		for (unsigned int i = 0; i < m_bias->GetSize(); ++i)
 		{
 			(*m_bias)[i] = nrand.GetRandom();
-		}	
+		}
 	}
 
 	virtual void Forward()
 	{
-		m_middle->Copy(*m_weight * *m_input + *m_bias);
-		m_activeFunc(*m_middle, *m_output);
+		m_middle->Copy(*m_weight * GetInput() + *m_bias);
+		m_activeFunc(*m_middle, GetOutput());
 	}
 
-	virtual void BackProp(LayerBase *next)
+	virtual void BackProp()
 	{
-		FullyConnectedLayer *fc = dynamic_cast<FullyConnectedLayer*>(next);
+		FullyConnectedLayer *fc = dynamic_cast<FullyConnectedLayer*>(m_next);
 		m_activePrimeFunc(*m_middle, *m_outputPrime);
 		m_delta->Copy((fc->m_weight->Transpose() * (*fc->m_delta)) ^ (*m_outputPrime));
-		m_dw->Copy(*m_delta * *m_input);
+		m_dw->Copy(*m_delta * GetInput());
 	}
 
 	virtual void PreTrain()

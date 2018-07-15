@@ -74,13 +74,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="convolutional_layer.h" />
+    <ClInclude Include="flatten_layer.h" />
     <ClInclude Include="fully_connected_layer.h" />
     <ClInclude Include="input_layer.h" />
+    <ClInclude Include="input_output.h" />
     <ClInclude Include="math\mathdef.h" />
     <ClInclude Include="math\matrix3d.h" />
     <ClInclude Include="math\matrixmxn.h" />
     <ClInclude Include="math\vectorn.h" />
     <ClInclude Include="output_layer.h" />
+    <ClInclude Include="reshape_layer.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>
   <ItemGroup>

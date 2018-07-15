@@ -12,7 +12,9 @@ using namespace std;
 #include "utils.h"
 #include "math/vectorn.h"
 #include "math/matrixmxn.h"
+#include "math/matrix3d.h"
 #include "math/mathdef.h"
+#include "input_output.h"
 
 enum eActiveFunc
 {
@@ -33,16 +35,17 @@ enum eLossFunc
 class LayerBase
 {
 public:
-	uint32_t m_neuralCount;	
-	const VectorN *m_input;		// input of this layer, this is a ref to prev layer's output
-	VectorN *m_output;			// output of this layer
+	InOut *m_input;
+	InOut *m_output;
 protected:
-	VectorN *m_outputPrime;
+	uint32_t m_neuralCount;	
+	LayerBase *m_prev;
+	LayerBase *m_next;
 
 public:
-	LayerBase(uint32_t neuralCount) : m_neuralCount(neuralCount)
+	LayerBase(uint32_t neuralCount, InOut *input, InOut *output)
+		: m_neuralCount(neuralCount), m_input(input), m_output(output)
 	{
-		m_outputPrime = new VectorN(neuralCount);
 	}
 
 	uint32_t Size()
@@ -50,8 +53,19 @@ public:
 		return m_neuralCount;
 	}
 
-	virtual void Connect(LayerBase *prev)
+	virtual void Connect(LayerBase *next)
 	{
+		if (next != nullptr)
+		{
+			next->m_prev = this;
+			this->m_next = next;
+		}
+
+		if (next != nullptr)
+		{
+			assert(next->m_input->m_type == m_output->m_type);
+			next->m_input = m_output;
+		}
 	}
 
 	virtual void Init(NormalRandom nrand)
@@ -62,7 +76,7 @@ public:
 	{
 	}
 
-	virtual void BackProp(LayerBase *next)
+	virtual void BackProp()
 	{
 	}
 

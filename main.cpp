@@ -19,16 +19,15 @@
 #include "input_layer.h"
 #include "fully_connected_layer.h"
 #include "output_layer.h"
+#include "reshape_layer.h"
+#include "flatten_layer.h"
 #include "convolutional_layer.h"
 #include "network.h"
-
 
 using namespace std;
 
 const int N_inputCount = 784;
 const int C_classCount = 10;
-// z = w * a + b
-// a = f(z)
 
 int ReadInt(unsigned char *buffer, int &index)
 {
@@ -146,15 +145,15 @@ int main()
 
 	// define neural network
 	Network nn(N_inputCount);
-	nn.AddLayer(new FullyConnectedLayer(128, eActiveFunc::eRelu));
-	nn.AddLayer(new FullyConnectedLayer(32, eActiveFunc::eRelu));
+	//nn.AddLayer(new FullyConnectedLayer(128, eActiveFunc::eRelu));
+	nn.AddLayer(new FullyConnectedLayer(32, eActiveFunc::eSigmod));
 	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 
 	nn.Init(nrand);
 
-	float learning_rate = 0.01f;
-	int epoch = 50;
-	int batch_size = 200;
+	float learning_rate = 3.01f;
+	int epoch = 30;
+	int batch_size = 10;
 
 	std::vector<int> idx_vec(img_count);
 	for (int k = 0; k < img_count; ++k)
