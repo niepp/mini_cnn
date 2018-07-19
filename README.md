@@ -1,8 +1,8 @@
 # 用C++11实现的基于反向传播的随机梯度下降神经网络
 
 ## 简单神经网络
-一个L层的神经网络，第1层为输入层，第L层为输出层，对第l层来说 【参考1)】</br> 
-![image](https://github.com/niepp/mini_nn/blob/master/backprop.png)</br>
+ 
+![image](https://github.com/niepp/mini_nn/blob/master/backprop.jpg)</br>
 
 反向传播总结为:</br>
 1.	根据训练样本给神经网络输入x,和输出y</br>
