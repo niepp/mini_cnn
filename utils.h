@@ -111,4 +111,48 @@ inline void SoftmaxPrime(const VectorN& vec, VectorN& retV)
 		retV[i] = v - v * v;
 	}
 }
+
+//
+typedef void(*MatActiveFunc)(const Matrix3D& mat, Matrix3D& retMat);
+
+template<typename T>
+inline void Relu(const _Matrix3D<T>& mat, _Matrix3D<T>& retMat)
+{
+	assert(mat.Width() == retMat.Width()
+		&& mat.Height() == retMat.Height()
+		&& mat.Depth() == retMat.Depth());
+
+	for (uint32_t k = 0; k < mat.Depth(); ++k)
+	{
+		for (uint32_t i = 0; i < mat.Width(); ++i)
+		{
+			for (uint32_t j = 0; j < mat.Height(); ++j)
+			{
+				T v = mat.operator()(i, j, k);
+				retMat.operator()(i, j, k) = v > 0.0f ? v : 0.0f;
+			}
+		}
+	}
+}
+
+template<typename T>
+inline void ReluPrime(const _Matrix3D<T>& mat, _Matrix3D<T>& retMat)
+{
+	assert(mat.Width() == retMat.Width()
+		&& mat.Height() == retMat.Height()
+		&& mat.Depth() == retMat.Depth());
+
+	for (uint32_t k = 0; k < mat.Depth(); ++k)
+	{
+		for (uint32_t i = 0; i < mat.Width(); ++i)
+		{
+			for (uint32_t j = 0; j < mat.Height(); ++j)
+			{
+				T v = mat.operator()(i, j, k);
+				retMat.operator()(i, j, k) = v > 0.0f ? 1.0f : 0.0f;
+			}
+		}
+	}
+}
+
 #endif //__UTILS_H__

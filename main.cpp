@@ -146,13 +146,13 @@ int main()
 	// define neural network
 	Network nn(N_inputCount);
 	//nn.AddLayer(new FullyConnectedLayer(128, eActiveFunc::eRelu));
-	nn.AddLayer(new FullyConnectedLayer(32, eActiveFunc::eSigmod));
+	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
 	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 
 	nn.Init(nrand);
 
-	float learning_rate = 3.01f;
-	int epoch = 30;
+	float learning_rate = 3.00f;
+	int epoch = 20;
 	int batch_size = 10;
 
 	std::vector<int> idx_vec(img_count);
@@ -160,6 +160,8 @@ int main()
 	{
 		idx_vec[k] = k;
 	}
+
+	long long t0 = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
 
 	uint32_t seed = (uint32_t)(std::chrono::system_clock::now().time_since_epoch().count());
 	std::mt19937_64 generator(seed);
@@ -191,6 +193,11 @@ int main()
 	}
 
 	cout << "maxCorrectRate: " << maxCorrectRate << endl;
+
+	long long t1 = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
+
+	float timeCost = (t1 - t0) * 0.001f;
+	cout << "cost: " << timeCost << "(s)" << endl;
 
 	system("pause");
 	return 0;
