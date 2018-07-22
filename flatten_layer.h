@@ -23,8 +23,8 @@ public:
 protected:
 
 public:
-	FlattenLayer(uint32_t neuralCount)
-		: LayerBase(neuralCount, new VectorInOut(), new VectorInOut())
+	FlattenLayer(uint32_t width, uint32_t height, uint32_t channels)
+		: LayerBase(width * height * channels, new VectorInOut(), new VectorInOut())
 	{
 
 	}

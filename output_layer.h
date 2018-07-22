@@ -21,14 +21,14 @@ class OutputLayer : public FullyConnectedLayer
 {
 protected:
 	const VectorN *m_label;  // 学习的正确值
-	eLossFunc m_lossFuncType;
+	eLossFunc m_loss_func_type;
 public:
 	OutputLayer(unsigned int neuralCount, eLossFunc lossFunc, eActiveFunc act) : FullyConnectedLayer(neuralCount, act)
 	{
 		assert(!(lossFunc == eLossFunc::eSigmod_CrossEntropy && act != eActiveFunc::eSigmod)
 			&& !(lossFunc == eLossFunc::eSoftMax_LogLikelihood && act != eActiveFunc::eSoftMax)
 			);
-		m_lossFuncType = lossFunc;
+		m_loss_func_type = lossFunc;
 	}
 
 	void SetLabelValue(const VectorN &label)
@@ -38,12 +38,12 @@ public:
 
 	virtual void BackProp()
 	{
-		switch (m_lossFuncType)
+		switch (m_loss_func_type)
 		{
 		case eLossFunc::eMSE:
 		{
-			m_activePrimeFunc(*m_middle, *m_outputPrime);
-			m_delta->Copy(MseDerive() ^ (*m_outputPrime));
+			m_prime_func(*m_middle, *m_middle_prime);
+			m_delta->Copy(MseDerive() ^ (*m_middle_prime));
 			m_dw->Copy(*m_delta * GetInput());
 		}
 			break;

@@ -24,7 +24,7 @@ public:
 
 	//const VectorN *m_input;		// input of this layer, this is a ref to prev layer's output
 	//VectorN *m_output;			// output of this layer
-	VectorN *m_outputPrime;
+	VectorN *m_middle_prime;
 
 	VectorN *m_delta;	// equal to dJ/d(bias)
 	MatrixMN *m_dw;		// equal to dJ/d(w)
@@ -33,9 +33,9 @@ public:
 	MatrixMN *m_sum_dw;
 
 protected:
-	eActiveFunc m_activeFuncType;
-	ActiveFunc m_activeFunc;
-	ActiveFunc m_activePrimeFunc;
+	eActiveFunc m_func_type;
+	ActiveFunc m_func;
+	ActiveFunc m_prime_func;
 
 public:
 	FullyConnectedLayer(uint32_t neuralCount, eActiveFunc act)
@@ -50,21 +50,21 @@ public:
 		VectorInOut* vec_out = dynamic_cast<VectorInOut*>(m_output);
 		vec_out->m_value = new VectorN(neuralCount);
 
-		m_outputPrime = new VectorN(neuralCount);
+		m_middle_prime = new VectorN(neuralCount);
 
-		m_activeFuncType = act;
+		m_func_type = act;
 		switch (act)
 		{
 		case eActiveFunc::eSigmod:
-			m_activeFunc = Sigmoid;
-			m_activePrimeFunc = SigmoidPrime;
+			m_func = Sigmoid;
+			m_prime_func = SigmoidPrime;
 			break;
 		case eActiveFunc::eRelu:
-			m_activeFunc = Relu;
-			m_activePrimeFunc = ReluPrime;
+			m_func = Relu;
+			m_prime_func = ReluPrime;
 			break;
 		case eActiveFunc::eSoftMax:
-			m_activeFunc = Softmax;
+			m_func = Softmax;
 			break;
 		default:
 			break;
@@ -116,15 +116,18 @@ public:
 	virtual void Forward()
 	{
 		m_middle->Copy(*m_weight * GetInput() + *m_bias);
-		m_activeFunc(*m_middle, GetOutput());
+		m_func(*m_middle, GetOutput());
 	}
 
 	virtual void BackProp()
 	{
 		FullyConnectedLayer *fc = dynamic_cast<FullyConnectedLayer*>(m_next);
-		m_activePrimeFunc(*m_middle, *m_outputPrime);
-		m_delta->Copy((fc->m_weight->Transpose() * (*fc->m_delta)) ^ (*m_outputPrime));
-		m_dw->Copy(*m_delta * GetInput());
+		if (fc != nullptr) 
+		{
+			m_prime_func(*m_middle, *m_middle_prime);
+			m_delta->Copy((fc->m_weight->Transpose() * (*fc->m_delta)) ^ (*m_middle_prime));
+			m_dw->Copy(*m_delta * GetInput());
+		}
 	}
 
 	virtual void PreTrain()

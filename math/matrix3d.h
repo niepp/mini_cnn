@@ -36,6 +36,8 @@ public:
 
 	friend _Matrix3D<T> operator*(const _Matrix3D<T>&, const T &scale);
 
+	_Matrix3D<T>& operator^(const _Matrix3D<T>& other);
+
 	void MakeZero();
 
 	_Matrix3D<T>& Copy(const _Matrix3D<T>&);
@@ -135,7 +137,7 @@ inline void _Matrix3D<T>::MakeZero()
 template <class T>
 inline _Matrix3D<T>& _Matrix3D<T>::Copy(const _Matrix3D<T>& other)
 {
-	assert(_w == other._w && _h == other._h && _d == other_d);
+	assert(_w == other._w && _h == other._h && _d == other._d);
 	memcpy(_data, other._data, other._w * other._h * other._d * sizeof(T));
 	return *this;
 }
@@ -270,6 +272,24 @@ inline _Matrix3D<T> operator*(const _Matrix3D<T>& mat, const T &scale)
 		}
 	}
 	return *retMat;
+}
+
+// Hadamard product
+template <class T>
+_Matrix3D<T>& _Matrix3D<T>::operator^(const _Matrix3D<T>& other)
+{	
+	assert(_w == other._w && _h == other._h && _d == other._d);
+	for (uint32_t k = 0; k < _d; ++k)
+	{
+		for (uint32_t i = 0; i < _w; ++i)
+		{
+			for (uint32_t j = 0; j < _h; ++j)
+			{
+				(*this)(i, j, k) *= other(i, j, k);
+			}
+		}
+	}
+	return *this;
 }
 
 #endif // __MATRIX_3D_H__
