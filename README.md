@@ -1,6 +1,6 @@
 # 用C++11实现的基于反向传播的随机梯度下降神经网络
 
-## 简单神经网络
+## 简单全连接神经网络
  
 ![image](https://github.com/niepp/mini_nn/blob/master/backprop.jpg)</br>
 
