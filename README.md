@@ -4,12 +4,6 @@
  
 ![image](https://github.com/niepp/mini_nn/blob/master/backprop.jpg)</br>
 
-反向传播总结为:</br>
-1.	根据训练样本给神经网络输入x,和输出y</br>
-2.	从第2层到第L层，进行前向网络计算</br>
-3.	根据公式（4）计算第L层的残差</br>
-4.	从第L层到第2层，根据公式（3）逐级计算每层的残差，然后根据残差由公式（1）和（2）计算每层的梯度</br>
-
 
 【实验1】 3层神经网络训练mnist数据集</br>
 |---- 输入层(784 个神经元) </br>
@@ -63,4 +57,4 @@ maxCorrectRate: 0.9554</br>
 3) http://cs231n.github.io/convolutional-networks </br>
 4) http://cs231n.stanford.edu/slides/2018/cs231n_2018_lecture05.pdf
 5) http://ufldl.stanford.edu/tutorial/supervised/ConvolutionalNeuralNetwork/
-6) http://www.cnblogs.com/pinard/p/6483207.html
+
