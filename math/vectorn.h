@@ -3,6 +3,9 @@
 
 #include <cassert>
 
+template<class T>
+class _Matrix3D;
+
 template <class T>
 class _MatrixMN;
 
@@ -29,10 +32,8 @@ public:
 		}
 	}
 
-	_VectorN(unsigned long size, T* buf) : _size(size)
+	_VectorN(T* buf, int32_t) : _size(size), _buf(buf)
 	{
-		_buf = new T[size];
-		::memcpy(_buf, buf, size * sizeof(T));
 	}
 
 	_VectorN(const _VectorN<T> &src)
@@ -117,6 +118,12 @@ public:
 			_buf[i] = src._buf[i];
 		}
 		return *this;
+	}
+
+	_Matrix3D<T>* Unflatten(int32_t w, int32_t h, int32_t d)
+	{
+		assert(_size == w * h * d);
+		return new _Matrix3D<T>(_buf, w, h, d);
 	}
 
 	T& operator[](unsigned long index)

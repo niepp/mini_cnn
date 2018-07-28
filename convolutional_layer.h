@@ -56,6 +56,7 @@ protected:
 	Matrix3D *m_output_img;
 	Matrix3D *m_middle_prime;
 
+	// mini-batch中每个batch里的多个训练样本的梯度之和
 	VectorN *m_sum_db;
 	std::vector<Matrix3D*> m_sum_dw;
 
@@ -133,6 +134,8 @@ public:
 
 		m_output_img = new Matrix3D(nw, nh, nd);
 
+		m_delta = new Matrix3D(nw, nh, nd);
+
 		m_middle = new Matrix3D(nw, nh, nd);
 		m_middle_prime = new Matrix3D(nw, nh, nd);
 
@@ -167,30 +170,46 @@ public:
 
 	virtual void Forward()
 	{
-		m_input_img->Conv(m_middle, m_filters, m_filterDim.m_stride_w, m_filterDim.m_stride_h, Padding::Valid);
+		m_input_img->Conv(m_middle, m_filters, m_filterDim.m_stride_w, m_filterDim.m_stride_h, 0, 0, Padding::Valid);
 		m_middle->AddBias(*m_bias);
 		m_activeFunc(*m_middle, *m_output_img);
 	}
 
 	virtual void BackProp(LayerBase *next)
 	{
-		FlattenLayer *flatten_layer = dynamic_cast<FlattenLayer*>(m_next);
+		FullyConnectedLayer *fully_layer = dynamic_cast<FullyConnectedLayer*>(m_next);
 		ConvolutionalLayer *conv_layer = dynamic_cast<ConvolutionalLayer*>(m_next);
 
 		m_activePrimeFunc(*m_middle, *m_middle_prime);
 
-		if (flatten_layer != nullptr)
+		if (fully_layer != nullptr)
 		{
-	/*		m_delta->Copy((flatten_layer->m_weight->Transpose() * (*flatten_layer->m_delta)) ^ (*m_middle_prime));
-			m_dw->Copy(*m_delta * GetInput());*/
+			auto flatten_delta = (fully_layer->m_weight->Transpose() * (*fully_layer->m_delta)) ^ (*(m_middle_prime->Flatten()));
+			m_delta->Copy(*flatten_delta.Unflatten(m_delta->Width(), m_delta->Height(), m_delta->Depth()));			
 		}
 		else if (conv_layer != nullptr)
 		{
-			// todo add padding size
-			conv_layer->m_delta->Conv(m_delta, conv_layer->m_filters, m_filterDim.m_stride_w, m_filterDim.m_stride_h, Padding::Valid);
-			m_delta->Copy((*conv_layer->m_delta) ^ (*m_middle_prime));
+			conv_layer->m_delta->Conv(m_delta, conv_layer->m_filters, 
+				conv_layer->m_filterDim.m_stride_w, conv_layer->m_filterDim.m_stride_h, 
+				conv_layer->m_filterDim.m_width - 1, conv_layer->m_filterDim.m_height - 1,
+				Padding::Valid);
 
-			//m_dw
+			(*m_delta)^= (*m_middle_prime);
+
+		}
+		else
+		{
+			throw new exception("no implement!");
+		}
+
+		m_input_img->ConvDepthWise(m_dw, *m_delta, m_filterDim.m_stride_w, m_filterDim.m_stride_h, 0, 0, Padding::Valid);
+
+		assert(m_filters.size() == m_bias->GetSize() &&
+			m_bias->GetSize() == m_delta->Depth());
+
+		for (int i = 0; i < m_filters.size(); ++i)
+		{
+			m_bias[i] = m_delta->SumByDepthWise(i);
 		}
 	}
 
