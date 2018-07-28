@@ -48,7 +48,7 @@ epoch 29: 0.9554 (9554 / 10000)</br>
 maxCorrectRate: 0.9554</br>
 
 ## 卷积神经网络
-  卷积层的误差反向传播 【参考5)】</br>
+  卷积层的误差反向传播 【参考3)4)5)6)】</br>
   ![image](https://github.com/niepp/mini_nn/blob/master/convbackprop.png)</br>
   
 [参考文献]</br>
@@ -57,4 +57,5 @@ maxCorrectRate: 0.9554</br>
 3) http://cs231n.github.io/convolutional-networks </br>
 4) http://cs231n.stanford.edu/slides/2018/cs231n_2018_lecture05.pdf
 5) http://ufldl.stanford.edu/tutorial/supervised/ConvolutionalNeuralNetwork/
+6) http://deeplearning.net/software/theano_versions/dev/tutorial/conv_arithmetic.html#transposed-convolution-arithmetic
 
