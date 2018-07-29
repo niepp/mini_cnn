@@ -115,6 +115,45 @@ inline void SoftmaxPrime(const VectorN& vec, VectorN& retV)
 //
 typedef void(*MatActiveFunc)(const Matrix3D& mat, Matrix3D &retMat);
 
+inline void Sigmoid(const Matrix3D &mat, Matrix3D &retMat)
+{
+	assert(mat.Width() == retMat.Width()
+		&& mat.Height() == retMat.Height()
+		&& mat.Depth() == retMat.Depth());
+
+	for (uint32_t k = 0; k < mat.Depth(); ++k)
+	{
+		for (uint32_t i = 0; i < mat.Width(); ++i)
+		{
+			for (uint32_t j = 0; j < mat.Height(); ++j)
+			{
+				float v = mat(i, j, k);
+				retMat(i, j, k) = 1.0f / (1.0f + exp(-v));
+			}
+		}
+	}
+}
+
+inline void SigmoidPrime(const Matrix3D &mat, Matrix3D &retMat)
+{
+	assert(mat.Width() == retMat.Width()
+		&& mat.Height() == retMat.Height()
+		&& mat.Depth() == retMat.Depth());
+
+	for (uint32_t k = 0; k < mat.Depth(); ++k)
+	{
+		for (uint32_t i = 0; i < mat.Width(); ++i)
+		{
+			for (uint32_t j = 0; j < mat.Height(); ++j)
+			{
+				auto v = mat(i, j, k);
+				auto f = 1.0f / (1.0f + exp(-v));
+				retMat(i, j, k) = f * (1.0f - f);			
+			}
+		}
+	}
+}
+
 inline void Relu(const Matrix3D &mat, Matrix3D &retMat)
 {
 	assert(mat.Width() == retMat.Width()
@@ -127,8 +166,8 @@ inline void Relu(const Matrix3D &mat, Matrix3D &retMat)
 		{
 			for (uint32_t j = 0; j < mat.Height(); ++j)
 			{
-				float v = mat.operator()(i, j, k);
-				retMat.operator()(i, j, k) = v > 0.0f ? v : 0.0f;
+				auto v = mat(i, j, k);
+				retMat(i, j, k) = v > 0.0f ? v : 0.0f;
 			}
 		}
 	}
@@ -146,8 +185,8 @@ inline void ReluPrime(const Matrix3D &mat, Matrix3D &retMat)
 		{
 			for (uint32_t j = 0; j < mat.Height(); ++j)
 			{
-				float v = mat.operator()(i, j, k);
-				retMat.operator()(i, j, k) = v > 0.0f ? 1.0f : 0.0f;
+				auto v = mat(i, j, k);
+				retMat(i, j, k) = v > 0.0f ? 1.0f : 0.0f;
 			}
 		}
 	}

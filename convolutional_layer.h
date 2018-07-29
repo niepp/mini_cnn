@@ -93,6 +93,10 @@ public:
 		m_activeFuncType = act;
 		switch (act)
 		{
+		case eActiveFunc::eSigmod:
+			m_activeFunc = Sigmoid;
+			m_activePrimeFunc = SigmoidPrime;
+			break;
 		case eActiveFunc::eRelu:
 			m_activeFunc = Relu;
 			m_activePrimeFunc = ReluPrime;
@@ -184,7 +188,7 @@ public:
 
 	}
 
-	virtual void BackProp(LayerBase *next)
+	virtual void BackProp()
 	{
 		FullyConnectedLayer *fully_layer = dynamic_cast<FullyConnectedLayer*>(m_next);
 		ConvolutionalLayer *conv_layer = dynamic_cast<ConvolutionalLayer*>(m_next);

@@ -236,7 +236,7 @@ void _Matrix3D<T>::ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix
 
 	int32_t m = retm.size();
 
-	assert(_w >= filter._w && _h >= filter._h && _d == m);
+	assert(_w >= filter._w && _h >= filter._h && m == filter._d);
 
 	// Padding::Valid
 	int32_t nw = retm[0]->_w;
@@ -251,7 +251,7 @@ void _Matrix3D<T>::ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix
 				int32_t startw = i * stride_w + offset_w;
 				int32_t starth = j * stride_h + offset_h;
 
-				for (int32_t c = 0; c < filter._d; ++c)
+				for (int32_t c = 0; c < _d; ++c)
 				{
 					T s = 0;
 					for (int32_t u = 0; u < filter._w; ++u)
@@ -268,7 +268,7 @@ void _Matrix3D<T>::ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix
 							{
 								continue;
 							}
-							s += (*this)(startw + u, starth + v, c) * filter(u, v, k);
+							s += (*this)(x, y, c) * filter(u, v, k);
 							mat(i, j, c) = s;
 						}
 					}

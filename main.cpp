@@ -77,8 +77,8 @@ Network CreateCNN()
 {
 	Network nn;
 	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
-	nn.AddLayer(new ConvolutionalLayer(32, 3, 3, 1, 0, 1, 1, eActiveFunc::eRelu));
-	nn.AddLayer(new ConvolutionalLayer(64, 3, 3, 32, 0, 1, 1, eActiveFunc::eRelu));
+	nn.AddLayer(new ConvolutionalLayer(32, 3, 3, 1, 0, 1, 1, eActiveFunc::eSigmod));
+	//nn.AddLayer(new ConvolutionalLayer(64, 3, 3, 32, 0, 1, 1, eActiveFunc::eRelu));
 	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 	return nn;
 }
@@ -165,14 +165,14 @@ int main()
 	NormalRandom nrand(0, 1.0f);
 
 	// define neural network
-	Network nn = CreateFCN();
+	Network nn = CreateCNN();
 
 	nn.Init(nrand);
 
 	float learning_rate = 3.00f;
 	int epoch = 20;
-	int batch_size = 10;
-
+	int batch_size = 100;
+	int batch = img_count / batch_size;
 	std::vector<int> idx_vec(img_count);
 	for (int k = 0; k < img_count; ++k)
 	{
@@ -190,7 +190,7 @@ int main()
 		std::shuffle(std::begin(idx_vec), std::end(idx_vec), generator);
 		std::vector<VectorN*> batch_img_vec(batch_size);
 		std::vector<VectorN*> batch_label_vec(batch_size);
-		for (int i = 0; i <= (img_count / batch_size); ++i)
+		for (int i = 0; i <= batch; ++i)
 		{
 			for (int k = 0; k < batch_size; ++k)
 			{
@@ -200,7 +200,7 @@ int main()
 			}
 			if (i % 100 == 0)
 			{
-				cout << "batch: " << i << endl;
+				cout << "batch: " << i << "/" << batch << endl;
 			}
 			nn.SGD(batch_img_vec, batch_label_vec, learning_rate);
 		}

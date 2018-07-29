@@ -206,12 +206,6 @@ _MatrixMN<T>& _MatrixMN<T>::Copy(const _MatrixMN<T>& other)
 template <class T>
 _VectorN<T> _MatrixMN<T>::operator*(const _VectorN<T> &v) 
 {
-
-	if (v.GetSize() != _col)
-	{
-		int kkk = 0;
-	}
-
 	assert(v.GetSize() == _col);
 	_VectorN<T> r(_row);
 	for(unsigned long i = 0; i < _row; ++i)
