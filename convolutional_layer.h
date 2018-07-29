@@ -178,7 +178,7 @@ public:
 		MatrixInOut* pre_out = dynamic_cast<MatrixInOut*>(m_prev->m_output);
 		m_input_img = pre_out->m_value;
 
-		m_input_img->Conv(m_middle, m_filters, m_filterDim.m_stride_w, m_filterDim.m_stride_h, 0, 0, Padding::Valid);
+		m_input_img->Conv(m_middle, m_filters, m_filterDim.m_stride_w, m_filterDim.m_stride_h, Padding::Valid);
 		m_middle->AddBias(*m_bias);
 		m_activeFunc(*m_middle, *m_output_img);
 
@@ -207,7 +207,6 @@ public:
 		{
 			conv_layer->m_delta->ConvDepthWise(m_delta, conv_layer->m_filters,
 				conv_layer->m_filterDim.m_stride_w, conv_layer->m_filterDim.m_stride_h, 
-				conv_layer->m_filterDim.m_width - 1, conv_layer->m_filterDim.m_height - 1,
 				Padding::Valid);
 
 			(*m_delta)^= (*m_middle_prime);
@@ -215,15 +214,17 @@ public:
 		}
 		else
 		{
-			throw new exception("no implement!");
+			throw new std::exception("no implement!");
 		}
 
-		m_input_img->ConvDepthWise(m_dw, *m_delta, m_filterDim.m_stride_w, m_filterDim.m_stride_h, 0, 0, Padding::Valid);
+		m_input_img->ConvDepthWise(m_dw, *m_delta, m_filterDim.m_stride_w, m_filterDim.m_stride_h, Padding::Valid);
 
 		assert(m_filters.size() == m_bias->GetSize() &&
 			m_bias->GetSize() == m_delta->Depth());
 
-		for (int i = 0; i < m_filters.size(); ++i)
+		int32_t nFilter = m_filters.size();
+
+		for (int i = 0; i < nFilter; ++i)
 		{
 			(*m_bias)[i] = m_delta->SumByDepthWise(i);
 		}

@@ -43,21 +43,18 @@ public:
 
 	_Matrix3D<T>& Copy(const _Matrix3D<T>&);
 
-	void Conv(_Matrix3D<T>* retm, const std::vector<_Matrix3D<T>*> &filters, 
-		int32_t stride_w, int32_t stride_h, 
-		int32_t offset_w, int32_t offset_h, 
+	void Conv(_Matrix3D<T> *retm, const std::vector<_Matrix3D<T>*> &filters,
+		int32_t stride_w, int32_t stride_h,
 		Padding padding) const;
 
 	void AddBias(const _VectorN<T>& bias);
 
-	void ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix3D<T>& filter,
+	void ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix3D<T> &filter,
 		int32_t stride_w, int32_t stride_h,
-		int32_t offset_w, int32_t offset_h,
 		Padding padding) const;
 
-	void ConvDepthWise(_Matrix3D<T>* retm, const std::vector<_Matrix3D<T>*> &filters,
+	void ConvDepthWise(_Matrix3D<T> *retm, const std::vector<_Matrix3D<T>*> &filters,
 		int32_t stride_w, int32_t stride_h,
-		int32_t offset_w, int32_t offset_h,
 		Padding padding) const;
 
 	T SumByDepthWise(int32_t depth_idx) const;
@@ -199,19 +196,13 @@ T _Matrix3D<T>::ConvByLocal(int32_t startw, int32_t starth, const _Matrix3D<T>& 
 }
 
 template <class T>
-void _Matrix3D<T>::Conv(_Matrix3D<T>* retm, const std::vector<_Matrix3D<T>*> &filters, 
+void _Matrix3D<T>::Conv(_Matrix3D<T> *retm, const std::vector<_Matrix3D<T>*> &filters, 
 	int32_t stride_w, int32_t stride_h, 
-	int32_t offset_w, int32_t offset_h,
 	Padding padding) const
 {
 	assert(filters.size() > 0 && filters[0] != nullptr);
 
 	_Matrix3D<T> &filter = *filters[0];
-
-	if (!(_w >= filter._w && _h >= filter._h && _d == filter._d))
-	{
-		int kkk = 0;
-	}
 
 	assert(_w >= filter._w && _h >= filter._h && _d == filter._d);
 
@@ -224,8 +215,8 @@ void _Matrix3D<T>::Conv(_Matrix3D<T>* retm, const std::vector<_Matrix3D<T>*> &fi
 	{
 		for (int32_t j = 0; j < nh; ++j)
 		{
-			int32_t startw = i * stride_w + offset_w;
-			int32_t starth = j * stride_h + offset_h;
+			int32_t startw = i * stride_w;
+			int32_t starth = j * stride_h;
 			for (int32_t k = 0; k < nfilter; ++k)
 			{
 				const _Matrix3D<T>& filter = *filters[k];
@@ -237,9 +228,8 @@ void _Matrix3D<T>::Conv(_Matrix3D<T>* retm, const std::vector<_Matrix3D<T>*> &fi
 }
 
 template <class T>
-void _Matrix3D<T>::ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix3D<T>& filter,
+void _Matrix3D<T>::ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix3D<T> &filter,
 	int32_t stride_w, int32_t stride_h,
-	int32_t offset_w, int32_t offset_h,
 	Padding padding) const
 {
 	assert(retm.size() > 0 && retm[0] != nullptr);
@@ -258,8 +248,8 @@ void _Matrix3D<T>::ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix
 		{
 			for (int32_t j = 0; j < nh; ++j)
 			{
-				int32_t startw = i * stride_w + offset_w;
-				int32_t starth = j * stride_h + offset_h;
+				int32_t startw = i * stride_w;
+				int32_t starth = j * stride_h;
 
 				for (int32_t c = 0; c < _d; ++c)
 				{
@@ -289,9 +279,8 @@ void _Matrix3D<T>::ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix
 }
 
 template <class T>
-void _Matrix3D<T>::ConvDepthWise(_Matrix3D<T>* retm, const std::vector<_Matrix3D<T>*> &filters,
+void _Matrix3D<T>::ConvDepthWise(_Matrix3D<T> *retm, const std::vector<_Matrix3D<T>*> &filters,
 	int32_t stride_w, int32_t stride_h,
-	int32_t offset_w, int32_t offset_h,
 	Padding padding) const
 {
 	assert(filters.size() > 0 && filters[0] != nullptr);
@@ -312,31 +301,31 @@ void _Matrix3D<T>::ConvDepthWise(_Matrix3D<T>* retm, const std::vector<_Matrix3D
 		{
 			for (int32_t j = 0; j < nh; ++j)
 			{
-				int32_t startw = i * stride_w + offset_w;
-				int32_t starth = j * stride_h + offset_h;
+				int32_t startw = i * stride_w;
+				int32_t starth = j * stride_h;
+				T s = 0;
 				for (int32_t k = 0; k < nfilter; ++k)
 				{
-					_Matrix3D<T> &filter = *filters[k];
-					T s = 0;
+					_Matrix3D<T> &filter = *filters[k];					
 					for (int32_t u = 0; u < filter._w; ++u)
 					{
-						int32_t x = startw + u;
+						int32_t x = startw - u;
 						if (x < 0 || x >= _w)
 						{
 							continue;
 						}
 						for (int32_t v = 0; v < filter._h; ++v)
 						{
-							int32_t y = starth + v;
+							int32_t y = starth - v;
 							if (y < 0 || y >= _h)
 							{
 								continue;
 							}
 							s += (*this)(x, y, k) * filter(u, v, d);
-							(*retm)(i, j, d) = s;
 						}
 					}
 				}
+				(*retm)(i, j, d) = s;
 			}
 		}
 	}
