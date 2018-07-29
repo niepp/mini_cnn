@@ -68,7 +68,7 @@ protected:
 
 public:
 	ConvolutionalLayer(uint32_t filterCount, uint32_t filterWidth, uint32_t filterHeight, uint32_t filterChannels, uint32_t padding, uint32_t stride_w, uint32_t stride_h, eActiveFunc act)
-		: LayerBase(filterWidth * filterHeight * filterChannels, new MatrixInOut(), new MatrixInOut())
+		: LayerBase(0, new MatrixInOut(), new MatrixInOut())
 		, m_filterDim(filterWidth, filterHeight, filterChannels, padding, stride_w, stride_h)
 	{
 
@@ -121,9 +121,6 @@ public:
 		MatrixInOut* pre_out = dynamic_cast<MatrixInOut*>(m_prev->m_output);
 		m_input_img = pre_out->m_value;
 
-		MatrixInOut* this_out = dynamic_cast<MatrixInOut*>(m_output);
-		m_output_img = this_out->m_value;
-
 		// calc output size
 		// Padding::Valid
 		uint32_t input_w = m_input_img->Width();
@@ -132,7 +129,11 @@ public:
 		uint32_t nh = static_cast<uint32_t>(floorf(1.0f * (input_h - m_filterDim.m_height) / m_filterDim.m_stride_h)) + 1;
 		uint32_t nd = m_filters.size();
 
-		m_output_img = new Matrix3D(nw, nh, nd);
+		m_neuralCount = nw * nh * nd;
+
+		MatrixInOut* this_out = dynamic_cast<MatrixInOut*>(m_output);
+		this_out->m_value = new Matrix3D(nw, nh, nd);
+		m_output_img = this_out->m_value;
 
 		m_delta = new Matrix3D(nw, nh, nd);
 
@@ -173,6 +174,14 @@ public:
 		m_input_img->Conv(m_middle, m_filters, m_filterDim.m_stride_w, m_filterDim.m_stride_h, 0, 0, Padding::Valid);
 		m_middle->AddBias(*m_bias);
 		m_activeFunc(*m_middle, *m_output_img);
+
+		assert(m_next != nullptr);
+		if (m_next->m_input->m_type != m_output->m_type)
+		{
+			VectorInOut* next_vec_in = dynamic_cast<VectorInOut*>(m_next->m_input);
+			next_vec_in->m_value = m_output_img->Flatten();
+		}
+
 	}
 
 	virtual void BackProp(LayerBase *next)
@@ -209,7 +218,7 @@ public:
 
 		for (int i = 0; i < m_filters.size(); ++i)
 		{
-			m_bias[i] = m_delta->SumByDepthWise(i);
+			(*m_bias)[i] = m_delta->SumByDepthWise(i);
 		}
 	}
 

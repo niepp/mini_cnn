@@ -32,7 +32,7 @@ public:
 		}
 	}
 
-	_VectorN(T* buf, int32_t) : _size(size), _buf(buf)
+	_VectorN(T* buf, int32_t size) : _size(size), _buf(buf)
 	{
 	}
 
@@ -120,7 +120,7 @@ public:
 		return *this;
 	}
 
-	_Matrix3D<T>* Unflatten(int32_t w, int32_t h, int32_t d)
+	_Matrix3D<T>* Unflatten(int32_t w, int32_t h, int32_t d) const
 	{
 		assert(_size == w * h * d);
 		return new _Matrix3D<T>(_buf, w, h, d);

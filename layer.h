@@ -60,12 +60,6 @@ public:
 			next->m_prev = this;
 			this->m_next = next;
 		}
-
-		if (next != nullptr)
-		{
-			assert(next->m_input->m_type == m_output->m_type);
-			next->m_input = m_output;
-		}
 	}
 
 	virtual void Init(NormalRandom nrand)

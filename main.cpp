@@ -27,6 +27,9 @@
 using namespace std;
 
 const int N_inputCount = 784;
+const int W_input = 28;
+const int H_input = 28;
+const int D_input = 1;
 const int C_classCount = 10;
 
 int ReadInt(unsigned char *buffer, int &index)
@@ -61,6 +64,24 @@ unsigned char* ReadFile(const char *filePath)
 	return buffer;
 }
 
+Network CreateFCN()
+{
+	Network nn;
+	nn.AddLayer(new InputLayer(N_inputCount));
+	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
+	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
+	return nn;
+}
+
+Network CreateCNN()
+{
+	Network nn;
+	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
+	nn.AddLayer(new ConvolutionalLayer(32, 3, 3, 1, 0, 1, 1, eActiveFunc::eRelu));
+	nn.AddLayer(new ConvolutionalLayer(64, 3, 3, 32, 0, 1, 1, eActiveFunc::eRelu));
+	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
+	return nn;
+}
 
 // todo
 // 1.整理成矢量/矩阵形式
@@ -144,10 +165,7 @@ int main()
 	NormalRandom nrand(0, 1.0f);
 
 	// define neural network
-	Network nn(N_inputCount);
-	//nn.AddLayer(new FullyConnectedLayer(128, eActiveFunc::eRelu));
-	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
+	Network nn = CreateFCN();
 
 	nn.Init(nrand);
 
@@ -179,6 +197,10 @@ int main()
 				int j = idx_vec[(i * batch_size + k) % img_count];
 				batch_img_vec[k] = &img_vec[j];
 				batch_label_vec[k] = &lab_vec[j];
+			}
+			if (i % 100 == 0)
+			{
+				cout << "batch: " << i << endl;
 			}
 			nn.SGD(batch_img_vec, batch_label_vec, learning_rate);
 		}

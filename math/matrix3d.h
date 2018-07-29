@@ -57,7 +57,7 @@ public:
 
 	T SumByDepthWise(int32_t depth_idx) const;
 
-	_VectorN<T>* Flatten();
+	_VectorN<T>* Flatten() const;
 
 private:
 	T ConvByLocal(int32_t startw, int32_t starth, const _Matrix3D<T>& filter) const;
@@ -309,7 +309,7 @@ void _Matrix3D<T>::AddBias(const _VectorN<T>& bias)
 }
 
 template <class T>
-_VectorN<T>* Flatten()
+_VectorN<T>* _Matrix3D<T>::Flatten() const
 {
 	return new _VectorN<T>(_data, _w * _h * _d);
 }

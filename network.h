@@ -24,10 +24,8 @@ class Network
 	OutputLayer* m_outputLayer;
 	std::vector<LayerBase*> m_layers;
 public:
-	Network(uint32_t inputCount)
+	Network()
 	{
-		m_inputLayer = new InputLayer(inputCount);
-		m_layers.push_back(m_inputLayer);
 	}
 
 	void AddLayer(LayerBase *layer)
@@ -36,17 +34,30 @@ public:
 		{
 			throw std::exception("add layer after output!");
 		}
-		LayerBase* lastLayer = *m_layers.rbegin();
-		lastLayer->Connect(layer);
-		m_layers.push_back(layer);
 
-		OutputLayer *ol = dynamic_cast<OutputLayer*>(layer);
-		if (ol != nullptr)
+		if (m_inputLayer == nullptr)
 		{
-			m_outputLayer = ol;
-			m_outputLayer->Connect(nullptr);
+			InputLayer *inl = dynamic_cast<InputLayer*>(layer);
+			if (inl == nullptr)
+			{
+				throw std::exception("must add input layer first!");
+			}	
+			m_layers.push_back(layer);
+			m_inputLayer = inl;
 		}
+		else
+		{
+			LayerBase* lastLayer = *m_layers.rbegin();
+			lastLayer->Connect(layer);
+			m_layers.push_back(layer);
 
+			OutputLayer *ol = dynamic_cast<OutputLayer*>(layer);
+			if (ol != nullptr)
+			{
+				m_outputLayer = ol;
+				m_outputLayer->Connect(nullptr);
+			}
+		}
 	}
 
 	void Init(NormalRandom nrand)
@@ -71,8 +82,8 @@ public:
 
 	void BackProp()
 	{
-		m_outputLayer->BackProp();
-		for (int i = (int)m_layers.size() - 2; i >= 0; --i)
+		int len = static_cast<int>(m_layers.size());
+		for (int i = len - 1; i >= 0; --i)
 		{
 			LayerBase *layer = m_layers[i];
 			layer->BackProp();

@@ -117,6 +117,10 @@ public:
 	{
 		m_middle->Copy(*m_weight * GetInput() + *m_bias);
 		m_func(*m_middle, GetOutput());
+		if (m_next != nullptr)
+		{
+			m_next->m_input = m_output;
+		}
 	}
 
 	virtual void BackProp()
