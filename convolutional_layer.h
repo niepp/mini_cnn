@@ -123,12 +123,12 @@ public:
 		LayerBase::Connect(next);
 
 		MatrixInOut* pre_out = dynamic_cast<MatrixInOut*>(m_prev->m_output);
-		m_input_img = pre_out->m_value;
+		auto input_img = pre_out->m_value;
 
 		// calc output size
 		// Padding::Valid
-		uint32_t input_w = m_input_img->Width();
-		uint32_t input_h = m_input_img->Height();
+		uint32_t input_w = input_img->Width();
+		uint32_t input_h = input_img->Height();
 		uint32_t nw = static_cast<uint32_t>(floorf(1.0f * (input_w - m_filterDim.m_width) / m_filterDim.m_stride_w)) + 1;
 		uint32_t nh = static_cast<uint32_t>(floorf(1.0f * (input_h - m_filterDim.m_height) / m_filterDim.m_stride_h)) + 1;
 		uint32_t nd = m_filters.size();
@@ -175,6 +175,9 @@ public:
 
 	virtual void Forward()
 	{
+		MatrixInOut* pre_out = dynamic_cast<MatrixInOut*>(m_prev->m_output);
+		m_input_img = pre_out->m_value;
+
 		m_input_img->Conv(m_middle, m_filters, m_filterDim.m_stride_w, m_filterDim.m_stride_h, 0, 0, Padding::Valid);
 		m_middle->AddBias(*m_bias);
 		m_activeFunc(*m_middle, *m_output_img);
@@ -202,7 +205,7 @@ public:
 		}
 		else if (conv_layer != nullptr)
 		{
-			conv_layer->m_delta->Conv(m_delta, conv_layer->m_filters, 
+			conv_layer->m_delta->ConvDepthWise(m_delta, conv_layer->m_filters,
 				conv_layer->m_filterDim.m_stride_w, conv_layer->m_filterDim.m_stride_h, 
 				conv_layer->m_filterDim.m_width - 1, conv_layer->m_filterDim.m_height - 1,
 				Padding::Valid);

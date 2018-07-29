@@ -77,8 +77,8 @@ Network CreateCNN()
 {
 	Network nn;
 	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
-	nn.AddLayer(new ConvolutionalLayer(32, 3, 3, 1, 0, 1, 1, eActiveFunc::eSigmod));
-	//nn.AddLayer(new ConvolutionalLayer(64, 3, 3, 32, 0, 1, 1, eActiveFunc::eRelu));
+	nn.AddLayer(new ConvolutionalLayer(4, 3, 3, 1, 0, 1, 1, eActiveFunc::eSigmod));
+//	nn.AddLayer(new ConvolutionalLayer(8, 3, 3, 4, 0, 1, 1, eActiveFunc::eSigmod));
 	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 	return nn;
 }
@@ -169,7 +169,7 @@ int main()
 
 	nn.Init(nrand);
 
-	float learning_rate = 3.00f;
+	float learning_rate = 3.0f;
 	int epoch = 20;
 	int batch_size = 100;
 	int batch = img_count / batch_size;

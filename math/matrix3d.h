@@ -55,6 +55,11 @@ public:
 		int32_t offset_w, int32_t offset_h,
 		Padding padding) const;
 
+	void ConvDepthWise(_Matrix3D<T>* retm, const std::vector<_Matrix3D<T>*> &filters,
+		int32_t stride_w, int32_t stride_h,
+		int32_t offset_w, int32_t offset_h,
+		Padding padding) const;
+
 	T SumByDepthWise(int32_t depth_idx) const;
 
 	_VectorN<T>* Flatten() const;
@@ -203,6 +208,11 @@ void _Matrix3D<T>::Conv(_Matrix3D<T>* retm, const std::vector<_Matrix3D<T>*> &fi
 
 	_Matrix3D<T> &filter = *filters[0];
 
+	if (!(_w >= filter._w && _h >= filter._h && _d == filter._d))
+	{
+		int kkk = 0;
+	}
+
 	assert(_w >= filter._w && _h >= filter._h && _d == filter._d);
 
 	int32_t nfilter = filters.size();
@@ -272,7 +282,61 @@ void _Matrix3D<T>::ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix
 							mat(i, j, c) = s;
 						}
 					}
-				}				
+				}
+			}
+		}
+	}
+}
+
+template <class T>
+void _Matrix3D<T>::ConvDepthWise(_Matrix3D<T>* retm, const std::vector<_Matrix3D<T>*> &filters,
+	int32_t stride_w, int32_t stride_h,
+	int32_t offset_w, int32_t offset_h,
+	Padding padding) const
+{
+	assert(filters.size() > 0 && filters[0] != nullptr);
+
+	int32_t nfilter = filters.size();
+
+	assert(_w >= filters[0]->_w && _h >= filters[0]->_h);
+
+	assert(_d == nfilter && retm->_d == filters[0]->_d);
+
+	// Padding::Valid
+	int32_t nw = retm->_w;
+	int32_t nh = retm->_h;
+	int32_t nd = retm->_d;
+	for (int32_t d = 0; d < nd; ++d)
+	{
+		for (int32_t i = 0; i < nw; ++i)
+		{
+			for (int32_t j = 0; j < nh; ++j)
+			{
+				int32_t startw = i * stride_w + offset_w;
+				int32_t starth = j * stride_h + offset_h;
+				for (int32_t k = 0; k < nfilter; ++k)
+				{
+					_Matrix3D<T> &filter = *filters[k];
+					T s = 0;
+					for (int32_t u = 0; u < filter._w; ++u)
+					{
+						int32_t x = startw + u;
+						if (x < 0 || x >= _w)
+						{
+							continue;
+						}
+						for (int32_t v = 0; v < filter._h; ++v)
+						{
+							int32_t y = starth + v;
+							if (y < 0 || y >= _h)
+							{
+								continue;
+							}
+							s += (*this)(x, y, k) * filter(u, v, d);
+							(*retm)(i, j, d) = s;
+						}
+					}
+				}
 			}
 		}
 	}
