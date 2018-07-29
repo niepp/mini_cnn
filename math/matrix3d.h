@@ -269,9 +269,9 @@ void _Matrix3D<T>::ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix
 								continue;
 							}
 							s += (*this)(x, y, c) * filter(u, v, k);
-							mat(i, j, c) = s;
 						}
 					}
+					mat(i, j, c) = s;
 				}
 			}
 		}
@@ -306,7 +306,7 @@ void _Matrix3D<T>::ConvDepthWise(_Matrix3D<T> *retm, const std::vector<_Matrix3D
 				T s = 0;
 				for (int32_t k = 0; k < nfilter; ++k)
 				{
-					_Matrix3D<T> &filter = *filters[k];					
+					_Matrix3D<T> &filter = *filters[k];
 					for (int32_t u = 0; u < filter._w; ++u)
 					{
 						int32_t x = startw - u;
