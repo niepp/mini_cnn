@@ -67,6 +67,48 @@ public:
 		return GetOutput() - *m_label;
 	}
 
+	float32_t GetCost()
+	{
+		float32_t cost = 0;
+		switch (m_loss_func_type)
+		{
+		case eLossFunc::eMSE:
+			{
+				VectorN diff = GetOutput() - *m_label;
+				cost = diff.SquareMagnitude();
+			}
+			break;
+		case eLossFunc::eSigmod_CrossEntropy:
+			{
+				const VectorN &ov = GetOutput();
+				int idx = m_label->ArgMax();
+				cost = -ov[idx] * log(ov[idx]);
+			}
+			break;
+		case eLossFunc::eSoftMax_LogLikelihood:
+			{
+				const VectorN &ov = GetOutput();
+				int len = static_cast<int>(ov.GetSize());
+				for (int32_t i = 0; i < len; ++i)
+				{
+					float32_t p = (*m_label)[i]; // p is only 0 or 1
+					float32_t q = ov[i];
+					float32_t c = p > 0 ? log(q) : log(1.0f - q);
+					cost += -c;
+				}
+				if (len > 0)
+				{
+					cost /= len;
+				}
+			}
+			break;
+		default:
+			assert(false);
+			break;
+		}
+		return cost;
+	}
+
 };
 
 #endif //__OUTPUT_LAYER_H__

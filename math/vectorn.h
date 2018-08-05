@@ -89,7 +89,7 @@ public:
 		::memset(_buf, 0, _size * sizeof(T));
 	}
 
-	T Length2() const
+	T SquareMagnitude() const
 	{
 		T len2 = 0;
 		for(unsigned long i = 0; i < _size; ++i)

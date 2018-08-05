@@ -160,6 +160,24 @@ public:
 
 	}
 
+	float32_t CalcCost(const std::vector<VectorN> &img_vec, const std::vector<VectorN> &lab_vec)
+	{
+		assert(img_vec.size() == lab_vec.size());
+		int tot_count = img_vec.size();
+		float32_t tot_cost = 0;
+		for (int k = 0; k < tot_count; ++k)
+		{
+			m_inputLayer->SetInputData(img_vec[k]);
+			Forward();
+			m_outputLayer->SetLabelValue(lab_vec[k]);
+			tot_cost += m_outputLayer->GetCost();
+		}
+		if (tot_count > 0)
+		{
+			tot_cost /= tot_count;
+		}
+		return tot_cost;
+	}
 };
 
 #endif //__NETWORK_H__

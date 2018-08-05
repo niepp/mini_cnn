@@ -198,7 +198,7 @@ int main()
 				batch_img_vec[k] = &img_vec[j];
 				batch_label_vec[k] = &lab_vec[j];
 			}
-			if (i % 100 == 0)
+			if (i % (batch/10) == 0)
 			{
 				cout << "batch: " << i << "/" << batch << endl;
 			}
@@ -209,17 +209,20 @@ int main()
 		float correct_rate = (1.0f * correct / test_img_count);
 		if (correct_rate > maxCorrectRate)
 		{
-			maxCorrectRate = correct_rate;			
+			maxCorrectRate = correct_rate;
 		}
-		cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
+
+		float32_t tot_cost = nn.CalcCost(img_vec, lab_vec);
+
+		cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "\t tot_cost = " << tot_cost << endl;
 	}
 
-	cout << "maxCorrectRate: " << maxCorrectRate << endl;
+	cout << "Max CorrectRate: " << maxCorrectRate << endl;
 
 	long long t1 = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
 
 	float timeCost = (t1 - t0) * 0.001f;
-	cout << "cost: " << timeCost << "(s)" << endl;
+	cout << "TimeCost: " << timeCost << "(s)" << endl;
 
 	system("pause");
 	return 0;
