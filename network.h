@@ -110,6 +110,18 @@ public:
 		}
 	}
 
+#ifndef NDEBUG
+	void CheckGradient()
+	{
+		int len = static_cast<int>(m_layers.size());
+		for (int i = 0; i < len; ++i)
+		{
+			LayerBase *layer = m_layers[i];
+			layer->CheckGradient();
+		}
+	}
+#endif
+
 	void SGD(const std::vector<VectorN*> &batch_img_vec, const std::vector<VectorN*> &batch_label_vec, float eta)
 	{
 		int len = static_cast<int>(m_layers.size());
@@ -129,6 +141,9 @@ public:
 			Forward();
 			BackProp();
 			SumGradient();
+#ifndef NDEBUG
+			CheckGradient();
+#endif
 		}
 
 		float eff = eta / batch_size;

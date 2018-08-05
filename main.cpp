@@ -77,17 +77,11 @@ Network CreateCNN()
 {
 	Network nn;
 	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
-	nn.AddLayer(new ConvolutionalLayer(1, 3, 3, 1, 0, 1, 1, eActiveFunc::eSigmod));
-	nn.AddLayer(new ConvolutionalLayer(1, 3, 3, 1, 0, 1, 1, eActiveFunc::eSigmod));
+	nn.AddLayer(new ConvolutionalLayer(2, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 1, 1), eActiveFunc::eSigmod));
+	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 2, 0, 1, 1), new Pooling(2, 2, 0, 1, 1), eActiveFunc::eSigmod));
 	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 	return nn;
 }
-
-// todo
-// 1.整理成矢量/矩阵形式
-// 2.抽象出layer
-// 3.损失函数使用交叉熵，输出层使用softmax激活函数
-// 4.加入卷积层
 
 int main()
 {

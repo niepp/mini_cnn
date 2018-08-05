@@ -29,6 +29,30 @@ public:
 		m_width(w), m_height(h), m_channels(c), m_padding(padding), m_stride_w(stride_w), m_stride_h(stride_h)
 	{
 	}
+	FilterDimension(const FilterDimension &filterDim) :
+		m_width(filterDim.m_width), m_height(filterDim.m_height), m_channels(filterDim.m_channels)
+		, m_padding(filterDim.m_padding), m_stride_w(filterDim.m_stride_w), m_stride_h(filterDim.m_stride_h)
+	{
+	}
+};
+
+class Pooling
+{
+public:
+	uint32_t m_width;
+	uint32_t m_height;
+	uint32_t m_padding;
+	uint32_t m_stride_w;
+	uint32_t m_stride_h;
+	Pooling(uint32_t w, uint32_t h, uint32_t padding, uint32_t stride_w, uint32_t stride_h) :
+		m_width(w), m_height(h), m_padding(padding), m_stride_w(stride_w), m_stride_h(stride_h)
+	{
+	}
+	Pooling(const Pooling &pooling) :
+		m_width(pooling.m_width), m_height(pooling.m_height)
+		, m_padding(pooling.m_padding), m_stride_w(pooling.m_stride_w), m_stride_h(pooling.m_stride_h)
+	{
+	}
 };
 
 
@@ -62,35 +86,40 @@ protected:
 
 protected:
 	FilterDimension m_filterDim;
+	Pooling *m_pooling;
 	eActiveFunc m_activeFuncType;
 	MatActiveFunc m_activeFunc;
 	MatActiveFunc m_activePrimeFunc;
 
 public:
-	ConvolutionalLayer(uint32_t filterCount, uint32_t filterWidth, uint32_t filterHeight, uint32_t filterChannels, uint32_t padding, uint32_t stride_w, uint32_t stride_h, eActiveFunc act)
+	ConvolutionalLayer(uint32_t filterCount
+		, FilterDimension *filterDim
+		, Pooling *pooling
+		, eActiveFunc act)
 		: LayerBase(0, new MatrixInOut(), new MatrixInOut())
-		, m_filterDim(filterWidth, filterHeight, filterChannels, padding, stride_w, stride_h)
+		, m_filterDim(*filterDim)
+		, m_pooling(pooling)
+		, m_activeFuncType(act)
 	{
 
 		for (uint32_t i = 0; i < filterCount; ++i)
 		{
-			m_filters.push_back(new Matrix3D(filterWidth, filterHeight, filterChannels));
+			m_filters.push_back(new Matrix3D(m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
 		}
 		m_bias = new VectorN(filterCount);
 
 		for (uint32_t i = 0; i < filterCount; ++i)
 		{
-			m_dw.push_back(new Matrix3D(filterWidth, filterHeight, filterChannels));
+			m_dw.push_back(new Matrix3D(m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
 		}
 		m_db = new VectorN(filterCount);
 
 		for (uint32_t i = 0; i < filterCount; ++i)
 		{
-			m_sum_dw.push_back(new Matrix3D(filterWidth, filterHeight, filterChannels));
+			m_sum_dw.push_back(new Matrix3D(m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
 		}
 		m_sum_db = new VectorN(filterCount);
 
-		m_activeFuncType = act;
 		switch (act)
 		{
 		case eActiveFunc::eSigmod:
@@ -160,7 +189,7 @@ public:
 				{
 					for (uint32_t c = 0; c < d; ++c)
 					{
-						filter->operator()(i, j, c) = nrand.GetRandom();
+						(*filter)(i, j, c) = nrand.GetRandom();
 					}
 				}
 			}
@@ -257,6 +286,13 @@ public:
 			*m_filters[i] -= *m_sum_dw[i];
 		}
 	}
+
+#ifndef NDEBUG
+	virtual void CheckGradient()
+	{
+
+	}
+#endif
 
 };
 

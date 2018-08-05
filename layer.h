@@ -80,12 +80,17 @@ public:
 
 	virtual void SumGradient()
 	{
-
 	}
 
 	virtual void UpdateWeightBias(float eff)
 	{
 	}
+
+#ifndef NDEBUG
+	virtual void CheckGradient()
+	{
+	}
+#endif
 
 };
 

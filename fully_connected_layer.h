@@ -151,6 +151,14 @@ public:
 		*m_weight -= *m_sum_dw * eff;
 		*m_bias -= *m_sum_delta * eff;
 	}
+
+#ifndef NDEBUG
+	virtual void CheckGradient()
+	{
+
+	}
+#endif
+
 };
 
 #endif //__FULLYCONNECTED_LAYER_H__
