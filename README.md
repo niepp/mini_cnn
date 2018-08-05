@@ -58,4 +58,5 @@ maxCorrectRate: 0.9554</br>
 4) http://cs231n.stanford.edu/slides/2018/cs231n_2018_lecture05.pdf
 5) http://ufldl.stanford.edu/tutorial/supervised/ConvolutionalNeuralNetwork/
 6) http://deeplearning.net/software/theano_versions/dev/tutorial/conv_arithmetic.html#transposed-convolution-arithmetic
+7) http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization
 
