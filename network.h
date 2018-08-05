@@ -137,7 +137,7 @@ public:
 	}
 
 
-	uint32_t Test(const std::vector<VectorN> &test_img_vec, const std::vector<int> &test_lab_vec)
+	uint32_t Test(const std::vector<VectorN*> &test_img_vec, const std::vector<int> &test_lab_vec)
 	{
 
 		assert(test_img_vec.size() == test_lab_vec.size());
@@ -146,7 +146,7 @@ public:
 		uint32_t correct = 0;
 		for (int k = 0; k < test_count; ++k)
 		{
-			m_inputLayer->SetInputData(test_img_vec[k]);
+			m_inputLayer->SetInputData(*test_img_vec[k]);
 			Forward();
 			int lab = m_outputLayer->GetOutput().ArgMax();
 			int std_lab = test_lab_vec[k];
@@ -160,17 +160,18 @@ public:
 
 	}
 
-	float32_t CalcCost(const std::vector<VectorN> &img_vec, const std::vector<VectorN> &lab_vec)
+	float32_t CalcCost(const std::vector<VectorN*> &img_vec, const std::vector<VectorN*> &lab_vec)
 	{
 		assert(img_vec.size() == lab_vec.size());
 		int tot_count = img_vec.size();
 		float32_t tot_cost = 0;
 		for (int k = 0; k < tot_count; ++k)
 		{
-			m_inputLayer->SetInputData(img_vec[k]);
+			m_inputLayer->SetInputData(*img_vec[k]);
 			Forward();
-			m_outputLayer->SetLabelValue(lab_vec[k]);
-			tot_cost += m_outputLayer->GetCost();
+			m_outputLayer->SetLabelValue(*lab_vec[k]);
+			float32_t c = m_outputLayer->GetCost();
+			tot_cost += c;
 		}
 		if (tot_count > 0)
 		{

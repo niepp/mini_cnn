@@ -93,8 +93,9 @@ public:
 				{
 					float32_t p = (*m_label)[i]; // p is only 0 or 1
 					float32_t q = ov[i];
-					float32_t c = p > 0 ? log(q) : log(1.0f - q);
-					cost += -c;
+					float32_t c = p > 0 ? -log(q) : -log(1.0f - q);
+					c = std::min(c, 1.0f); // 限定代价值上限，防止数值溢出
+					cost += c;
 				}
 				if (len > 0)
 				{

@@ -78,7 +78,7 @@ Network CreateCNN()
 	Network nn;
 	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
 	nn.AddLayer(new ConvolutionalLayer(1, 3, 3, 1, 0, 1, 1, eActiveFunc::eSigmod));
-	nn.AddLayer(new ConvolutionalLayer(1, 5, 5, 1, 0, 1, 1, eActiveFunc::eSigmod));
+	nn.AddLayer(new ConvolutionalLayer(1, 3, 3, 1, 0, 1, 1, eActiveFunc::eSigmod));
 	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 	return nn;
 }
@@ -108,23 +108,23 @@ int main()
 
 	assert(img_count == lab_count);
 
-	std::vector<VectorN> img_vec(img_count);
+	std::vector<VectorN*> img_vec(img_count);
 	for (int k = 0; k < img_count; ++k)
 	{
-		img_vec[k].SetSize(N_inputCount);
+		img_vec[k] = new VectorN(N_inputCount);
 		for (int i = 0; i < N_inputCount; ++i)
 		{
 			float v = images[index + k * N_inputCount + i] * 1.0f / 255.0f;
-			img_vec[k][i] = v;
+			(*img_vec[k])[i] = v;
 		}
 	}
 
-	std::vector<VectorN> lab_vec(img_count);
+	std::vector<VectorN*> lab_vec(img_count);
 	for (int k = 0; k < img_count; ++k)
 	{
-		lab_vec[k].SetSize(C_classCount);
+		lab_vec[k] = new VectorN(C_classCount);
 		int lab = labels[idx + k];
-		lab_vec[k][lab] = 1.0f;
+		(*lab_vec[k])[lab] = 1.0f;
 	}
 
 	// read test data
@@ -144,14 +144,14 @@ int main()
 	
 	assert(test_img_count == test_lab_count);
 
-	std::vector<VectorN> test_img_vec(test_img_count);
+	std::vector<VectorN*> test_img_vec(test_img_count);
 	for (int k = 0; k < test_img_count; ++k)
 	{
-		test_img_vec[k].SetSize(N_inputCount);
+		test_img_vec[k] = new VectorN(N_inputCount);
 		for (int i = 0; i < N_inputCount; ++i)
 		{
 			float v = test_images[test_idx + k * N_inputCount + i] * 1.0f / 255.0f;
-			test_img_vec[k][i] = v;
+			(*test_img_vec[k])[i] = v;
 		}
 	}
 
@@ -162,27 +162,30 @@ int main()
 	}
 
 	// random init
-	NormalRandom nrand(0, 1.0f);
+	long long t0 = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
+
+	uint32_t seed = (uint32_t)(std::chrono::system_clock::now().time_since_epoch().count());
+
+	cout << "random seed:" << seed << endl;
+
+	std::mt19937_64 generator(seed);
+
+	NormalRandom nrand(generator, 0, 1.0f);
 
 	// define neural network
 	Network nn = CreateCNN();
 
 	nn.Init(nrand);
 
-	float learning_rate = 3.0f;
-	int epoch = 20;
-	int batch_size = 100;
+	float learning_rate = 0.2f;
+	int epoch = 30;
+	int batch_size = 10;
 	int batch = img_count / batch_size;
 	std::vector<int> idx_vec(img_count);
 	for (int k = 0; k < img_count; ++k)
 	{
 		idx_vec[k] = k;
 	}
-
-	long long t0 = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
-
-	uint32_t seed = (uint32_t)(std::chrono::system_clock::now().time_since_epoch().count());
-	std::mt19937_64 generator(seed);
 
 	float maxCorrectRate = 0;
 	for (int c = 0; c < epoch; ++c)
@@ -195,14 +198,18 @@ int main()
 			for (int k = 0; k < batch_size; ++k)
 			{
 				int j = idx_vec[(i * batch_size + k) % img_count];
-				batch_img_vec[k] = &img_vec[j];
-				batch_label_vec[k] = &lab_vec[j];
+				batch_img_vec[k] = img_vec[j];
+				batch_label_vec[k] = lab_vec[j];
 			}
-			if (i % (batch/10) == 0)
+			if (i % (batch/5) == 0)
 			{
 				cout << "batch: " << i << "/" << batch << endl;
 			}
+
+		//	float32_t cb = nn.CalcCost(batch_img_vec, batch_label_vec);
 			nn.SGD(batch_img_vec, batch_label_vec, learning_rate);
+		//	float32_t ca = nn.CalcCost(batch_img_vec, batch_label_vec);
+		//	cout << "cost: " << cb << " -> " << ca << "\t" << cb - ca << endl;
 		}
 
 		uint32_t correct = nn.Test(test_img_vec, test_lab_vec);

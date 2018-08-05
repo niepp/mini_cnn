@@ -15,7 +15,7 @@ public:
 	std::mt19937_64 m_generator;
 	std::normal_distribution<float> m_distribution;
 public:
-	NormalRandom(float mean, float stdev) : m_distribution(mean, stdev)
+	NormalRandom(std::mt19937_64 generator, float mean, float stdev) : m_generator(generator), m_distribution(mean, stdev)
 	{
 	}
 
