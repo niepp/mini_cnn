@@ -77,8 +77,10 @@ Network CreateCNN()
 {
 	Network nn;
 	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
-	nn.AddLayer(new ConvolutionalLayer(2, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 1, 1), eActiveFunc::eSigmod));
-	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 2, 0, 1, 1), new Pooling(2, 2, 0, 1, 1), eActiveFunc::eSigmod));
+	nn.AddLayer(new ConvolutionalLayer(6, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eSigmod));
+	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 6, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eSigmod));
+	nn.AddLayer(new ConvolutionalLayer(120, new FilterDimension(3, 3, 16, 0, 1, 1), nullptr, eActiveFunc::eSigmod));
+//	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
 	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 	return nn;
 }

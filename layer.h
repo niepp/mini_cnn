@@ -19,6 +19,7 @@ using namespace std;
 enum eActiveFunc
 {
 	eSigmod,
+	eTanh,
 	eRelu,
 	eSoftMax,
 };

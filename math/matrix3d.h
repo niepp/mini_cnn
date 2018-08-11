@@ -47,8 +47,6 @@ public:
 		int32_t stride_w, int32_t stride_h,
 		Padding padding) const;
 
-	void AddBias(const _VectorN<T>& bias);
-
 	void ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix3D<T> &filter,
 		int32_t stride_w, int32_t stride_h,
 		Padding padding) const;
@@ -59,7 +57,17 @@ public:
 
 	T SumByDepthWise(int32_t depth_idx) const;
 
+	void AddBias(const _VectorN<T>& bias);
+
 	_VectorN<T>* Flatten() const;
+
+	void DownSample(_Matrix3D<T> *retm, std::vector<int32_t> &idx_map,
+		int32_t pool_w, int32_t pool_h,
+		int32_t pool_stride_w, int32_t pool_stride_h) const;
+
+	void UpSample(_Matrix3D<T> *retm, std::vector<int32_t> &idx_map,
+		int32_t pool_w, int32_t pool_h,
+		int32_t pool_stride_w, int32_t pool_stride_h) const;
 
 private:
 	T ConvByLocal(int32_t startw, int32_t starth, const _Matrix3D<T>& filter) const;
@@ -366,6 +374,105 @@ _VectorN<T>* _Matrix3D<T>::Flatten() const
 {
 	return new _VectorN<T>(_data, _w * _h * _d);
 }
+
+template <class T>
+void _Matrix3D<T>::DownSample(_Matrix3D<T> *retm, std::vector<int32_t> &idx_map,
+	int32_t pool_w, int32_t pool_h,
+	int32_t pool_stride_w, int32_t pool_stride_h) const
+{
+
+	assert(idx_map.size() == _w * _h);
+
+	for (int32_t i = 0; i < idx_map.size(); ++i)
+	{
+		idx_map[i] = -1;
+	}
+
+	// Padding::Valid
+	int32_t nw = retm->_w;
+	int32_t nh = retm->_h;
+	int32_t nd = retm->_d;
+	for (int32_t d = 0; d < nd; ++d)
+	{
+		for (int32_t i = 0; i < nw; ++i)
+		{
+			for (int32_t j = 0; j < nh; ++j)
+			{
+				int32_t startw = i * pool_stride_w;
+				int32_t starth = j * pool_stride_h;
+				T maxv = cMIN_FLOAT;
+				int32_t in_idx = -1;
+				for (int32_t u = 0; u < pool_w; ++u)
+				{
+					int32_t x = startw + u;
+					if (x < 0 || x >= _w)
+					{
+						continue;
+					}
+					for (int32_t v = 0; v < pool_h; ++v)
+					{
+						int32_t y = starth + v;
+						if (y < 0 || y >= _h)
+						{
+							continue;
+						}
+						T s = (*this)(x, y, d);
+						if (s > maxv)
+						{
+							maxv = s;
+							in_idx = x + y * _w;
+						}
+					}
+				}
+				(*retm)(i, j, d) = maxv;
+				if (in_idx >= 0)
+				{
+					int32_t out_idx = i + j * nw;
+					idx_map[in_idx] = out_idx;
+				}
+			}
+		}
+	}
+
+}
+
+
+template <class T>
+void _Matrix3D<T>::UpSample(_Matrix3D<T> *retm, std::vector<int32_t> &idx_map,
+	int32_t pool_w, int32_t pool_h,
+	int32_t pool_stride_w, int32_t pool_stride_h) const
+{
+
+	assert(idx_map.size() == retm->_w * retm->_h);
+
+	// Padding::Valid
+	int32_t nw = retm->_w;
+	int32_t nh = retm->_h;
+	int32_t nd = retm->_d;
+	for (int32_t d = 0; d < nd; ++d)
+	{
+		for (int32_t i = 0; i < nw; ++i)
+		{
+			for (int32_t j = 0; j < nh; ++j)
+			{
+				int32_t in_idx = i + j * nw;
+				int32_t out_idx = idx_map[in_idx];
+				if (out_idx >= 0)
+				{
+					int32_t y = out_idx / _w;
+					int32_t x = out_idx - y * _w;
+					(*retm)(i, j, d) = (*this)(x, y, d);
+				}
+				else
+				{
+					(*retm)(i, j, d) = (T)(0);
+				}
+			}
+		}
+	}
+
+}
+
 
 template <class T>
 _Matrix3D<T>& _Matrix3D<T>::operator+=(const _Matrix3D<T>& other)

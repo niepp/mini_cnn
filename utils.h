@@ -47,6 +47,29 @@ inline void SigmoidPrime(const VectorN& vec, VectorN& retV)
 	}
 }
 
+inline void Tanh(const VectorN& vec, VectorN& retV)
+{
+	assert(vec.GetSize() == retV.GetSize());
+	for (unsigned int i = 0; i < retV.GetSize(); ++i)
+	{
+		const float32_t ep = std::exp(vec[i]);
+		const float32_t em = std::exp(-vec[i]);
+		retV[i] = (ep - em) / (ep + em);
+	}
+}
+
+inline void TanhPrime(const VectorN& vec, VectorN& retV)
+{
+	assert(vec.GetSize() == retV.GetSize());
+	for (unsigned int i = 0; i < retV.GetSize(); ++i)
+	{
+		const float32_t ep = std::exp(vec[i]);
+		const float32_t em = std::exp(-vec[i]);
+		float32_t f = (ep - em) / (ep + em);
+		retV[i] = (float32_t)1.0f - f * f;
+	}
+}
+
 inline void Relu(const VectorN& vec, VectorN& retV)
 {
 	assert(vec.GetSize() == retV.GetSize());
@@ -148,7 +171,50 @@ inline void SigmoidPrime(const Matrix3D &mat, Matrix3D &retMat)
 			{
 				auto v = mat(i, j, k);
 				auto f = 1.0f / (1.0f + exp(-v));
-				retMat(i, j, k) = f * (1.0f - f);			
+				retMat(i, j, k) = f * (1.0f - f);
+			}
+		}
+	}
+}
+
+inline void Tanh(const Matrix3D &mat, Matrix3D &retMat)
+{
+	assert(mat.Width() == retMat.Width()
+		&& mat.Height() == retMat.Height()
+		&& mat.Depth() == retMat.Depth());
+
+	for (uint32_t k = 0; k < mat.Depth(); ++k)
+	{
+		for (uint32_t i = 0; i < mat.Width(); ++i)
+		{
+			for (uint32_t j = 0; j < mat.Height(); ++j)
+			{
+				auto v = mat(i, j, k);
+				const float32_t ep = std::exp(v);
+				const float32_t em = std::exp(-v);
+				retMat(i, j, k) = (ep - em) / (ep + em);
+			}
+		}
+	}
+}
+
+inline void TanhPrime(const Matrix3D &mat, Matrix3D &retMat)
+{
+	assert(mat.Width() == retMat.Width()
+		&& mat.Height() == retMat.Height()
+		&& mat.Depth() == retMat.Depth());
+
+	for (uint32_t k = 0; k < mat.Depth(); ++k)
+	{
+		for (uint32_t i = 0; i < mat.Width(); ++i)
+		{
+			for (uint32_t j = 0; j < mat.Height(); ++j)
+			{
+				auto v = mat(i, j, k);
+				const float32_t ep = std::exp(v);
+				const float32_t em = std::exp(-v);
+				float32_t f = (ep - em) / (ep + em);
+				retMat(i, j, k) = (float32_t)1.0f - f * f;
 			}
 		}
 	}

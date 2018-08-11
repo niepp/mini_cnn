@@ -59,6 +59,10 @@ public:
 			m_func = Sigmoid;
 			m_prime_func = SigmoidPrime;
 			break;
+		case eActiveFunc::eTanh:
+			m_func = Tanh;
+			m_prime_func = TanhPrime;
+			break;
 		case eActiveFunc::eRelu:
 			m_func = Relu;
 			m_prime_func = ReluPrime;
