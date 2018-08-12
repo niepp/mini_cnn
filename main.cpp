@@ -77,9 +77,9 @@ Network CreateCNN()
 {
 	Network nn;
 	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
-	nn.AddLayer(new ConvolutionalLayer(6, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eSigmod));
-	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 6, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eSigmod));
-	nn.AddLayer(new ConvolutionalLayer(120, new FilterDimension(3, 3, 16, 0, 1, 1), nullptr, eActiveFunc::eSigmod));
+	nn.AddLayer(new ConvolutionalLayer(6, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
+	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 6, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
+	nn.AddLayer(new ConvolutionalLayer(120, new FilterDimension(3, 3, 16, 0, 1, 1), nullptr, eActiveFunc::eRelu));
 //	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
 	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 	return nn;
@@ -173,7 +173,7 @@ int main()
 
 	nn.Init(nrand);
 
-	float learning_rate = 0.2f;
+	float learning_rate = 0.02f;
 	int epoch = 30;
 	int batch_size = 10;
 	int batch = img_count / batch_size;
@@ -183,9 +183,11 @@ int main()
 		idx_vec[k] = k;
 	}
 
+	float rate = learning_rate;
 	float maxCorrectRate = 0;
 	for (int c = 0; c < epoch; ++c)
 	{
+		learning_rate = rate;
 		std::shuffle(std::begin(idx_vec), std::end(idx_vec), generator);
 		std::vector<VectorN*> batch_img_vec(batch_size);
 		std::vector<VectorN*> batch_label_vec(batch_size);
@@ -201,6 +203,9 @@ int main()
 			{
 				cout << "batch: " << i << "/" << batch << endl;
 			}
+
+			learning_rate *= 0.85f;
+			learning_rate = std::max(0.00001f, learning_rate);
 
 		//	float32_t cb = nn.CalcCost(batch_img_vec, batch_label_vec);
 			nn.SGD(batch_img_vec, batch_label_vec, learning_rate);

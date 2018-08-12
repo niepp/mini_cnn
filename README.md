@@ -2,7 +2,7 @@
 
 ## 简单全连接神经网络
  
-![image](https://github.com/niepp/mini_nn/blob/master/backprop.jpg)</br>
+![image](https://github.com/niepp/mini_nn/blob/master/doc/backprop.jpg)</br>
 
 
 【实验1】 3层神经网络训练mnist数据集</br>
@@ -49,8 +49,10 @@ maxCorrectRate: 0.9554</br>
 
 ## 卷积神经网络
   卷积层的误差反向传播 【参考3)4)5)6)】</br>
-  ![image](https://github.com/niepp/mini_nn/blob/master/convbackprop.png)</br>
-  
+  ![image](https://github.com/niepp/mini_nn/blob/master/doc/convbackprop_delta.png)</br>
+  ![image](https://github.com/niepp/mini_nn/blob/master/doc/convbackprop_dw_db.png)</br>
+与全连接层类似：由式子（1）从输出层开始反向递推计算各层的误差项，然后由式子（2）（3）分别计算各层的梯度（损失函数对卷积核和偏置的导数）
+
 [参考文献]</br>
 1) [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
 2) [Deep Learning](http://www.deeplearningbook.org/), book by Ian Goodfellow, Yoshua Bengio, and Aaron Courville</br>

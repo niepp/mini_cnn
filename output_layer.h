@@ -83,6 +83,7 @@ public:
 				const VectorN &ov = GetOutput();
 				int idx = m_label->ArgMax();
 				cost = -ov[idx] * log(ov[idx]);
+				cost = std::min(cost, 1.0f); // 限定代价值上限，防止数值溢出
 			}
 			break;
 		case eLossFunc::eSoftMax_LogLikelihood:
@@ -95,6 +96,10 @@ public:
 					float32_t q = ov[i];
 					float32_t c = p > 0 ? -log(q) : -log(1.0f - q);
 					c = std::min(c, 1.0f); // 限定代价值上限，防止数值溢出
+					if (std::isinf(c) || std::isnan(c))
+					{
+						std::cout <<"p:" << p << "\tq:" << q << endl;
+					}
 					cost += c;
 				}
 				if (len > 0)
