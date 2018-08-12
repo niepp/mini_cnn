@@ -49,8 +49,8 @@ maxCorrectRate: 0.9554</br>
 
 ## 卷积神经网络
   卷积层的误差反向传播 【参考3)4)5)6)】</br>
-  ![image](https://github.com/niepp/mini_nn/blob/master/doc/convbackprop_delta.png)</br>
-  ![image](https://github.com/niepp/mini_nn/blob/master/doc/convbackprop_dw_db.png)</br>
+  ![image](https://github.com/niepp/mini_nn/blob/master/doc/convbackprop_delta.jpg)</br>
+  ![image](https://github.com/niepp/mini_nn/blob/master/doc/convbackprop_dw_db.jpg)</br>
 与全连接层类似：由式子（1）从输出层开始反向递推计算各层的误差项，然后由式子（2）（3）分别计算各层的梯度（损失函数对卷积核和偏置的导数）
 
 [参考文献]</br>
