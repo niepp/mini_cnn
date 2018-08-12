@@ -81,11 +81,12 @@ Network CreateCNN()
 	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 6, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
 	nn.AddLayer(new ConvolutionalLayer(120, new FilterDimension(3, 3, 16, 0, 1, 1), nullptr, eActiveFunc::eRelu));
 //	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
+	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eMSE, eActiveFunc::eSigmod));
 	return nn;
 }
 
-int main()
+void ReadDataSet(std::vector<VectorN*> &img_vec, std::vector<VectorN*> &lab_vec
+	, std::vector<VectorN*> &test_img_vec, std::vector<int> &test_lab_vec)
 {
 	// read train data
 	// train images
@@ -104,7 +105,7 @@ int main()
 
 	assert(img_count == lab_count);
 
-	std::vector<VectorN*> img_vec(img_count);
+	img_vec.reserve(img_count);
 	for (int k = 0; k < img_count; ++k)
 	{
 		img_vec[k] = new VectorN(N_inputCount);
@@ -115,7 +116,7 @@ int main()
 		}
 	}
 
-	std::vector<VectorN*> lab_vec(img_count);
+	lab_vec.reserve(img_count);
 	for (int k = 0; k < img_count; ++k)
 	{
 		lab_vec[k] = new VectorN(C_classCount);
@@ -137,10 +138,10 @@ int main()
 	int lab_idx = 0;
 	int test_lab_migic = ReadInt(test_labels, lab_idx);
 	int test_lab_count = ReadInt(test_labels, lab_idx);
-	
+
 	assert(test_img_count == test_lab_count);
 
-	std::vector<VectorN*> test_img_vec(test_img_count);
+	test_img_vec.reserve(test_img_count);
 	for (int k = 0; k < test_img_count; ++k)
 	{
 		test_img_vec[k] = new VectorN(N_inputCount);
@@ -151,21 +152,63 @@ int main()
 		}
 	}
 
-	std::vector<int> test_lab_vec(test_lab_count);
+	test_lab_vec.reserve(test_lab_count);
 	for (int k = 0; k < test_lab_count; ++k)
-	{		
-		test_lab_vec[k]= test_labels[lab_idx + k];
+	{
+		test_lab_vec[k] = test_labels[lab_idx + k];
 	}
+}
 
+long long GetNow()
+{
+	return std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
+}
+
+std::mt19937_64 CreateRandom()
+{
 	// random init
-	long long t0 = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
-
 	uint32_t seed = (uint32_t)(std::chrono::system_clock::now().time_since_epoch().count());
 
 	cout << "random seed:" << seed << endl;
 
 	std::mt19937_64 generator(seed);
 
+	return generator;
+}
+
+#ifndef NDEBUG
+void CheckGradient()
+{
+	auto generator = CreateRandom();
+	NormalRandom nrand(generator, 0, 1.0f);
+
+	// define neural network
+	Network nn = CreateCNN();
+
+	nn.Init(nrand);
+
+	VectorN *input = new VectorN(30, 0.0f);
+	VectorN *label = new VectorN(30, 0.0f);
+	(*label)[3] = 1.0f;
+
+	nn.GradientCheck(*input, *label);
+	
+}
+#endif
+
+int main()
+{
+	std::vector<VectorN*> img_vec;
+	std::vector<VectorN*> lab_vec;
+	std::vector<VectorN*> test_img_vec;	
+	std::vector<int> test_lab_vec;	
+	ReadDataSet(img_vec, lab_vec, test_img_vec, test_lab_vec);
+
+	int img_count = img_vec.size();
+	int test_img_count = test_img_vec.size();
+
+	long long t0 = GetNow();
+	auto generator = CreateRandom();
 	NormalRandom nrand(generator, 0, 1.0f);
 
 	// define neural network
@@ -227,7 +270,7 @@ int main()
 
 	cout << "Max CorrectRate: " << maxCorrectRate << endl;
 
-	long long t1 = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
+	long long t1 = GetNow();
 
 	float timeCost = (t1 - t0) * 0.001f;
 	cout << "TimeCost: " << timeCost << "(s)" << endl;

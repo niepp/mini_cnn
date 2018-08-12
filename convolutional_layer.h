@@ -242,13 +242,40 @@ public:
 			m_activeFunc(*m_middle, *m_output_img);
 		}
 
+		VectorN &outp = *m_output_img->Flatten();
+		for (int i = 0; i < outp.GetSize(); ++i)
+		{
+			float32_t c = outp[i];
+
+			if (std::abs(c) > 1000.0f)
+			{
+				int kkk = 0;
+			}
+
+			if (std::isinf(c) || std::isnan(c))
+			{
+				std::cout << "c:" << c << endl;
+			}
+		}
+
+
 		assert(m_next != nullptr);
 		if (m_next->m_input->m_type != m_output->m_type)
 		{
 			VectorInOut* next_vec_in = dynamic_cast<VectorInOut*>(m_next->m_input);
 			next_vec_in->m_value = m_output_img->Flatten();
-		}
 
+			VectorN &outp = *next_vec_in->m_value;
+			for (int i = 0; i < outp.GetSize(); ++i)
+			{
+				float32_t c = outp[i];
+				if (std::isinf(c) || std::isnan(c))
+				{
+					std::cout << "c:" << c << endl;
+				}
+			}
+
+		}
 	}
 
 	virtual void BackProp()
@@ -272,6 +299,19 @@ public:
 				VectorN flatten_delta = (fully_layer->m_weight->Transpose() * (*fully_layer->m_delta)) ^ (*(m_middle_prime->Flatten()));
 				m_delta->Copy(*flatten_delta.Unflatten(m_delta->Width(), m_delta->Height(), m_delta->Depth()));
 			}
+
+			VectorN &outp = *m_delta->Flatten();
+			for (int i = 0; i < outp.GetSize(); ++i)
+			{
+				float32_t c = outp[i];
+
+				if (std::abs(c) > 10.0f)
+				{
+					int kkk = 0;
+				}
+
+			}
+
 		}
 		else if (conv_layer != nullptr)
 		{
@@ -281,6 +321,20 @@ public:
 					conv_layer->m_filterDim.m_stride_w, conv_layer->m_filterDim.m_stride_h,
 					Padding::Valid);
 				m_pre_unpool_delta->UpSample(m_delta, *m_idx_map, m_pooling->m_width, m_pooling->m_height, m_pooling->m_stride_w, m_pooling->m_stride_h);
+
+
+				VectorN &outp = *m_delta->Flatten();
+				for (int i = 0; i < outp.GetSize(); ++i)
+				{
+					float32_t c = outp[i];
+
+					if (std::abs(c) > 10.0f)
+					{
+						int kkk = 0;
+					}
+
+				}
+
 			}
 			else
 			{

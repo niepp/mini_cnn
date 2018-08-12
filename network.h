@@ -110,18 +110,6 @@ public:
 		}
 	}
 
-#ifndef NDEBUG
-	void CheckGradient()
-	{
-		int len = static_cast<int>(m_layers.size());
-		for (int i = 0; i < len; ++i)
-		{
-			LayerBase *layer = m_layers[i];
-			layer->CheckGradient();
-		}
-	}
-#endif
-
 	void SGD(const std::vector<VectorN*> &batch_img_vec, const std::vector<VectorN*> &batch_label_vec, float eta)
 	{
 		int len = static_cast<int>(m_layers.size());
@@ -141,9 +129,6 @@ public:
 			Forward();
 			BackProp();
 			SumGradient();
-#ifndef NDEBUG
-			CheckGradient();
-#endif
 		}
 
 		float eff = eta / batch_size;
@@ -194,6 +179,27 @@ public:
 		}
 		return tot_cost;
 	}
+
+	bool GradientCheck(const VectorN &test_img, const VectorN &test_lab, float32_t eps = 1e-4)
+	{
+		assert(!m_layers.empty());
+		assert(test_img.GetSize() == test_lab.GetSize());
+
+		int len = static_cast<int>(m_layers.size());
+		for (int i = 0; i < len; ++i)
+		{
+			LayerBase *layer = m_layers[i];
+			/*for (int i = 0; i < (int)w.size(); i++) {
+				if (calc_delta_diff(in, &v[0], data_size, w, dw, i) > eps) return false;
+			}
+			for (int i = 0; i < (int)b.size(); i++) {
+				if (calc_delta_diff(in, &v[0], data_size, b, db, i) > eps) return false;
+			}*/
+		}
+		
+		return true;
+	}
+
 };
 
 #endif //__NETWORK_H__

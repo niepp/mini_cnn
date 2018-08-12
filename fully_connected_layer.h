@@ -125,6 +125,23 @@ public:
 		{
 			m_next->m_input = m_output;
 		}
+
+		VectorN &outp = GetOutput();
+		for (int i = 0; i < outp.GetSize(); ++i)
+		{
+			float32_t c = outp[i];
+
+			if (std::abs(c) > 10.0f)
+			{
+				std::cout << "c:" << c << endl;
+			}
+
+			if (std::isinf(c) || std::isnan(c))
+			{
+				std::cout << "c:" << c << endl;
+			}
+		}
+
 	}
 
 	virtual void BackProp()
@@ -136,6 +153,23 @@ public:
 			m_delta->Copy((fc->m_weight->Transpose() * (*fc->m_delta)) ^ (*m_middle_prime));
 			m_dw->Copy(*m_delta * GetInput());
 		}
+
+		VectorN &outp = *m_delta;
+		for (int i = 0; i < outp.GetSize(); ++i)
+		{
+			float32_t c = outp[i];
+
+			if (std::abs(c) > 10.0f)
+			{
+				std::cout << "c:" << c << endl;
+			}
+
+			if (std::isinf(c) || std::isnan(c))
+			{
+				std::cout << "c:" << c << endl;
+			}
+		}
+
 	}
 
 	virtual void PreTrain()
