@@ -15,14 +15,16 @@ using namespace std;
 #include "math/mathdef.h"
 #include "layer.h"
 
+namespace mini_cnn
+{
 class InputLayer : public LayerBase
 {
 protected:
-	int32_t m_width;
-	int32_t m_height;
-	int32_t m_depth;
+	Int m_width;
+	Int m_height;
+	Int m_depth;
 public:
-	InputLayer(uint32_t neuralCount) : LayerBase(neuralCount, new VectorInOut(), new VectorInOut())
+	InputLayer(uInt neuralCount) : LayerBase(neuralCount, new VectorInOut(), new VectorInOut())
 	{
 		m_width = 0;
 		m_height = 0;
@@ -31,7 +33,7 @@ public:
 		vec_out->m_value = new VectorN(neuralCount);
 	}
 
-	InputLayer(int32_t width, int32_t height, int32_t depth) : LayerBase(width * height * depth, new VectorInOut(), new MatrixInOut())
+	InputLayer(Int width, Int height, Int depth) : LayerBase(width * height * depth, new VectorInOut(), new MatrixInOut())
 	{
 		m_width = width;
 		m_height = height;
@@ -56,5 +58,5 @@ public:
 	}
 
 };
-
+}
 #endif //__INPUT_LAYER_H__

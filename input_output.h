@@ -15,6 +15,8 @@ using namespace std;
 #include "math/matrix3d.h"
 #include "math/mathdef.h"
 
+namespace mini_cnn
+{
 enum InOutType
 {
 	IO_Vector,
@@ -65,5 +67,5 @@ public:
 	MatrixInOut() : InOut(InOutType::IO_Matrix)
 	{}
 };
-
+}
 #endif //__INPUT_OUTPUT_H__

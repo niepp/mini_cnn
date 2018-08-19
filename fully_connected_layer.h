@@ -15,6 +15,8 @@ using namespace std;
 #include "math/mathdef.h"
 #include "layer.h"
 
+namespace mini_cnn
+{
 class FullyConnectedLayer : public LayerBase
 {
 public:
@@ -38,7 +40,7 @@ protected:
 	ActiveFunc m_prime_func;
 
 public:
-	FullyConnectedLayer(uint32_t neuralCount, eActiveFunc act)
+	FullyConnectedLayer(uInt neuralCount, eActiveFunc act)
 		: LayerBase(neuralCount, new VectorInOut(), new VectorInOut())
 	{
 		m_bias = new VectorN(neuralCount);
@@ -126,21 +128,21 @@ public:
 			m_next->m_input = m_output;
 		}
 
-		VectorN &outp = GetOutput();
-		for (int i = 0; i < outp.GetSize(); ++i)
-		{
-			float32_t c = outp[i];
+		//VectorN &outp = GetOutput();
+		//for (int i = 0; i < outp.GetSize(); ++i)
+		//{
+		//	Float c = outp[i];
 
-			if (std::abs(c) > 10.0f)
-			{
-				std::cout << "c:" << c << endl;
-			}
+		//	if (std::abs(c) > 10.0f)
+		//	{
+		//		std::cout << "c:" << c << endl;
+		//	}
 
-			if (std::isinf(c) || std::isnan(c))
-			{
-				std::cout << "c:" << c << endl;
-			}
-		}
+		//	if (std::isinf(c) || std::isnan(c))
+		//	{
+		//		std::cout << "c:" << c << endl;
+		//	}
+		//}
 
 	}
 
@@ -154,21 +156,21 @@ public:
 			m_dw->Copy(*m_delta * GetInput());
 		}
 
-		VectorN &outp = *m_delta;
-		for (int i = 0; i < outp.GetSize(); ++i)
-		{
-			float32_t c = outp[i];
+		//VectorN &outp = *m_delta;
+		//for (int i = 0; i < outp.GetSize(); ++i)
+		//{
+		//	Float c = outp[i];
 
-			if (std::abs(c) > 10.0f)
-			{
-				std::cout << "c:" << c << endl;
-			}
+		//	if (std::abs(c) > 10.0f)
+		//	{
+		//		std::cout << "c:" << c << endl;
+		//	}
 
-			if (std::isinf(c) || std::isnan(c))
-			{
-				std::cout << "c:" << c << endl;
-			}
-		}
+		//	if (std::isinf(c) || std::isnan(c))
+		//	{
+		//		std::cout << "c:" << c << endl;
+		//	}
+		//}
 
 	}
 
@@ -190,13 +192,6 @@ public:
 		*m_bias -= *m_sum_delta * eff;
 	}
 
-#ifndef NDEBUG
-	virtual void CheckGradient()
-	{
-
-	}
-#endif
-
 };
-
+}
 #endif //__FULLYCONNECTED_LAYER_H__

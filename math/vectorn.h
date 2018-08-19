@@ -3,6 +3,9 @@
 
 #include <cassert>
 
+namespace mini_cnn
+{
+
 template<class T>
 class _Matrix3D;
 
@@ -32,7 +35,7 @@ public:
 		}
 	}
 
-	_VectorN(T* buf, int32_t size) : _size(size), _buf(buf)
+	_VectorN(T* buf, Int size) : _size(size), _buf(buf)
 	{
 	}
 
@@ -120,7 +123,7 @@ public:
 		return *this;
 	}
 
-	_Matrix3D<T>* Unflatten(int32_t w, int32_t h, int32_t d) const
+	_Matrix3D<T>* Unflatten(Int w, Int h, Int d) const
 	{
 		assert(_size == w * h * d);
 		return new _Matrix3D<T>(_buf, w, h, d);
@@ -227,10 +230,10 @@ public:
 		return result;
 	}
 
-	uint32_t ArgMax() const
+	uInt ArgMax() const
 	{
 		assert(_size > 0);
-		uint32_t idx = 0;
+		uInt idx = 0;
 		T maxv = _buf[0];
 		for (unsigned long i = 1; i < _size; ++i)
 		{
@@ -243,10 +246,10 @@ public:
 		return idx;
 	}
 
-	uint32_t ArgMin() const
+	uInt ArgMin() const
 	{
 		assert(_size > 0);
-		uint32_t idx = 0;
+		uInt idx = 0;
 		T minv = _buf[0];
 		for (unsigned long i = 1; i < _size; ++i)
 		{
@@ -263,5 +266,6 @@ private:
 	unsigned long _size;
 	T* _buf;
 };
+}
 
 #endif // __VECTOR_N_H__

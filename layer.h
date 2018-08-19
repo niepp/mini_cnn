@@ -15,7 +15,8 @@ using namespace std;
 #include "math/matrix3d.h"
 #include "math/mathdef.h"
 #include "input_output.h"
-
+namespace mini_cnn
+{
 enum eActiveFunc
 {
 	eSigmod,
@@ -39,17 +40,17 @@ public:
 	InOut *m_input;
 	InOut *m_output;
 protected:
-	uint32_t m_neuralCount;	
+	uInt m_neuralCount;	
 	LayerBase *m_prev;
 	LayerBase *m_next;
 
 public:
-	LayerBase(uint32_t neuralCount, InOut *input, InOut *output)
+	LayerBase(uInt neuralCount, InOut *input, InOut *output)
 		: m_neuralCount(neuralCount), m_input(input), m_output(output)
 	{
 	}
 
-	uint32_t Size()
+	uInt Size()
 	{
 		return m_neuralCount;
 	}
@@ -87,12 +88,6 @@ public:
 	{
 	}
 
-#ifndef NDEBUG
-	virtual void CheckGradient()
-	{
-	}
-#endif
-
 };
-
+}
 #endif //__LAYER_H__

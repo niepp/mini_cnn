@@ -3,6 +3,8 @@
 
 #include <cassert>
 
+namespace mini_cnn
+{
 template <class T>
 class _VectorN;
 
@@ -26,16 +28,7 @@ public:
 	T& operator() (unsigned long, unsigned  long);  
 	T  operator() (unsigned long, unsigned  long) const;
 
-	void SetDiagonalEntries(const T &);
-	void SetDiagonalEntries(const _VectorN<T>&);
-	void AddToDiagonal(const T &);
-
-	void SetColumn(unsigned long,  const _VectorN<T>&);
-	void SetRow(unsigned long, const _VectorN<T>&);
-	void MakeIdentity();
 	void MakeZero();
-	_MatrixMN<T> SubMatrix(unsigned long row1, unsigned long col1,
-		unsigned long row2, unsigned long col2) const;
 
 	_MatrixMN<T> Transpose() const;
 
@@ -61,5 +54,5 @@ private:
 };
 
 #include "matrixmxn.inl"
-
+}
 #endif // __MATRIX_MXN_H__

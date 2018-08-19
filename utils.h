@@ -8,7 +8,8 @@
 #include "math/matrixmxn.h"
 #include "math/matrix3d.h"
 #include "math/mathdef.h"
-
+namespace mini_cnn
+{
 class NormalRandom
 {
 public:
@@ -33,7 +34,7 @@ inline void Sigmoid(const VectorN& vec, VectorN& retV)
 	assert(vec.GetSize() == retV.GetSize());
 	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		retV[i] = 1.0f / (1.0f + exp(-vec[i]));
+		retV[i] = (Float)(1.0) / ((Float)(1.0) + exp(-vec[i]));
 	}
 }
 
@@ -42,8 +43,8 @@ inline void SigmoidPrime(const VectorN& vec, VectorN& retV)
 	assert(vec.GetSize() == retV.GetSize());
 	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		auto f = 1.0f / (1.0f + exp(-vec[i]));
-		retV[i] = f * (1.0f - f);
+		Float f = (Float)(1.0) / ((Float)(1.0) + exp(-vec[i]));
+		retV[i] = f * ((Float)(1.0) - f);
 	}
 }
 
@@ -52,8 +53,8 @@ inline void Tanh(const VectorN& vec, VectorN& retV)
 	assert(vec.GetSize() == retV.GetSize());
 	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		const float32_t ep = std::exp(vec[i]);
-		const float32_t em = std::exp(-vec[i]);
+		const Float ep = std::exp(vec[i]);
+		const Float em = std::exp(-vec[i]);
 		retV[i] = (ep - em) / (ep + em);
 	}
 }
@@ -63,10 +64,10 @@ inline void TanhPrime(const VectorN& vec, VectorN& retV)
 	assert(vec.GetSize() == retV.GetSize());
 	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		const float32_t ep = std::exp(vec[i]);
-		const float32_t em = std::exp(-vec[i]);
-		float32_t f = (ep - em) / (ep + em);
-		retV[i] = (float32_t)1.0f - f * f;
+		const Float ep = std::exp(vec[i]);
+		const Float em = std::exp(-vec[i]);
+		Float f = (ep - em) / (ep + em);
+		retV[i] = (Float)1.0f - f * f;
 	}
 }
 
@@ -91,14 +92,14 @@ inline void ReluPrime(const VectorN& vec, VectorN& retV)
 inline void Softmax(const VectorN& vec, VectorN& retV)
 {
 	assert(vec.GetSize() == retV.GetSize());
-	uint32_t idx = vec.ArgMax();
-	float maxv = vec[idx];
+	uInt idx = vec.ArgMax();
+	Float maxv = vec[idx];
 	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
 		retV[i] = vec[i] - maxv;
 	}
 
-	float sum = 0;
+	Float sum = 0;
 	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
 		retV[i] = exp(retV[i]);
@@ -114,14 +115,14 @@ inline void Softmax(const VectorN& vec, VectorN& retV)
 inline void SoftmaxPrime(const VectorN& vec, VectorN& retV)
 {
 	assert(vec.GetSize() == retV.GetSize());
-	uint32_t idx = vec.ArgMax();
-	float maxv = vec[idx];
+	uInt idx = vec.ArgMax();
+	Float maxv = vec[idx];
 	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
 		retV[i] = vec[i] - maxv;
 	}
 
-	float sum = 0;
+	Float sum = 0;
 	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
 		retV[i] = exp(retV[i]);
@@ -130,7 +131,7 @@ inline void SoftmaxPrime(const VectorN& vec, VectorN& retV)
 
 	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		float v = retV[i] / sum;
+		Float v = retV[i] / sum;
 		retV[i] = v - v * v;
 	}
 }
@@ -144,13 +145,13 @@ inline void Sigmoid(const Matrix3D &mat, Matrix3D &retMat)
 		&& mat.Height() == retMat.Height()
 		&& mat.Depth() == retMat.Depth());
 
-	for (uint32_t k = 0; k < mat.Depth(); ++k)
+	for (uInt k = 0; k < mat.Depth(); ++k)
 	{
-		for (uint32_t i = 0; i < mat.Width(); ++i)
+		for (uInt i = 0; i < mat.Width(); ++i)
 		{
-			for (uint32_t j = 0; j < mat.Height(); ++j)
+			for (uInt j = 0; j < mat.Height(); ++j)
 			{
-				float v = mat(i, j, k);
+				Float v = mat(i, j, k);
 				retMat(i, j, k) = 1.0f / (1.0f + exp(-v));
 			}
 		}
@@ -163,14 +164,14 @@ inline void SigmoidPrime(const Matrix3D &mat, Matrix3D &retMat)
 		&& mat.Height() == retMat.Height()
 		&& mat.Depth() == retMat.Depth());
 
-	for (uint32_t k = 0; k < mat.Depth(); ++k)
+	for (uInt k = 0; k < mat.Depth(); ++k)
 	{
-		for (uint32_t i = 0; i < mat.Width(); ++i)
+		for (uInt i = 0; i < mat.Width(); ++i)
 		{
-			for (uint32_t j = 0; j < mat.Height(); ++j)
+			for (uInt j = 0; j < mat.Height(); ++j)
 			{
-				auto v = mat(i, j, k);
-				auto f = 1.0f / (1.0f + exp(-v));
+				Float v = mat(i, j, k);
+				Float f = 1.0f / (1.0f + exp(-v));
 				retMat(i, j, k) = f * (1.0f - f);
 			}
 		}
@@ -183,15 +184,15 @@ inline void Tanh(const Matrix3D &mat, Matrix3D &retMat)
 		&& mat.Height() == retMat.Height()
 		&& mat.Depth() == retMat.Depth());
 
-	for (uint32_t k = 0; k < mat.Depth(); ++k)
+	for (uInt k = 0; k < mat.Depth(); ++k)
 	{
-		for (uint32_t i = 0; i < mat.Width(); ++i)
+		for (uInt i = 0; i < mat.Width(); ++i)
 		{
-			for (uint32_t j = 0; j < mat.Height(); ++j)
+			for (uInt j = 0; j < mat.Height(); ++j)
 			{
-				auto v = mat(i, j, k);
-				const float32_t ep = std::exp(v);
-				const float32_t em = std::exp(-v);
+				Float v = mat(i, j, k);
+				const Float ep = std::exp(v);
+				const Float em = std::exp(-v);
 				retMat(i, j, k) = (ep - em) / (ep + em);
 			}
 		}
@@ -204,17 +205,17 @@ inline void TanhPrime(const Matrix3D &mat, Matrix3D &retMat)
 		&& mat.Height() == retMat.Height()
 		&& mat.Depth() == retMat.Depth());
 
-	for (uint32_t k = 0; k < mat.Depth(); ++k)
+	for (uInt k = 0; k < mat.Depth(); ++k)
 	{
-		for (uint32_t i = 0; i < mat.Width(); ++i)
+		for (uInt i = 0; i < mat.Width(); ++i)
 		{
-			for (uint32_t j = 0; j < mat.Height(); ++j)
+			for (uInt j = 0; j < mat.Height(); ++j)
 			{
-				auto v = mat(i, j, k);
-				const float32_t ep = std::exp(v);
-				const float32_t em = std::exp(-v);
-				float32_t f = (ep - em) / (ep + em);
-				retMat(i, j, k) = (float32_t)1.0f - f * f;
+				Float v = mat(i, j, k);
+				const Float ep = std::exp(v);
+				const Float em = std::exp(-v);
+				Float f = (ep - em) / (ep + em);
+				retMat(i, j, k) = (Float)1.0f - f * f;
 			}
 		}
 	}
@@ -226,13 +227,13 @@ inline void Relu(const Matrix3D &mat, Matrix3D &retMat)
 		&& mat.Height() == retMat.Height()
 		&& mat.Depth() == retMat.Depth());
 
-	for (uint32_t k = 0; k < mat.Depth(); ++k)
+	for (uInt k = 0; k < mat.Depth(); ++k)
 	{
-		for (uint32_t i = 0; i < mat.Width(); ++i)
+		for (uInt i = 0; i < mat.Width(); ++i)
 		{
-			for (uint32_t j = 0; j < mat.Height(); ++j)
+			for (uInt j = 0; j < mat.Height(); ++j)
 			{
-				auto v = mat(i, j, k);
+				Float v = mat(i, j, k);
 				retMat(i, j, k) = v > 0.0f ? v : 0.0f;
 			}
 		}
@@ -245,17 +246,19 @@ inline void ReluPrime(const Matrix3D &mat, Matrix3D &retMat)
 		&& mat.Height() == retMat.Height()
 		&& mat.Depth() == retMat.Depth());
 
-	for (uint32_t k = 0; k < mat.Depth(); ++k)
+	for (uInt k = 0; k < mat.Depth(); ++k)
 	{
-		for (uint32_t i = 0; i < mat.Width(); ++i)
+		for (uInt i = 0; i < mat.Width(); ++i)
 		{
-			for (uint32_t j = 0; j < mat.Height(); ++j)
+			for (uInt j = 0; j < mat.Height(); ++j)
 			{
-				auto v = mat(i, j, k);
+				Float v = mat(i, j, k);
 				retMat(i, j, k) = v > 0.0f ? 1.0f : 0.0f;
 			}
 		}
 	}
+}
+
 }
 
 #endif //__UTILS_H__

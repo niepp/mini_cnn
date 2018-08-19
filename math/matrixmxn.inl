@@ -97,81 +97,9 @@ void _MatrixMN<T>::SetSize(unsigned long row, unsigned long col)
 }
 
 template <class T>
-void _MatrixMN<T>::SetColumn(unsigned long col, const _VectorN<T> &v)
-{
-	assert(col < _col && v.GetSize() == _row);
-	for(unsigned long i = 0; i < _row; ++i)
-	{
-		operator()(i, col) = v[i];
-	}
-}
-
-template <class T>
-void _MatrixMN<T>::SetRow(unsigned long row, const _VectorN<T> &v)
-{
-	assert(row < _row && v.GetSize() == _col);
-	for(unsigned long i = 0; i < _col; ++i)
-	{
-		operator()(row, i) = v[i];
-	}
-}
-
-template <class T>
-void _MatrixMN<T>::SetDiagonalEntries(const T &v)
-{
-	for(unsigned long i = 0; i < _row; i++)
-	{
-		operator()(i, i) = v;
-	}
-}
-
-template <class T>
-void _MatrixMN<T>::SetDiagonalEntries(const _VectorN<T> &v)
-{
-	assert(v.GetSize() >= rows);
-	for(unsigned long i = 0; i < _row; i++)
-	{
-		operator()(i, i) = v[i];
-	}
-}
-
-template <class T>
-void _MatrixMN<T>::AddToDiagonal(const T &v)
-{
-	for(unsigned long i = 0; i < _row; ++i)
-	{
-		operator()(i, i) += v;
-	}
-}
-
-template <class T>
 void _MatrixMN<T>::MakeZero()
 {
 	memset(_buf, 0, _row * _col * sizeof(T));
-}
-
-template <class T>
-void _MatrixMN<T>::MakeIdentity()
-{
-	SetDiagonalEntries((T)1);
-}
-
-template <class T>
-_MatrixMN<T> _MatrixMN<T>::SubMatrix(unsigned long row1, unsigned long col1,
-					   unsigned long row2, unsigned long col2) const
-{
-	assert(row1 <= row2 && col1 <= col2);
-	unsigned long row = row2 - row1 + 1;
-	unsigned long col = col2 - col1 + 1;
-	_MatrixMN<T> m(row, col);
-	for (unsigned long i = 0; i < row; ++i)
-	{
-		for (unsigned long j = 0; j < col; ++j)
-		{
-			m.operator()(i, j) = operator() (i + row1, j + col1);
-		}
-	}
-	return m;
 }
 
 template <class T>

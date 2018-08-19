@@ -4,7 +4,7 @@
 #include <string>
 #include <map>
 #include <cassert>
-#include <cmath>
+//#include <cmath>
 #include <random>
 #include <algorithm>
 #include <chrono>
@@ -19,12 +19,11 @@
 #include "input_layer.h"
 #include "fully_connected_layer.h"
 #include "output_layer.h"
-#include "reshape_layer.h"
-#include "flatten_layer.h"
 #include "convolutional_layer.h"
 #include "network.h"
 
 using namespace std;
+using namespace mini_cnn;
 
 const int N_inputCount = 784;
 const int W_input = 28;
@@ -69,7 +68,9 @@ Network CreateFCN()
 	Network nn;
 	nn.AddLayer(new InputLayer(N_inputCount));
 	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
+//	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
+
+	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSigmod_CrossEntropy, eActiveFunc::eSigmod));
 	return nn;
 }
 
@@ -105,7 +106,7 @@ void ReadDataSet(std::vector<VectorN*> &img_vec, std::vector<VectorN*> &lab_vec
 
 	assert(img_count == lab_count);
 
-	img_vec.reserve(img_count);
+	img_vec.resize(img_count);
 	for (int k = 0; k < img_count; ++k)
 	{
 		img_vec[k] = new VectorN(N_inputCount);
@@ -116,7 +117,7 @@ void ReadDataSet(std::vector<VectorN*> &img_vec, std::vector<VectorN*> &lab_vec
 		}
 	}
 
-	lab_vec.reserve(img_count);
+	lab_vec.resize(img_count);
 	for (int k = 0; k < img_count; ++k)
 	{
 		lab_vec[k] = new VectorN(C_classCount);
@@ -141,7 +142,7 @@ void ReadDataSet(std::vector<VectorN*> &img_vec, std::vector<VectorN*> &lab_vec
 
 	assert(test_img_count == test_lab_count);
 
-	test_img_vec.reserve(test_img_count);
+	test_img_vec.resize(test_img_count);
 	for (int k = 0; k < test_img_count; ++k)
 	{
 		test_img_vec[k] = new VectorN(N_inputCount);
@@ -152,7 +153,7 @@ void ReadDataSet(std::vector<VectorN*> &img_vec, std::vector<VectorN*> &lab_vec
 		}
 	}
 
-	test_lab_vec.reserve(test_lab_count);
+	test_lab_vec.resize(test_lab_count);
 	for (int k = 0; k < test_lab_count; ++k)
 	{
 		test_lab_vec[k] = test_labels[lab_idx + k];
@@ -167,7 +168,7 @@ long long GetNow()
 std::mt19937_64 CreateRandom()
 {
 	// random init
-	uint32_t seed = (uint32_t)(std::chrono::system_clock::now().time_since_epoch().count());
+	uInt seed = (uInt)(std::chrono::system_clock::now().time_since_epoch().count());
 
 	cout << "random seed:" << seed << endl;
 
@@ -176,32 +177,44 @@ std::mt19937_64 CreateRandom()
 	return generator;
 }
 
-#ifndef NDEBUG
 void CheckGradient()
 {
-	auto generator = CreateRandom();
+	uInt seed = 566226029;
+	std::mt19937_64 generator(seed);
+
 	NormalRandom nrand(generator, 0, 1.0f);
 
 	// define neural network
-	Network nn = CreateCNN();
+	Network nn = CreateFCN();
 
 	nn.Init(nrand);
 
-	VectorN *input = new VectorN(30, 0.0f);
-	VectorN *label = new VectorN(30, 0.0f);
-	(*label)[3] = 1.0f;
+	std::vector<VectorN*> img_vec;
+	std::vector<VectorN*> lab_vec;
+	std::vector<VectorN*> test_img_vec;
+	std::vector<int> test_lab_vec;
+	ReadDataSet(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
-	nn.GradientCheck(*input, *label);
-	
+	VectorN *input = img_vec[0];
+	VectorN *label = lab_vec[0];
+
+	bool check_ok = nn.GradientCheck(*input, *label);
+	cout << "GradientCheck: " << std::boolalpha << check_ok << endl;
+
 }
-#endif
 
 int main()
 {
+
+	CheckGradient();
+
+	system("pause");
+	return 0;
+
 	std::vector<VectorN*> img_vec;
 	std::vector<VectorN*> lab_vec;
-	std::vector<VectorN*> test_img_vec;	
-	std::vector<int> test_lab_vec;	
+	std::vector<VectorN*> test_img_vec;
+	std::vector<int> test_lab_vec;
 	ReadDataSet(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
 	int img_count = img_vec.size();
@@ -250,20 +263,20 @@ int main()
 			learning_rate *= 0.85f;
 			learning_rate = std::max(0.00001f, learning_rate);
 
-		//	float32_t cb = nn.CalcCost(batch_img_vec, batch_label_vec);
+		//	Float cb = nn.CalcCost(batch_img_vec, batch_label_vec);
 			nn.SGD(batch_img_vec, batch_label_vec, learning_rate);
-		//	float32_t ca = nn.CalcCost(batch_img_vec, batch_label_vec);
+		//	Float ca = nn.CalcCost(batch_img_vec, batch_label_vec);
 		//	cout << "cost: " << cb << " -> " << ca << "\t" << cb - ca << endl;
 		}
 
-		uint32_t correct = nn.Test(test_img_vec, test_lab_vec);
+		uInt correct = nn.Test(test_img_vec, test_lab_vec);
 		float correct_rate = (1.0f * correct / test_img_count);
 		if (correct_rate > maxCorrectRate)
 		{
 			maxCorrectRate = correct_rate;
 		}
 
-		float32_t tot_cost = nn.CalcCost(img_vec, lab_vec);
+		Float tot_cost = nn.CalcCost(img_vec, lab_vec);
 
 		cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "\t tot_cost = " << tot_cost << endl;
 	}

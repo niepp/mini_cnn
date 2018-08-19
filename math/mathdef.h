@@ -1,17 +1,19 @@
 #ifndef __MATH_DEF_H__
 #define __MATH_DEF_H__
 
+namespace mini_cnn
+{
 const float EPSILON = 1e-4f;
 
 #ifndef PI
-const float cPI = 3.141592653589793f;
+const Float cPI = 3.141592653589793f;
 #endif
 
-const float cMIN_FLOAT = std::numeric_limits<float>::min();
-const float cMAX_FLOAT = std::numeric_limits<float>::max();
+const Float cMIN_FLOAT = std::numeric_limits<Float>::min();
+const Float cMAX_FLOAT = std::numeric_limits<Float>::max();
 
-typedef _MatrixMN<float32_t> MatrixMN;
-typedef _VectorN<float32_t> VectorN;
-typedef _Matrix3D<float32_t> Matrix3D;
-
+typedef _MatrixMN<Float> MatrixMN;
+typedef _VectorN<Float> VectorN;
+typedef _Matrix3D<Float> Matrix3D;
+}
 #endif // __MATH_DEF_H__

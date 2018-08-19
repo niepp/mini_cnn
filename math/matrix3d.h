@@ -2,7 +2,8 @@
 #define __MATRIX_3D_H__
 
 #include <cassert>
-
+namespace mini_cnn
+{
 enum Padding
 {
 	Valid = 0,
@@ -16,19 +17,19 @@ template<class T>
 class _Matrix3D
 {
 public:
-	_Matrix3D(int32_t w, int32_t h, int32_t d);
-	_Matrix3D(T* data, int32_t w, int32_t h, int32_t d);
+	_Matrix3D(Int w, Int h, Int d);
+	_Matrix3D(T* data, Int w, Int h, Int d);
 	_Matrix3D(const _Matrix3D<T>&);
 	~_Matrix3D();
 
 	_Matrix3D<T>& operator=(const _Matrix3D<T>&);
 
-	int32_t Width() const;
-	int32_t Height() const;
-	int32_t Depth() const;
+	Int Width() const;
+	Int Height() const;
+	Int Depth() const;
 
-	T& operator() (int32_t w, int32_t h, int32_t d);
-	T  operator() (int32_t w, int32_t h, int32_t d) const;
+	T& operator() (Int w, Int h, Int d);
+	T  operator() (Int w, Int h, Int d) const;
 
 	_Matrix3D<T>& operator+=(const _Matrix3D<T>&);
 	_Matrix3D<T>& operator-=(const _Matrix3D<T>&);
@@ -44,50 +45,50 @@ public:
 	_Matrix3D<T>& Copy(const _Matrix3D<T>&);
 
 	void Conv(_Matrix3D<T> *retm, const std::vector<_Matrix3D<T>*> &filters,
-		int32_t stride_w, int32_t stride_h,
+		Int stride_w, Int stride_h,
 		Padding padding) const;
 
 	void ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix3D<T> &filter,
-		int32_t stride_w, int32_t stride_h,
+		Int stride_w, Int stride_h,
 		Padding padding) const;
 
 	void ConvDepthWise(_Matrix3D<T> *retm, const std::vector<_Matrix3D<T>*> &filters,
-		int32_t stride_w, int32_t stride_h,
+		Int stride_w, Int stride_h,
 		Padding padding) const;
 
-	T SumByDepthWise(int32_t depth_idx) const;
+	T SumByDepthWise(Int depth_idx) const;
 
 	void AddBias(const _VectorN<T>& bias);
 
 	_VectorN<T>* Flatten() const;
 
-	void DownSample(_Matrix3D<T> *retm, std::vector<int32_t> &idx_map,
-		int32_t pool_w, int32_t pool_h,
-		int32_t pool_stride_w, int32_t pool_stride_h) const;
+	void DownSample(_Matrix3D<T> *retm, std::vector<Int> &idx_map,
+		Int pool_w, Int pool_h,
+		Int pool_stride_w, Int pool_stride_h) const;
 
-	void UpSample(_Matrix3D<T> *retm, std::vector<int32_t> &idx_map,
-		int32_t pool_w, int32_t pool_h,
-		int32_t pool_stride_w, int32_t pool_stride_h) const;
-
-private:
-	T ConvByLocal(int32_t startw, int32_t starth, const _Matrix3D<T>& filter) const;
+	void UpSample(_Matrix3D<T> *retm, std::vector<Int> &idx_map,
+		Int pool_w, Int pool_h,
+		Int pool_stride_w, Int pool_stride_h) const;
 
 private:
-	int32_t _w;
-	int32_t _h;
-	int32_t _d;
+	T ConvByLocal(Int startw, Int starth, const _Matrix3D<T>& filter) const;
+
+private:
+	Int _w;
+	Int _h;
+	Int _d;
 	T* _data;
 };
 
 template <class T>
-inline _Matrix3D<T>::_Matrix3D(int32_t w, int32_t h, int32_t d) : _w(w), _h(h), _d(d)
+inline _Matrix3D<T>::_Matrix3D(Int w, Int h, Int d) : _w(w), _h(h), _d(d)
 {
 	_data = new T[w * h * d];
 	this->MakeZero();
 }
 
 template <class T>
-inline _Matrix3D<T>::_Matrix3D(T* data, int32_t w, int32_t h, int32_t d) : _data(data), _w(w), _h(h), _d(d)
+inline _Matrix3D<T>::_Matrix3D(T* data, Int w, Int h, Int d) : _data(data), _w(w), _h(h), _d(d)
 {
 }
 
@@ -131,32 +132,32 @@ inline _Matrix3D<T>& _Matrix3D<T>::operator=(const _Matrix3D<T>& other)
 }
 
 template <class T>
-inline int32_t _Matrix3D<T>::Width() const
+inline Int _Matrix3D<T>::Width() const
 {
 	return _w;
 }
 
 template <class T>
-inline int32_t _Matrix3D<T>::Height() const
+inline Int _Matrix3D<T>::Height() const
 {
 	return _h;
 }
 
 template <class T>
-inline int32_t _Matrix3D<T>::Depth() const
+inline Int _Matrix3D<T>::Depth() const
 {
 	return _d;
 }
 
 template <class T>
-inline T& _Matrix3D<T>::operator() (int32_t w, int32_t h, int32_t d)
+inline T& _Matrix3D<T>::operator() (Int w, Int h, Int d)
 {
 	assert(w < _w && h < _h && d < _d);
 	return _data[d * (_w * _h) + h * _w + w];
 }
 
 template <class T>
-inline T _Matrix3D<T>::operator() (int32_t w, int32_t h, int32_t d) const
+inline T _Matrix3D<T>::operator() (Int w, Int h, Int d) const
 {
 	assert(w < _w && h < _h && d < _d);
 	return _data[d * (_w * _h) + h * _w + w];
@@ -177,24 +178,24 @@ inline _Matrix3D<T>& _Matrix3D<T>::Copy(const _Matrix3D<T>& other)
 }
 
 template <class T>
-T _Matrix3D<T>::ConvByLocal(int32_t startw, int32_t starth, const _Matrix3D<T>& filter) const
+T _Matrix3D<T>::ConvByLocal(Int startw, Int starth, const _Matrix3D<T>& filter) const
 {
 	T s = 0;
-	for (int32_t u = 0; u < filter._w; ++u)
+	for (Int u = 0; u < filter._w; ++u)
 	{
-		int32_t x = startw + u;
+		Int x = startw + u;
 		if (x < 0 || x >= _w)
 		{
 			continue;
 		}
-		for (int32_t v = 0; v < filter._h; ++v)
+		for (Int v = 0; v < filter._h; ++v)
 		{			
-			int32_t y = starth + v;
+			Int y = starth + v;
 			if (y < 0 || y >= _h)
 			{
 				continue;
 			}
-			for (int32_t c = 0; c < filter._d; ++c)
+			for (Int c = 0; c < filter._d; ++c)
 			{
 				s += (*this)(x, y, c) * filter(u, v, c);
 			}
@@ -205,7 +206,7 @@ T _Matrix3D<T>::ConvByLocal(int32_t startw, int32_t starth, const _Matrix3D<T>& 
 
 template <class T>
 void _Matrix3D<T>::Conv(_Matrix3D<T> *retm, const std::vector<_Matrix3D<T>*> &filters, 
-	int32_t stride_w, int32_t stride_h, 
+	Int stride_w, Int stride_h, 
 	Padding padding) const
 {
 	assert(filters.size() > 0 && filters[0] != nullptr);
@@ -214,18 +215,18 @@ void _Matrix3D<T>::Conv(_Matrix3D<T> *retm, const std::vector<_Matrix3D<T>*> &fi
 
 	assert(_w >= filter._w && _h >= filter._h && _d == filter._d);
 
-	int32_t nfilter = filters.size();
+	Int nfilter = filters.size();
 
 	// Padding::Valid
-	int32_t nw = retm->_w;
-	int32_t nh = retm->_h;
-	for (int32_t i = 0; i < nw; ++i)
+	Int nw = retm->_w;
+	Int nh = retm->_h;
+	for (Int i = 0; i < nw; ++i)
 	{
-		for (int32_t j = 0; j < nh; ++j)
+		for (Int j = 0; j < nh; ++j)
 		{
-			int32_t startw = i * stride_w;
-			int32_t starth = j * stride_h;
-			for (int32_t k = 0; k < nfilter; ++k)
+			Int startw = i * stride_w;
+			Int starth = j * stride_h;
+			for (Int k = 0; k < nfilter; ++k)
 			{
 				const _Matrix3D<T>& filter = *filters[k];
 				T s = ConvByLocal(startw, starth, filter);
@@ -237,41 +238,41 @@ void _Matrix3D<T>::Conv(_Matrix3D<T> *retm, const std::vector<_Matrix3D<T>*> &fi
 
 template <class T>
 void _Matrix3D<T>::ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix3D<T> &filter,
-	int32_t stride_w, int32_t stride_h,
+	Int stride_w, Int stride_h,
 	Padding padding) const
 {
 	assert(retm.size() > 0 && retm[0] != nullptr);
 
-	int32_t m = retm.size();
+	Int m = retm.size();
 
 	assert(_w >= filter._w && _h >= filter._h && m == filter._d);
 
 	// Padding::Valid
-	int32_t nw = retm[0]->_w;
-	int32_t nh = retm[0]->_h;
-	for (int32_t k = 0; k < m; ++k)
+	Int nw = retm[0]->_w;
+	Int nh = retm[0]->_h;
+	for (Int k = 0; k < m; ++k)
 	{
 		_Matrix3D<T> &mat = *retm[k];
-		for (int32_t i = 0; i < nw; ++i)
+		for (Int i = 0; i < nw; ++i)
 		{
-			for (int32_t j = 0; j < nh; ++j)
+			for (Int j = 0; j < nh; ++j)
 			{
-				int32_t startw = i * stride_w;
-				int32_t starth = j * stride_h;
+				Int startw = i * stride_w;
+				Int starth = j * stride_h;
 
-				for (int32_t c = 0; c < _d; ++c)
+				for (Int c = 0; c < _d; ++c)
 				{
 					T s = 0;
-					for (int32_t u = 0; u < filter._w; ++u)
+					for (Int u = 0; u < filter._w; ++u)
 					{
-						int32_t x = startw + u;
+						Int x = startw + u;
 						if (x < 0 || x >= _w)
 						{
 							continue;
 						}
-						for (int32_t v = 0; v < filter._h; ++v)
+						for (Int v = 0; v < filter._h; ++v)
 						{
-							int32_t y = starth + v;
+							Int y = starth + v;
 							if (y < 0 || y >= _h)
 							{
 								continue;
@@ -288,43 +289,43 @@ void _Matrix3D<T>::ConvDepthWise(std::vector<_Matrix3D<T>*> &retm, const _Matrix
 
 template <class T>
 void _Matrix3D<T>::ConvDepthWise(_Matrix3D<T> *retm, const std::vector<_Matrix3D<T>*> &filters,
-	int32_t stride_w, int32_t stride_h,
+	Int stride_w, Int stride_h,
 	Padding padding) const
 {
 	assert(filters.size() > 0 && filters[0] != nullptr);
 
-	int32_t nfilter = filters.size();
+	Int nfilter = filters.size();
 
 	assert(_w >= filters[0]->_w && _h >= filters[0]->_h);
 
 	assert(_d == nfilter && retm->_d == filters[0]->_d);
 
 	// Padding::Valid
-	int32_t nw = retm->_w;
-	int32_t nh = retm->_h;
-	int32_t nd = retm->_d;
-	for (int32_t d = 0; d < nd; ++d)
+	Int nw = retm->_w;
+	Int nh = retm->_h;
+	Int nd = retm->_d;
+	for (Int d = 0; d < nd; ++d)
 	{
-		for (int32_t i = 0; i < nw; ++i)
+		for (Int i = 0; i < nw; ++i)
 		{
-			for (int32_t j = 0; j < nh; ++j)
+			for (Int j = 0; j < nh; ++j)
 			{
-				int32_t startw = i * stride_w;
-				int32_t starth = j * stride_h;
+				Int startw = i * stride_w;
+				Int starth = j * stride_h;
 				T s = 0;
-				for (int32_t k = 0; k < nfilter; ++k)
+				for (Int k = 0; k < nfilter; ++k)
 				{
 					_Matrix3D<T> &filter = *filters[k];
-					for (int32_t u = 0; u < filter._w; ++u)
+					for (Int u = 0; u < filter._w; ++u)
 					{
-						int32_t x = startw - u;
+						Int x = startw - u;
 						if (x < 0 || x >= _w)
 						{
 							continue;
 						}
-						for (int32_t v = 0; v < filter._h; ++v)
+						for (Int v = 0; v < filter._h; ++v)
 						{
-							int32_t y = starth - v;
+							Int y = starth - v;
 							if (y < 0 || y >= _h)
 							{
 								continue;
@@ -340,12 +341,12 @@ void _Matrix3D<T>::ConvDepthWise(_Matrix3D<T> *retm, const std::vector<_Matrix3D
 }
 
 template <class T>
-T _Matrix3D<T>::SumByDepthWise(int32_t depth_idx) const
+T _Matrix3D<T>::SumByDepthWise(Int depth_idx) const
 {
 	T s = 0;
-	for (int32_t i = 0; i < _w; ++i)
+	for (Int i = 0; i < _w; ++i)
 	{
-		for (int32_t j = 0; j < _h; ++j)
+		for (Int j = 0; j < _h; ++j)
 		{
 			s += (*this)(i, j, depth_idx);
 		}
@@ -357,11 +358,11 @@ template <class T>
 void _Matrix3D<T>::AddBias(const _VectorN<T>& bias)
 {
 	assert(_d == bias.GetSize());
-	for (int32_t k = 0; k < _d; ++k)
+	for (Int k = 0; k < _d; ++k)
 	{
-		for (int32_t i = 0; i < _w; ++i)
+		for (Int i = 0; i < _w; ++i)
 		{
-			for (int32_t j = 0; j < _h; ++j)
+			for (Int j = 0; j < _h; ++j)
 			{
 				(*this)(i, j, k) += bias[k];
 			}
@@ -376,42 +377,42 @@ _VectorN<T>* _Matrix3D<T>::Flatten() const
 }
 
 template <class T>
-void _Matrix3D<T>::DownSample(_Matrix3D<T> *retm, std::vector<int32_t> &idx_map,
-	int32_t pool_w, int32_t pool_h,
-	int32_t pool_stride_w, int32_t pool_stride_h) const
+void _Matrix3D<T>::DownSample(_Matrix3D<T> *retm, std::vector<Int> &idx_map,
+	Int pool_w, Int pool_h,
+	Int pool_stride_w, Int pool_stride_h) const
 {
 
 	assert(idx_map.size() == _w * _h);
 
-	for (int32_t i = 0; i < idx_map.size(); ++i)
+	for (Int i = 0; i < idx_map.size(); ++i)
 	{
 		idx_map[i] = -1;
 	}
 
 	// Padding::Valid
-	int32_t nw = retm->_w;
-	int32_t nh = retm->_h;
-	int32_t nd = retm->_d;
-	for (int32_t d = 0; d < nd; ++d)
+	Int nw = retm->_w;
+	Int nh = retm->_h;
+	Int nd = retm->_d;
+	for (Int d = 0; d < nd; ++d)
 	{
-		for (int32_t i = 0; i < nw; ++i)
+		for (Int i = 0; i < nw; ++i)
 		{
-			for (int32_t j = 0; j < nh; ++j)
+			for (Int j = 0; j < nh; ++j)
 			{
-				int32_t startw = i * pool_stride_w;
-				int32_t starth = j * pool_stride_h;
+				Int startw = i * pool_stride_w;
+				Int starth = j * pool_stride_h;
 				T maxv = cMIN_FLOAT;
-				int32_t in_idx = -1;
-				for (int32_t u = 0; u < pool_w; ++u)
+				Int in_idx = -1;
+				for (Int u = 0; u < pool_w; ++u)
 				{
-					int32_t x = startw + u;
+					Int x = startw + u;
 					if (x < 0 || x >= _w)
 					{
 						continue;
 					}
-					for (int32_t v = 0; v < pool_h; ++v)
+					for (Int v = 0; v < pool_h; ++v)
 					{
-						int32_t y = starth + v;
+						Int y = starth + v;
 						if (y < 0 || y >= _h)
 						{
 							continue;
@@ -427,7 +428,7 @@ void _Matrix3D<T>::DownSample(_Matrix3D<T> *retm, std::vector<int32_t> &idx_map,
 				(*retm)(i, j, d) = maxv;
 				if (in_idx >= 0)
 				{
-					int32_t out_idx = i + j * nw;
+					Int out_idx = i + j * nw;
 					idx_map[in_idx] = out_idx;
 				}
 			}
@@ -438,29 +439,29 @@ void _Matrix3D<T>::DownSample(_Matrix3D<T> *retm, std::vector<int32_t> &idx_map,
 
 
 template <class T>
-void _Matrix3D<T>::UpSample(_Matrix3D<T> *retm, std::vector<int32_t> &idx_map,
-	int32_t pool_w, int32_t pool_h,
-	int32_t pool_stride_w, int32_t pool_stride_h) const
+void _Matrix3D<T>::UpSample(_Matrix3D<T> *retm, std::vector<Int> &idx_map,
+	Int pool_w, Int pool_h,
+	Int pool_stride_w, Int pool_stride_h) const
 {
 
 	assert(idx_map.size() == retm->_w * retm->_h);
 
 	// Padding::Valid
-	int32_t nw = retm->_w;
-	int32_t nh = retm->_h;
-	int32_t nd = retm->_d;
-	for (int32_t d = 0; d < nd; ++d)
+	Int nw = retm->_w;
+	Int nh = retm->_h;
+	Int nd = retm->_d;
+	for (Int d = 0; d < nd; ++d)
 	{
-		for (int32_t i = 0; i < nw; ++i)
+		for (Int i = 0; i < nw; ++i)
 		{
-			for (int32_t j = 0; j < nh; ++j)
+			for (Int j = 0; j < nh; ++j)
 			{
-				int32_t in_idx = i + j * nw;
-				int32_t out_idx = idx_map[in_idx];
+				Int in_idx = i + j * nw;
+				Int out_idx = idx_map[in_idx];
 				if (out_idx >= 0)
 				{
-					int32_t y = out_idx / _w;
-					int32_t x = out_idx - y * _w;
+					Int y = out_idx / _w;
+					Int x = out_idx - y * _w;
 					(*retm)(i, j, d) = (*this)(x, y, d);
 				}
 				else
@@ -479,11 +480,11 @@ _Matrix3D<T>& _Matrix3D<T>::operator+=(const _Matrix3D<T>& other)
 {
 	assert(_w == other._w && _h == other._h && _d == other._d);
 
-	for (int32_t k = 0; k < _d; ++k)
+	for (Int k = 0; k < _d; ++k)
 	{
-		for (int32_t i = 0; i < _w; ++i)
+		for (Int i = 0; i < _w; ++i)
 		{
-			for (int32_t j = 0; j < _h; ++j)
+			for (Int j = 0; j < _h; ++j)
 			{
 				(*this)(i, j, k) += other(i, j, k);
 			}
@@ -497,11 +498,11 @@ _Matrix3D<T>& _Matrix3D<T>::operator-=(const _Matrix3D<T>& other)
 {
 	assert(_w == other._w && _h == other._h && _d == other._d);
 
-	for (int32_t k = 0; k < _d; ++k)
+	for (Int k = 0; k < _d; ++k)
 	{
-		for (int32_t i = 0; i < _w; ++i)
+		for (Int i = 0; i < _w; ++i)
 		{
-			for (int32_t j = 0; j < _h; ++j)
+			for (Int j = 0; j < _h; ++j)
 			{
 				(*this)(i, j, k) -= other(i, j, k);
 			}
@@ -513,11 +514,11 @@ _Matrix3D<T>& _Matrix3D<T>::operator-=(const _Matrix3D<T>& other)
 template <class T>
 _Matrix3D<T>& _Matrix3D<T>::operator*=(const T &scale)
 {
-	for (int32_t k = 0; k < _d; ++k)
+	for (Int k = 0; k < _d; ++k)
 	{
-		for (int32_t i = 0; i < _w; ++i)
+		for (Int i = 0; i < _w; ++i)
 		{
-			for (int32_t j = 0; j < _h; ++j)
+			for (Int j = 0; j < _h; ++j)
 			{
 				(*this)(i, j, k) *= scale;
 			}
@@ -530,11 +531,11 @@ template <class T>
 inline _Matrix3D<T> operator*(const _Matrix3D<T>& mat, const T &scale)
 {
 	_Matrix3D<T> retMat = new _Matrix3D<T>(mat);
-	for (int32_t k = 0; k < retMat._d; ++k)
+	for (Int k = 0; k < retMat._d; ++k)
 	{
-		for (int32_t i = 0; i < retMat._w; ++i)
+		for (Int i = 0; i < retMat._w; ++i)
 		{
-			for (int32_t j = 0; j < retMat._h; ++j)
+			for (Int j = 0; j < retMat._h; ++j)
 			{
 				(*retMat)(i, j, k) *= scale;
 			}
@@ -548,17 +549,19 @@ template <class T>
 _Matrix3D<T>& _Matrix3D<T>::operator^=(const _Matrix3D<T>& other)
 {	
 	assert(_w == other._w && _h == other._h && _d == other._d);
-	for (int32_t k = 0; k < _d; ++k)
+	for (Int k = 0; k < _d; ++k)
 	{
-		for (int32_t i = 0; i < _w; ++i)
+		for (Int i = 0; i < _w; ++i)
 		{
-			for (int32_t j = 0; j < _h; ++j)
+			for (Int j = 0; j < _h; ++j)
 			{
 				(*this)(i, j, k) *= other(i, j, k);
 			}
 		}
 	}
 	return *this;
+}
+
 }
 
 #endif // __MATRIX_3D_H__

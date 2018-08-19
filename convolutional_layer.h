@@ -16,16 +16,19 @@ using namespace std;
 #include "math/mathdef.h"
 #include "layer.h"
 
+namespace mini_cnn 
+{
+
 class FilterDimension
 {
 public:
-	int32_t m_width;
-	int32_t m_height;
-	int32_t m_channels;
-	int32_t m_padding;
-	int32_t m_stride_w;
-	int32_t m_stride_h;
-	FilterDimension(int32_t w, int32_t h, int32_t c, int32_t padding, int32_t stride_w, int32_t stride_h) :
+	Int m_width;
+	Int m_height;
+	Int m_channels;
+	Int m_padding;
+	Int m_stride_w;
+	Int m_stride_h;
+	FilterDimension(Int w, Int h, Int c, Int padding, Int stride_w, Int stride_h) :
 		m_width(w), m_height(h), m_channels(c), m_padding(padding), m_stride_w(stride_w), m_stride_h(stride_h)
 	{
 	}
@@ -39,12 +42,12 @@ public:
 class Pooling
 {
 public:
-	int32_t m_width;
-	int32_t m_height;
-	int32_t m_padding;
-	int32_t m_stride_w;
-	int32_t m_stride_h;
-	Pooling(int32_t w, int32_t h, int32_t padding, int32_t stride_w, int32_t stride_h) :
+	Int m_width;
+	Int m_height;
+	Int m_padding;
+	Int m_stride_w;
+	Int m_stride_h;
+	Pooling(Int w, Int h, Int padding, Int stride_w, Int stride_h) :
 		m_width(w), m_height(h), m_padding(padding), m_stride_w(stride_w), m_stride_h(stride_h)
 	{
 	}
@@ -80,7 +83,7 @@ protected:
 	Matrix3D *m_pre_pool_img;
 	Matrix3D *m_output_img;
 	Matrix3D *m_middle_prime;
-	std::vector<int32_t> *m_idx_map;
+	std::vector<Int> *m_idx_map;
 
 	Matrix3D *m_pre_unpool_delta;
 
@@ -96,7 +99,7 @@ protected:
 	MatActiveFunc m_activePrimeFunc;
 
 public:
-	ConvolutionalLayer(int32_t filterCount
+	ConvolutionalLayer(Int filterCount
 		, FilterDimension *filterDim
 		, Pooling *pooling
 		, eActiveFunc act)
@@ -106,19 +109,19 @@ public:
 		, m_activeFuncType(act)
 	{
 
-		for (int32_t i = 0; i < filterCount; ++i)
+		for (Int i = 0; i < filterCount; ++i)
 		{
 			m_filters.push_back(new Matrix3D(m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
 		}
 		m_bias = new VectorN(filterCount);
 
-		for (int32_t i = 0; i < filterCount; ++i)
+		for (Int i = 0; i < filterCount; ++i)
 		{
 			m_dw.push_back(new Matrix3D(m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
 		}
 		m_db = new VectorN(filterCount);
 
-		for (int32_t i = 0; i < filterCount; ++i)
+		for (Int i = 0; i < filterCount; ++i)
 		{
 			m_sum_dw.push_back(new Matrix3D(m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
 		}
@@ -162,14 +165,14 @@ public:
 		MatrixInOut* pre_out = dynamic_cast<MatrixInOut*>(m_prev->m_output);
 		auto input_img = pre_out->m_value;
 
-		int32_t nd = m_filters.size();
+		Int nd = m_filters.size();
 
 		// calc output size
 		// Padding::Valid
-		int32_t input_w = input_img->Width();
-		int32_t input_h = input_img->Height();
-		int32_t nw = static_cast<int32_t>(floorf(1.0f * (input_w - m_filterDim.m_width) / m_filterDim.m_stride_w)) + 1;
-		int32_t nh = static_cast<int32_t>(floorf(1.0f * (input_h - m_filterDim.m_height) / m_filterDim.m_stride_h)) + 1;
+		Int input_w = input_img->Width();
+		Int input_h = input_img->Height();
+		Int nw = static_cast<Int>(floorf(1.0f * (input_w - m_filterDim.m_width) / m_filterDim.m_stride_w)) + 1;
+		Int nh = static_cast<Int>(floorf(1.0f * (input_h - m_filterDim.m_height) / m_filterDim.m_stride_h)) + 1;
 
 		m_middle = new Matrix3D(nw, nh, nd);
 		m_middle_prime = new Matrix3D(nw, nh, nd);
@@ -180,10 +183,10 @@ public:
 		{
 			m_pre_pool_img = new Matrix3D(nw, nh, nd);
 
-			m_idx_map = new std::vector<int32_t>(nw * nh);
+			m_idx_map = new std::vector<Int>(nw * nh);
 
-			nw = static_cast<int32_t>(floorf(1.0f * (nw - m_pooling->m_width) / m_pooling->m_stride_w)) + 1;
-			nh = static_cast<int32_t>(floorf(1.0f * (nh - m_pooling->m_height) / m_pooling->m_stride_h)) + 1;
+			nw = static_cast<Int>(floorf(1.0f * (nw - m_pooling->m_width) / m_pooling->m_stride_w)) + 1;
+			nh = static_cast<Int>(floorf(1.0f * (nh - m_pooling->m_height) / m_pooling->m_stride_h)) + 1;
 
 			m_pre_unpool_delta = new Matrix3D(nw, nh, nd);
 
@@ -199,17 +202,17 @@ public:
 
 	virtual void Init(NormalRandom nrand)
 	{
-		for (int32_t k = 0; k < m_filters.size(); ++k)
+		for (Int k = 0; k < m_filters.size(); ++k)
 		{
 			auto filter = m_filters[k];
-			int32_t w = filter->Width();
-			int32_t h = filter->Height();
-			int32_t d = filter->Depth();
-			for (int32_t i = 0; i < w; ++i)
+			Int w = filter->Width();
+			Int h = filter->Height();
+			Int d = filter->Depth();
+			for (Int i = 0; i < w; ++i)
 			{
-				for (int32_t j = 0; j < h; ++j)
+				for (Int j = 0; j < h; ++j)
 				{
-					for (int32_t c = 0; c < d; ++c)
+					for (Int c = 0; c < d; ++c)
 					{
 						(*filter)(i, j, c) = nrand.GetRandom();
 					}
@@ -217,7 +220,7 @@ public:
 			}
 		}
 
-		for (int32_t i = 0; i < m_bias->GetSize(); ++i)
+		for (Int i = 0; i < m_bias->GetSize(); ++i)
 		{
 			(*m_bias)[i] = nrand.GetRandom();
 		}
@@ -245,7 +248,7 @@ public:
 		VectorN &outp = *m_output_img->Flatten();
 		for (int i = 0; i < outp.GetSize(); ++i)
 		{
-			float32_t c = outp[i];
+			Float c = outp[i];
 
 			if (std::abs(c) > 1000.0f)
 			{
@@ -268,7 +271,7 @@ public:
 			VectorN &outp = *next_vec_in->m_value;
 			for (int i = 0; i < outp.GetSize(); ++i)
 			{
-				float32_t c = outp[i];
+				Float c = outp[i];
 				if (std::isinf(c) || std::isnan(c))
 				{
 					std::cout << "c:" << c << endl;
@@ -303,7 +306,7 @@ public:
 			VectorN &outp = *m_delta->Flatten();
 			for (int i = 0; i < outp.GetSize(); ++i)
 			{
-				float32_t c = outp[i];
+				Float c = outp[i];
 
 				if (std::abs(c) > 10.0f)
 				{
@@ -326,7 +329,7 @@ public:
 				VectorN &outp = *m_delta->Flatten();
 				for (int i = 0; i < outp.GetSize(); ++i)
 				{
-					float32_t c = outp[i];
+					Float c = outp[i];
 
 					if (std::abs(c) > 10.0f)
 					{
@@ -354,7 +357,7 @@ public:
 		assert(m_filters.size() == m_bias->GetSize() &&
 			m_bias->GetSize() == m_delta->Depth());
 
-		int32_t nFilter = m_filters.size();
+		Int nFilter = m_filters.size();
 
 		for (int i = 0; i < nFilter; ++i)
 		{
@@ -365,7 +368,7 @@ public:
 	virtual void PreTrain()
 	{
 		m_sum_db->MakeZero();
-		for (int32_t i = 0; i < m_filters.size(); ++i)
+		for (Int i = 0; i < m_filters.size(); ++i)
 		{
 			m_sum_dw[i]->MakeZero();
 		}
@@ -374,7 +377,7 @@ public:
 	virtual void SumGradient()
 	{
 		m_sum_db->Copy(*m_sum_db + *m_db);
-		for (int32_t i = 0; i < m_filters.size(); ++i)
+		for (Int i = 0; i < m_filters.size(); ++i)
 		{
 			*m_sum_dw[i] += *m_dw[i];
 		}
@@ -383,21 +386,14 @@ public:
 	virtual void UpdateWeightBias(float eff)
 	{
 		*m_bias -= *m_sum_db * eff;
-		for (int32_t i = 0; i < m_filters.size(); ++i)
+		for (Int i = 0; i < m_filters.size(); ++i)
 		{
 			*m_sum_dw[i] *= eff;
 			*m_filters[i] -= *m_sum_dw[i];
 		}
 	}
 
-#ifndef NDEBUG
-	virtual void CheckGradient()
-	{
-
-	}
-#endif
-
 };
-
+}
 #endif //__CONVOLUTIONAL_LAYER_H__
 

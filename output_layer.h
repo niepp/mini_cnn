@@ -16,7 +16,8 @@ using namespace std;
 #include "layer.h"
 #include "fully_connected_layer.h"
 
-
+namespace mini_cnn
+{
 class OutputLayer : public FullyConnectedLayer
 {
 protected:
@@ -67,15 +68,15 @@ public:
 		return GetOutput() - *m_label;
 	}
 
-	float32_t GetCost()
+	Float GetCost()
 	{
-		float32_t cost = 0;
+		Float cost = 0;
 		switch (m_loss_func_type)
 		{
 		case eLossFunc::eMSE:
 			{
 				VectorN diff = GetOutput() - *m_label;
-				cost = diff.SquareMagnitude();
+				cost = (Float)(0.5) * diff.SquareMagnitude();
 			}
 			break;
 		case eLossFunc::eSigmod_CrossEntropy:
@@ -83,23 +84,19 @@ public:
 				const VectorN &ov = GetOutput();
 				int idx = m_label->ArgMax();
 				cost = -ov[idx] * log(ov[idx]);
-				cost = std::min(cost, 1.0f); // 限定代价值上限，防止数值溢出
+				//cost = std::min(cost, 1.0f); // 限定代价值上限，防止数值溢出
 			}
 			break;
 		case eLossFunc::eSoftMax_LogLikelihood:
 			{
 				const VectorN &ov = GetOutput();
 				int len = static_cast<int>(ov.GetSize());
-				for (int32_t i = 0; i < len; ++i)
+				for (Int i = 0; i < len; ++i)
 				{
-					float32_t p = (*m_label)[i]; // p is only 0 or 1
-					float32_t q = ov[i];
-					float32_t c = p > 0 ? -log(q) : -log(1.0f - q);
-					c = std::min(c, 1.0f); // 限定代价值上限，防止数值溢出
-					/*if (std::isinf(c) || std::isnan(c))
-					{
-						std::cout <<"p:" << p << "\tq:" << q << endl;
-					}*/
+					Float p = (*m_label)[i]; // p is only 0 or 1
+					Float q = ov[i];
+					Float c = p > 0 ? -log(q) : -log(1.0f - q);
+					//c = std::min(c, 1.0f); // 限定代价值上限，防止数值溢出
 					cost += c;
 				}
 				if (len > 0)
@@ -116,5 +113,6 @@ public:
 	}
 
 };
+}
 
 #endif //__OUTPUT_LAYER_H__
