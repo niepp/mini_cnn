@@ -42,19 +42,34 @@ public:
 		switch (m_loss_func_type)
 		{
 		case eLossFunc::eMSE:
-		{
-			m_prime_func(*m_middle, *m_middle_prime);
-			m_delta->Copy(MseDerive() ^ (*m_middle_prime));
-			m_dw->Copy(*m_delta * GetInput());
-		}
+			{
+				m_prime_func(*m_middle, *m_middle_prime);
+				m_delta->Copy(MseDerive() ^ (*m_middle_prime));
+				m_dw->Copy(*m_delta * GetInput());
+			}
 			break;
 		case eLossFunc::eSigmod_CrossEntropy:
+			{
+				// 交叉熵CrossEntropy损失函数和Sigmod激活函数的组合：
+				// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
+				// ref： http://neuralnetworksanddeeplearning.com/chap3.html#introducing_the_cross-entropy_cost_function
+				m_delta->Copy(GetOutput() - *m_label);
+				m_dw->Copy(*m_delta * GetInput());
+			}
+			break;
 		case eLossFunc::eSoftMax_LogLikelihood:
-			// 交叉熵CrossEntropy损失函数和Sigmod激活函数的组合 或者 LogLikelihood损失函数和Softmax激活函数的组合下：
-			// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
-			// ref： http://neuralnetworksanddeeplearning.com/chap3.html#introducing_the_cross-entropy_cost_function
-			m_delta->Copy(GetOutput() - *m_label);
-			m_dw->Copy(*m_delta * GetInput());
+			{
+				// LogLikelihood损失函数和Softmax激活函数的组合下：
+				// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
+				// delta(i) = output(k) - 1    (i==k时， k是one-hot标签对应的index)
+				//          = 0                (i!=k时)
+				// ref： https://www.cnblogs.com/ZJUT-jiangnan/p/5489047.html
+				m_delta->MakeZero();
+				int idx = m_label->ArgMax();
+				const VectorN &output = GetOutput();
+				(*m_delta)[idx] = output[idx] - (Float)(1.0);
+				m_dw->Copy(*m_delta * GetInput());
+			}
 			break;
 		default:
 			assert(false);
@@ -82,14 +97,6 @@ public:
 		case eLossFunc::eSigmod_CrossEntropy:
 			{
 				const VectorN &ov = GetOutput();
-				int idx = m_label->ArgMax();
-				cost = -ov[idx] * log(ov[idx]);
-				//cost = std::min(cost, 1.0f); // 限定代价值上限，防止数值溢出
-			}
-			break;
-		case eLossFunc::eSoftMax_LogLikelihood:
-			{
-				const VectorN &ov = GetOutput();
 				int len = static_cast<int>(ov.GetSize());
 				for (Int i = 0; i < len; ++i)
 				{
@@ -99,10 +106,14 @@ public:
 					//c = std::min(c, 1.0f); // 限定代价值上限，防止数值溢出
 					cost += c;
 				}
-				if (len > 0)
-				{
-					cost /= len;
-				}
+			}
+			break;
+		case eLossFunc::eSoftMax_LogLikelihood:
+			{
+				const VectorN &ov = GetOutput();
+				int idx = m_label->ArgMax();
+				cost = -log(ov[idx]);
+				//cost = std::min(cost, 1.0f); // 限定代价值上限，防止数值溢出
 			}
 			break;
 		default:

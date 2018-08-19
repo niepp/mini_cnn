@@ -259,6 +259,10 @@ public:
 		{
 			int kkk = 0;
 		}
+		else if (std::abs(delta_by_bprop) > EPSILON)
+		{
+			int kkk = 0;
+		}
 		return correct;
 
 	}

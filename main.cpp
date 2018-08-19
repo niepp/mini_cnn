@@ -68,9 +68,7 @@ Network CreateFCN()
 	Network nn;
 	nn.AddLayer(new InputLayer(N_inputCount));
 	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
-//	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
-
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSigmod_CrossEntropy, eActiveFunc::eSigmod));
+	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 	return nn;
 }
 
