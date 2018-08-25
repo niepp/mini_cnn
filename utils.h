@@ -2,6 +2,7 @@
 #define __UTILS_H__
 
 #include <random>
+#include <chrono>
 
 #include "types.h"
 #include "math/vectorn.h"
@@ -14,9 +15,9 @@ class NormalRandom
 {
 public:
 	std::mt19937_64 m_generator;
-	std::normal_distribution<float> m_distribution;
+	std::normal_distribution<Float> m_distribution;
 public:
-	NormalRandom(std::mt19937_64 generator, float mean, float stdev) : m_generator(generator), m_distribution(mean, stdev)
+	NormalRandom(std::mt19937_64 generator, Float mean, Float stdev) : m_generator(generator), m_distribution(mean, stdev)
 	{
 	}
 
@@ -26,6 +27,31 @@ public:
 	}
 
 };
+
+class UniformRandom
+{
+public:
+	std::mt19937_64 m_generator;
+	std::uniform_real_distribution<Float> m_distribution;
+public:
+	UniformRandom(std::mt19937_64 generator, Float min, Float max) : m_generator(generator), m_distribution(min, max)
+	{
+	}
+
+	float GetRandom()
+	{
+		return m_distribution(m_generator);
+	}
+
+};
+
+inline uInt GetNow()
+{
+	auto tp_now = std::chrono::steady_clock::now();
+	auto ms_now = std::chrono::time_point_cast<std::chrono::milliseconds>(tp_now);
+	auto t_now = ms_now.time_since_epoch();
+	return static_cast<uInt>(t_now.count());
+}
 
 typedef void(*ActiveFunc)(const VectorN& vec, VectorN& retV);
 
@@ -67,7 +93,7 @@ inline void TanhPrime(const VectorN& vec, VectorN& retV)
 		const Float ep = std::exp(vec[i]);
 		const Float em = std::exp(-vec[i]);
 		Float f = (ep - em) / (ep + em);
-		retV[i] = (Float)1.0f - f * f;
+		retV[i] = (Float)(1.0) - f * f;
 	}
 }
 
@@ -76,7 +102,7 @@ inline void Relu(const VectorN& vec, VectorN& retV)
 	assert(vec.GetSize() == retV.GetSize());
 	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		retV[i] = vec[i] > 0.0f ? vec[i] : 0.0f;
+		retV[i] = vec[i] > 0.0 ? vec[i] : 0.0;
 	}
 }
 
@@ -85,7 +111,7 @@ inline void ReluPrime(const VectorN& vec, VectorN& retV)
 	assert(vec.GetSize() == retV.GetSize());
 	for (unsigned int i = 0; i < retV.GetSize(); ++i)
 	{
-		retV[i] = vec[i] > 0.0f ? 1.0f : 0.0f;
+		retV[i] = vec[i] > 0.0 ? 1.0 : 0.0;
 	}
 }
 
@@ -152,7 +178,7 @@ inline void Sigmoid(const Matrix3D &mat, Matrix3D &retMat)
 			for (uInt j = 0; j < mat.Height(); ++j)
 			{
 				Float v = mat(i, j, k);
-				retMat(i, j, k) = 1.0f / (1.0f + exp(-v));
+				retMat(i, j, k) = (Float)(1.0) / ((Float)(1.0) + exp(-v));
 			}
 		}
 	}
@@ -171,8 +197,8 @@ inline void SigmoidPrime(const Matrix3D &mat, Matrix3D &retMat)
 			for (uInt j = 0; j < mat.Height(); ++j)
 			{
 				Float v = mat(i, j, k);
-				Float f = 1.0f / (1.0f + exp(-v));
-				retMat(i, j, k) = f * (1.0f - f);
+				Float f = (Float)(1.0) / ((Float)(1.0) + exp(-v));
+				retMat(i, j, k) = f * ((Float)(1.0) - f);
 			}
 		}
 	}
@@ -215,7 +241,7 @@ inline void TanhPrime(const Matrix3D &mat, Matrix3D &retMat)
 				const Float ep = std::exp(v);
 				const Float em = std::exp(-v);
 				Float f = (ep - em) / (ep + em);
-				retMat(i, j, k) = (Float)1.0f - f * f;
+				retMat(i, j, k) = (Float)(1.0) - f * f;
 			}
 		}
 	}
@@ -234,7 +260,7 @@ inline void Relu(const Matrix3D &mat, Matrix3D &retMat)
 			for (uInt j = 0; j < mat.Height(); ++j)
 			{
 				Float v = mat(i, j, k);
-				retMat(i, j, k) = v > 0.0f ? v : 0.0f;
+				retMat(i, j, k) = v > 0.0 ? v : 0.0;
 			}
 		}
 	}
@@ -253,7 +279,7 @@ inline void ReluPrime(const Matrix3D &mat, Matrix3D &retMat)
 			for (uInt j = 0; j < mat.Height(); ++j)
 			{
 				Float v = mat(i, j, k);
-				retMat(i, j, k) = v > 0.0f ? 1.0f : 0.0f;
+				retMat(i, j, k) = v > 0.0 ? 1.0 : 0.0;
 			}
 		}
 	}

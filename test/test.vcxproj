@@ -11,9 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{11E077A1-FFCA-4174-9376-9BF85220218B}</ProjectGuid>
-    <RootNamespace>mini_cnn</RootNamespace>
-    <ProjectName>mini_cnn</ProjectName>
+    <ProjectGuid>{DD55389F-87AB-4CFC-933C-E5A1068C2FB4}</ProjectGuid>
+    <RootNamespace>test</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -48,48 +47,24 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>Full</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="layer.h" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="network.h" />
-    <ClCompile Include="utils.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="convolutional_layer.h" />
-    <ClInclude Include="fully_connected_layer.h" />
-    <ClInclude Include="input_layer.h" />
-    <ClInclude Include="input_output.h" />
-    <ClInclude Include="math\mathdef.h" />
-    <ClInclude Include="math\matrix3d.h" />
-    <ClInclude Include="math\matrixmxn.h" />
-    <ClInclude Include="math\vectorn.h" />
-    <ClInclude Include="minist_dataset.h" />
-    <ClInclude Include="mini_cnn.h" />
-    <ClInclude Include="output_layer.h" />
-    <ClInclude Include="types.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="math\matrixmxn.inl" />
+    <ClCompile Include="test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

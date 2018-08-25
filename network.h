@@ -257,12 +257,9 @@ public:
 		bool correct = std::abs(delta_by_bprop - delta_by_numerical) <= precision;
 		if (!correct)
 		{
-			int kkk = 0;
+			cout << delta_by_bprop / delta_by_numerical << endl;
 		}
-		else if (std::abs(delta_by_bprop) > EPSILON)
-		{
-			int kkk = 0;
-		}
+
 		return correct;
 
 	}
