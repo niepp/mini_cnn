@@ -354,14 +354,14 @@ public:
 
 		m_input_img->ConvDepthWise(m_dw, *m_delta, m_filterDim.m_stride_w, m_filterDim.m_stride_h, Padding::Valid);
 
-		assert(m_filters.size() == m_bias->GetSize() &&
-			m_bias->GetSize() == m_delta->Depth());
+		assert(m_filters.size() == m_db->GetSize() &&
+			m_db->GetSize() == m_delta->Depth());
 
 		Int nFilter = m_filters.size();
 
 		for (int i = 0; i < nFilter; ++i)
 		{
-			(*m_bias)[i] = m_delta->SumByDepthWise(i);
+			(*m_db)[i] = m_delta->SumByDepthWise(i);
 		}
 	}
 

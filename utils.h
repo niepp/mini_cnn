@@ -21,7 +21,7 @@ public:
 	{
 	}
 
-	float GetRandom()
+	Float GetRandom()
 	{
 		return m_distribution(m_generator);
 	}
@@ -38,7 +38,7 @@ public:
 	{
 	}
 
-	float GetRandom()
+	Float GetRandom()
 	{
 		return m_distribution(m_generator);
 	}

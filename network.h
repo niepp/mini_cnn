@@ -195,8 +195,8 @@ public:
 			ConvolutionalLayer *conv_layer = dynamic_cast<ConvolutionalLayer*>(layer);
 			if (fully_layer != nullptr)
 			{
-				MatrixMN &w = *fully_layer->m_weight;
-				MatrixMN &dw = *fully_layer->m_dw;
+				MatrixMN &w = *(fully_layer->m_weight);
+				MatrixMN &dw = *(fully_layer->m_dw);
 				for (int x = 0; x < w.GetRowCount(); ++x)
 				{
 					for (int y = 0; y < w.GetColCount(); ++y)
@@ -208,13 +208,45 @@ public:
 					}
 				}
 
-				VectorN &b = *fully_layer->m_bias;
-				VectorN &db = *fully_layer->m_delta;
+				VectorN &b = *(fully_layer->m_bias);
+				VectorN &db = *(fully_layer->m_delta);
 				for (int x = 0; x < b.GetSize(); ++x)
 				{
 					if (!CalcDelta(test_img, test_lab, precision, b[x], db[x]))
 					{
 						check_ok = false;
+					}
+				}
+			}
+			else if (conv_layer != nullptr)
+			{
+				VectorN &b = *(conv_layer->m_bias);
+				VectorN &db = *(conv_layer->m_db);
+				Int filter_count = conv_layer->m_filters.size();
+				for (int k = 0; k < filter_count; ++k)
+				{
+					Matrix3D &w = *(conv_layer->m_filters[k]);
+					Matrix3D &dw = *(conv_layer->m_dw[k]);
+					for (int x = 0; x < w.Width(); ++x)
+					{
+						for (int y = 0; y < w.Height(); ++y)
+						{
+							for (int c = 0; c < w.Depth(); ++c)
+							{
+								if (!CalcDelta(test_img, test_lab, precision, w(x, y, c), dw(x, y, c)))
+								{
+									check_ok = false;
+								}
+							}
+						}
+					}
+
+					for (int x = 0; x < b.GetSize(); ++x)
+					{
+						if (!CalcDelta(test_img, test_lab, precision, b[x], db[x]))
+						{
+							check_ok = false;
+						}
 					}
 				}
 			}
@@ -257,7 +289,7 @@ public:
 		bool correct = std::abs(delta_by_bprop - delta_by_numerical) <= precision;
 		if (!correct)
 		{
-			cout << delta_by_bprop / delta_by_numerical << endl;
+			cout << "bprop:" << delta_by_bprop << "\tnumerical:" << delta_by_numerical << endl;
 		}
 
 		return correct;

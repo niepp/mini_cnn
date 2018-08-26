@@ -17,10 +17,9 @@ Network CreateFCN()
 {
 	Network nn;
 	nn.AddLayer(new InputLayer(N_inputCount));
-	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
+	nn.AddLayer(new FullyConnectedLayer(100, eActiveFunc::eRelu));
+	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eRelu));
 	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
-
-	//nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSigmod_CrossEntropy, eActiveFunc::eSigmod));
 	return nn;
 }
 
@@ -31,8 +30,7 @@ Network CreateCNN()
 	nn.AddLayer(new ConvolutionalLayer(6, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
 	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 6, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
 	nn.AddLayer(new ConvolutionalLayer(120, new FilterDimension(3, 3, 16, 0, 1, 1), nullptr, eActiveFunc::eRelu));
-//	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eMSE, eActiveFunc::eSigmod));
+	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 	return nn;
 }
 
@@ -61,15 +59,15 @@ int main()
 
 	long long t0 = GetNow();
 	auto generator = CreateRandom();
-	NormalRandom nrand(generator, 0, 1.0f);
+	NormalRandom nrand(generator, 0, 1.0);
 
 	// define neural network
 	Network nn = CreateFCN();
 
 	nn.Init(nrand);
 
-	float learning_rate = 3.02f;
-	int epoch = 30;
+	float learning_rate = 0.025f;
+	int epoch = 100;
 	int batch_size = 10;
 	int batch = img_count / batch_size;
 	std::vector<int> idx_vec(img_count);
