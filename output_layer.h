@@ -107,7 +107,7 @@ public:
 				{
 					Float p = (*m_label)[i]; // p is only 0 or 1
 					Float q = ov[i];
-					Float c = p > 0 ? -log(q) : -log((Float)(1.0) - q);
+					Float c = p > 0 ? -log(q + cEPSILON) : -log((Float)(1.0) - q + cEPSILON);
 					//c = std::min(c, 1.0f); // 限定代价值上限，防止数值溢出
 					cost += c;
 				}
@@ -117,7 +117,7 @@ public:
 			{
 				const VectorN &ov = GetOutput();
 				Int idx = m_label->ArgMax();
-				cost = -log(ov[idx]);
+				cost = -log(ov[idx] + cEPSILON);
 				//cost = std::min(cost, 1.0f); // 限定代价值上限，防止数值溢出
 			}
 			break;

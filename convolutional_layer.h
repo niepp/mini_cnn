@@ -208,13 +208,14 @@ public:
 			Int w = filter->Width();
 			Int h = filter->Height();
 			Int d = filter->Depth();
+			Int size = w * h * d;
 			for (Int i = 0; i < w; ++i)
 			{
 				for (Int j = 0; j < h; ++j)
 				{
 					for (Int c = 0; c < d; ++c)
 					{
-						(*filter)(i, j, c) = nrand.GetRandom();
+						(*filter)(i, j, c) = (nrand.GetRandom()) / size;
 					}
 				}
 			}
@@ -245,40 +246,28 @@ public:
 			m_activeFunc(*m_middle, *m_output_img);
 		}
 
-		VectorN &outp = *m_output_img->Flatten();
-		for (int i = 0; i < outp.GetSize(); ++i)
-		{
-			Float c = outp[i];
+	
+		//VectorN &outp = *m_output_img->Flatten();
+		//for (int i = 0; i < outp.GetSize(); ++i)
+		//{
+		//	Float c = outp[i];
 
-			if (std::abs(c) > 1000.0f)
-			{
-				int kkk = 0;
-			}
+		//	if (std::abs(c) > 10.0f)
+		//	{
+		//		int kkk = 0;
+		//	}
 
-			if (std::isinf(c) || std::isnan(c))
-			{
-				std::cout << "c:" << c << endl;
-			}
-		}
+		//}
 
+		
 
 		assert(m_next != nullptr);
 		if (m_next->m_input->m_type != m_output->m_type)
 		{
 			VectorInOut* next_vec_in = dynamic_cast<VectorInOut*>(m_next->m_input);
 			next_vec_in->m_value = m_output_img->Flatten();
-
-			VectorN &outp = *next_vec_in->m_value;
-			for (int i = 0; i < outp.GetSize(); ++i)
-			{
-				Float c = outp[i];
-				if (std::isinf(c) || std::isnan(c))
-				{
-					std::cout << "c:" << c << endl;
-				}
-			}
-
 		}
+
 	}
 
 	virtual void BackProp()
@@ -303,17 +292,7 @@ public:
 				m_delta->Copy(*flatten_delta.Unflatten(m_delta->Width(), m_delta->Height(), m_delta->Depth()));
 			}
 
-			VectorN &outp = *m_delta->Flatten();
-			for (int i = 0; i < outp.GetSize(); ++i)
-			{
-				Float c = outp[i];
-
-				if (std::abs(c) > 10.0f)
-				{
-					int kkk = 0;
-				}
-
-			}
+		
 
 		}
 		else if (conv_layer != nullptr)
@@ -326,17 +305,17 @@ public:
 				m_pre_unpool_delta->UpSample(m_delta, *m_idx_map, m_pooling->m_width, m_pooling->m_height, m_pooling->m_stride_w, m_pooling->m_stride_h);
 
 
-				VectorN &outp = *m_delta->Flatten();
-				for (int i = 0; i < outp.GetSize(); ++i)
-				{
-					Float c = outp[i];
+				//VectorN &outp = *m_delta->Flatten();
+				//for (int i = 0; i < outp.GetSize(); ++i)
+				//{
+				//	Float c = outp[i];
 
-					if (std::abs(c) > 10.0f)
-					{
-						int kkk = 0;
-					}
+				//	if (std::abs(c) > 10.0f)
+				//	{
+				//		int kkk = 0;
+				//	}
 
-				}
+				//}
 
 			}
 			else
@@ -383,8 +362,29 @@ public:
 		}
 	}
 
-	virtual void UpdateWeightBias(float eff)
+	virtual void UpdateWeightBias(Float eff)
 	{
+		//Float aw = 0;
+		//for (Int i = 0; i < m_filters.size(); ++i)
+		//{
+		//	aw += m_filters[i]->Avg();
+		//}
+		//aw /= m_filters.size();
+
+		//Float adw = 0;
+		//for (Int i = 0; i < m_sum_dw.size(); ++i)
+		//{
+		//	adw += m_sum_dw[i]->Avg();
+		//}
+		//adw /= m_sum_dw.size();
+
+		//if (abs(adw) > cEPSILON)
+		//{
+		//	eff *= aw / adw;
+		//}
+
+		//eff *= 1e-4;
+
 		*m_bias -= *m_sum_db * eff;
 		for (Int i = 0; i < m_filters.size(); ++i)
 		{

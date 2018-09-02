@@ -103,6 +103,20 @@ void _MatrixMN<T>::MakeZero()
 }
 
 template <class T>
+T _MatrixMN<T>::Avg() const
+{
+	T avg = 0;
+	for (unsigned long i = 0; i < _row; ++i)
+	{
+		for (unsigned long j = 0; j < _col; ++j)
+		{
+			avg += operator()(i, j);
+		}
+	}
+	return avg / (_row * _col);
+}
+
+template <class T>
 _MatrixMN<T> _MatrixMN<T>::Transpose() const
 {
 	_MatrixMN<T> m(_col, _row);

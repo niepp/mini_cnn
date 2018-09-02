@@ -27,10 +27,11 @@ Network CreateCNN()
 {
 	Network nn;
 	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
-	nn.AddLayer(new ConvolutionalLayer(6, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
-	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 6, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
-	nn.AddLayer(new ConvolutionalLayer(120, new FilterDimension(3, 3, 16, 0, 1, 1), nullptr, eActiveFunc::eRelu));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
+	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
+	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
+	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eRelu));
+	nn.AddLayer(new OutputLayer(C_classCount, eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
+	//nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eMSE, eActiveFunc::eSigmod));
 	return nn;
 }
 
@@ -62,11 +63,11 @@ int main()
 	NormalRandom nrand(generator, 0, 1.0);
 
 	// define neural network
-	Network nn = CreateFCN();
+	Network nn = CreateCNN();
 
 	nn.Init(nrand);
 
-	float learning_rate = 0.025f;
+	float learning_rate = 0.0001f;
 	int epoch = 100;
 	int batch_size = 10;
 	int batch = img_count / batch_size;
@@ -100,10 +101,10 @@ int main()
 			//learning_rate *= 0.85f;
 			//learning_rate = std::max(0.00001f, learning_rate);
 
-		//	Float cb = nn.CalcCost(batch_img_vec, batch_label_vec);
+			//Float cb = nn.CalcCost(batch_img_vec, batch_label_vec);
 			nn.SGD(batch_img_vec, batch_label_vec, learning_rate);
-		//	Float ca = nn.CalcCost(batch_img_vec, batch_label_vec);
-		//	cout << "cost: " << cb << " -> " << ca << "\t" << cb - ca << endl;
+			//Float ca = nn.CalcCost(batch_img_vec, batch_label_vec);
+			//cout << "cost: " << ca << endl;
 		}
 
 		uInt correct = nn.Test(test_img_vec, test_lab_vec);

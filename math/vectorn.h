@@ -102,6 +102,16 @@ public:
 		return len2;
 	}
 
+	T Avg() const
+	{
+		T avg = 0;
+		for (unsigned long i = 0; i < _size; ++i)
+		{
+			avg += _buf[i];
+		}
+		return avg / _size;
+	}
+
 	T Dot(const _VectorN<T>& src) const
 	{
 		T dot = 0;

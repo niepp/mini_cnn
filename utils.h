@@ -53,6 +53,11 @@ inline uInt GetNow()
 	return static_cast<uInt>(t_now.count());
 }
 
+inline bool f_is_valid(Float f)
+{
+	return f == f;
+}
+
 typedef void(*ActiveFunc)(const VectorN& vec, VectorN& retV);
 
 inline void Sigmoid(const VectorN& vec, VectorN& retV)

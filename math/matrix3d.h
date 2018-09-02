@@ -58,6 +58,8 @@ public:
 
 	T SumByDepthWise(Int depth_idx) const;
 
+	T Avg() const;
+
 	void AddBias(const _VectorN<T>& bias);
 
 	_VectorN<T>* Flatten() const;
@@ -296,6 +298,11 @@ void _Matrix3D<T>::ConvDepthWise(_Matrix3D<T> *retm, const std::vector<_Matrix3D
 
 	Int nfilter = filters.size();
 
+
+	if (!(_w >= filters[0]->_w && _h >= filters[0]->_h)){
+		int kkk = 0;
+	}
+
 	assert(_w >= filters[0]->_w && _h >= filters[0]->_h);
 
 	assert(_d == nfilter && retm->_d == filters[0]->_d);
@@ -352,6 +359,23 @@ T _Matrix3D<T>::SumByDepthWise(Int depth_idx) const
 		}
 	}
 	return s;
+}
+
+template <class T>
+T _Matrix3D<T>::Avg() const
+{
+	T avg = 0;
+	for (Int k = 0; k < _d; ++k)
+	{
+		for (Int i = 0; i < _w; ++i)
+		{
+			for (Int j = 0; j < _h; ++j)
+			{
+				avg += (*this)(i, j, k);
+			}
+		}
+	}
+	return avg / (_d * _w * _h);
 }
 
 template <class T>

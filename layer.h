@@ -84,7 +84,7 @@ public:
 	{
 	}
 
-	virtual void UpdateWeightBias(float eff)
+	virtual void UpdateWeightBias(Float eff)
 	{
 	}
 

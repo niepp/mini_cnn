@@ -3,7 +3,7 @@
 
 namespace mini_cnn
 {
-const float EPSILON = 1e-4f;
+const float cEPSILON = 1e-4f;
 
 #ifndef PI
 const Float cPI = 3.141592653589793f;

@@ -103,7 +103,7 @@ public:
 		}
 	}
 
-	void UpdateWeightBias(float eff)
+	void UpdateWeightBias(Float eff)
 	{
 		int len = static_cast<int>(m_layers.size());
 		for (int i = len - 1; i >= 0; --i)
@@ -183,7 +183,7 @@ public:
 		return tot_cost;
 	}
 
-	bool GradientCheck(const VectorN &test_img, const VectorN &test_lab, Float precision = 1e-4)
+	bool GradientCheck(const VectorN &test_img, const VectorN &test_lab, Float absPrecision = 1e-4, Float relatePrecision = 1e-2)
 	{
 		assert(!m_layers.empty());
 		bool check_ok = true;
@@ -201,7 +201,7 @@ public:
 				{
 					for (int y = 0; y < w.GetColCount(); ++y)
 					{
-						if (!CalcDelta(test_img, test_lab, precision, w(x, y), dw(x, y)))
+						if (!CalcDelta(test_img, test_lab, w(x, y), dw(x, y), absPrecision, relatePrecision))
 						{
 							check_ok = false;
 						}
@@ -212,11 +212,12 @@ public:
 				VectorN &db = *(fully_layer->m_delta);
 				for (int x = 0; x < b.GetSize(); ++x)
 				{
-					if (!CalcDelta(test_img, test_lab, precision, b[x], db[x]))
+					if (!CalcDelta(test_img, test_lab, b[x], db[x], absPrecision, relatePrecision))
 					{
 						check_ok = false;
 					}
 				}
+				//cout << "fully_layer " << std::boolalpha << check_ok << endl;
 			}
 			else if (conv_layer != nullptr)
 			{
@@ -233,7 +234,7 @@ public:
 						{
 							for (int c = 0; c < w.Depth(); ++c)
 							{
-								if (!CalcDelta(test_img, test_lab, precision, w(x, y, c), dw(x, y, c)))
+								if (!CalcDelta(test_img, test_lab, w(x, y, c), dw(x, y, c), absPrecision, relatePrecision))
 								{
 									check_ok = false;
 								}
@@ -243,12 +244,15 @@ public:
 
 					for (int x = 0; x < b.GetSize(); ++x)
 					{
-						if (!CalcDelta(test_img, test_lab, precision, b[x], db[x]))
+						if (!CalcDelta(test_img, test_lab, b[x], db[x], absPrecision, relatePrecision))
 						{
 							check_ok = false;
 						}
 					}
 				}
+
+				//cout << "conv_layer " << std::boolalpha << check_ok << endl;
+
 			}
 		}
 		return check_ok;
@@ -263,9 +267,9 @@ public:
 		return loss;
 	}
 
-	bool CalcDelta(const VectorN &test_img, const VectorN &test_lab, Float precision, Float &w, Float &dw)
+	bool CalcDelta(const VectorN &test_img, const VectorN &test_lab, Float &w, Float &dw, Float absPrecision, Float relatePrecision)
 	{
-		static const Float EPSILON = 1e-9;
+		static const Float EPSILON = 1e-6;
 
 		m_inputLayer->SetInputData(test_img);
 		m_outputLayer->SetLabelValue(test_lab);
@@ -286,10 +290,25 @@ public:
 
 		Float delta_by_bprop = dw;
 
-		bool correct = std::abs(delta_by_bprop - delta_by_numerical) <= precision;
+		if (!f_is_valid(loss_0) || !f_is_valid(loss_1) || !f_is_valid(dw))
+		{
+			cout << "[overflow] loss_0:" << loss_0 << "\tloss_1:" << loss_1 << "\tdw:" << dw << endl;
+			return false;
+		}
+
+		Float absError = std::abs(delta_by_bprop - delta_by_numerical);
+		bool correct = absError <= absPrecision;
 		if (!correct)
 		{
-			cout << "bprop:" << delta_by_bprop << "\tnumerical:" << delta_by_numerical << endl;
+			Float relateError = absError / std::abs(delta_by_numerical);
+			if (f_is_valid(relateError) && relateError < relatePrecision)
+			{
+				correct = true;
+			}
+			else
+			{
+				cout << "bprop:" << delta_by_bprop << "\tnumerical:" << delta_by_numerical << endl;
+			}
 		}
 
 		return correct;

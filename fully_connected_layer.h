@@ -186,8 +186,14 @@ public:
 		m_sum_dw->Copy(*m_sum_dw + *m_dw);
 	}
 
-	virtual void UpdateWeightBias(float eff)
-	{	
+	virtual void UpdateWeightBias(Float eff)
+	{
+		//Float aw = m_weight->Avg();
+		//Float adw = m_sum_dw->Avg();
+		//if (abs(adw) > cEPSILON)
+		//{
+		//	eff *= aw / adw;
+		//}
 		*m_weight -= *m_sum_dw * eff;
 		*m_bias -= *m_sum_delta * eff;
 	}

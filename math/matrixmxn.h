@@ -30,6 +30,8 @@ public:
 
 	void MakeZero();
 
+	T Avg() const;	
+
 	_MatrixMN<T> Transpose() const;
 
 	_MatrixMN<T>& Copy(const _MatrixMN<T>&);
