@@ -67,9 +67,11 @@ int main()
 
 	nn.Init(nrand);
 
-	float learning_rate = 0.0001f;
+	//Float lrs[] = { 0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1 };
+	//Int l_idx = 0;
+	Float init_learning_rate = 0.1;	
 	int epoch = 100;
-	int batch_size = 10;
+	int batch_size = 600;
 	int batch = img_count / batch_size;
 	std::vector<int> idx_vec(img_count);
 	for (int k = 0; k < img_count; ++k)
@@ -77,11 +79,11 @@ int main()
 		idx_vec[k] = k;
 	}
 
-	float rate = learning_rate;
+	float kef = 0.2f;
 	float maxCorrectRate = 0;
 	for (int c = 0; c < epoch; ++c)
 	{
-		learning_rate = rate;
+		Float learning_rate = init_learning_rate;
 		std::shuffle(std::begin(idx_vec), std::end(idx_vec), generator);
 		std::vector<VectorN*> batch_img_vec(batch_size);
 		std::vector<VectorN*> batch_label_vec(batch_size);
@@ -93,18 +95,24 @@ int main()
 				batch_img_vec[k] = img_vec[j];
 				batch_label_vec[k] = lab_vec[j];
 			}
-			if (i % (batch/5) == 0)
-			{
-				cout << "batch: " << i << "/" << batch << endl;
-			}
 
-			//learning_rate *= 0.85f;
-			//learning_rate = std::max(0.00001f, learning_rate);
+			//if (l_idx < sizeof(lrs) / sizeof(lrs[0]))
+			//{
+			//	learning_rate = lrs[l_idx++];
+			//}
 
-			//Float cb = nn.CalcCost(batch_img_vec, batch_label_vec);
+			learning_rate = init_learning_rate / (1.0 + kef * i);
+			learning_rate = std::max(1e-4, learning_rate);
+
 			nn.SGD(batch_img_vec, batch_label_vec, learning_rate);
-			//Float ca = nn.CalcCost(batch_img_vec, batch_label_vec);
-			//cout << "cost: " << ca << endl;
+
+			Float ca = nn.CalcCost(batch_img_vec, batch_label_vec);
+			std::cout << "learning_rate:" << learning_rate << "\tcost: " << ca << endl;
+
+			if (i % (batch / 5) == 0)
+			{
+				std::cout << "batch: " << i << "/" << batch << endl;
+			}
 		}
 
 		uInt correct = nn.Test(test_img_vec, test_lab_vec);
@@ -116,7 +124,7 @@ int main()
 
 		Float tot_cost = nn.CalcCost(img_vec, lab_vec);
 
-		cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "\t tot_cost = " << tot_cost << endl;
+		std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "\t tot_cost = " << tot_cost << endl;
 	}
 
 	cout << "Max CorrectRate: " << maxCorrectRate << endl;
