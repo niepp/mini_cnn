@@ -34,6 +34,9 @@ public:
 	VectorN *m_sum_delta;
 	MatrixMN *m_sum_dw;
 
+	VectorN *m_delta2;
+	MatrixMN *m_dw2;
+
 protected:
 	eActiveFunc m_func_type;
 	ActiveFunc m_func;
@@ -188,14 +191,38 @@ public:
 
 	virtual void UpdateWeightBias(Float eff)
 	{
-		//Float aw = m_weight->Avg();
-		//Float adw = m_sum_dw->Avg();
-		//if (abs(adw) > cEPSILON)
-		//{
-		//	eff *= aw / adw;
-		//}
 		*m_weight -= *m_sum_dw * eff;
 		*m_bias -= *m_sum_delta * eff;
+	}
+
+	virtual void Adagrad(Float eff, Float rho)
+	{
+		if (m_delta2 == nullptr)
+		{
+			m_delta2 = new VectorN(this->Size());
+			m_delta2->MakeZero();
+		}
+		if (m_dw2 == nullptr)
+		{
+			m_dw2 = new MatrixMN(this->Size(), this->m_prev->Size());
+			m_dw2->MakeZero();
+		}
+
+		*m_delta2 += *m_sum_delta ^ *m_sum_delta;
+		*m_dw2 += *m_sum_dw ^ *m_sum_dw;
+
+		for (unsigned long i = 0; i < m_weight->GetRowCount(); ++i)
+		{
+			for (unsigned long j = 0; j < m_weight->GetColCount(); ++j)
+			{
+				(*m_weight)(i, j) -= eff * (*m_sum_dw)(i, j) * rho / (rho + sqrt((*m_dw2)(i, j)));
+			}
+		}
+
+		for (unsigned long i = 0; i < m_bias->GetSize(); ++i)
+		{
+			(*m_bias)[i] -= eff * (*m_sum_delta)[i] * rho / (rho + sqrt((*m_delta2)[i]));
+		}
 	}
 
 };

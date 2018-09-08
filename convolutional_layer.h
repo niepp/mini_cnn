@@ -91,6 +91,9 @@ protected:
 	VectorN *m_sum_db;
 	std::vector<Matrix3D*> m_sum_dw;
 
+	VectorN *m_db2;
+	std::vector<Matrix3D*> m_dw2;
+
 protected:
 	FilterDimension m_filterDim;
 	Pooling *m_pooling;
@@ -108,22 +111,28 @@ public:
 		, m_pooling(pooling)
 		, m_activeFuncType(act)
 	{
-
+		uInt filterMemSize = sizeof(Float) * m_filterDim.m_width * m_filterDim.m_height * m_filterDim.m_channels;
+		unsigned char *matMem = new unsigned char[filterCount * filterMemSize];
+		memset(matMem, 0, filterCount * filterMemSize);
 		for (Int i = 0; i < filterCount; ++i)
 		{
-			m_filters.push_back(new Matrix3D(m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
+			m_filters.push_back(new Matrix3D(reinterpret_cast<Float*>(matMem + i * filterMemSize), m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
 		}
 		m_bias = new VectorN(filterCount);
 
+		matMem = new unsigned char[filterCount * filterMemSize];
+		memset(matMem, 0, filterCount * filterMemSize);
 		for (Int i = 0; i < filterCount; ++i)
 		{
-			m_dw.push_back(new Matrix3D(m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
+			m_dw.push_back(new Matrix3D(reinterpret_cast<Float*>(matMem + i * filterMemSize), m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
 		}
 		m_db = new VectorN(filterCount);
-
+		
+		matMem = new unsigned char[filterCount * filterMemSize];
+		memset(matMem, 0, filterCount * filterMemSize);
 		for (Int i = 0; i < filterCount; ++i)
 		{
-			m_sum_dw.push_back(new Matrix3D(m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
+			m_sum_dw.push_back(new Matrix3D(reinterpret_cast<Float*>(matMem + i * filterMemSize), m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
 		}
 		m_sum_db = new VectorN(filterCount);
 
@@ -208,14 +217,13 @@ public:
 			Int w = filter->Width();
 			Int h = filter->Height();
 			Int d = filter->Depth();
-			Int size = w * h * d;
 			for (Int i = 0; i < w; ++i)
 			{
 				for (Int j = 0; j < h; ++j)
 				{
 					for (Int c = 0; c < d; ++c)
 					{
-						(*filter)(i, j, c) = (nrand.GetRandom()) / size;
+						(*filter)(i, j, c) = nrand.GetRandom();
 					}
 				}
 			}
@@ -364,32 +372,58 @@ public:
 
 	virtual void UpdateWeightBias(Float eff)
 	{
-		//Float aw = 0;
-		//for (Int i = 0; i < m_filters.size(); ++i)
-		//{
-		//	aw += m_filters[i]->Avg();
-		//}
-		//aw /= m_filters.size();
-
-		//Float adw = 0;
-		//for (Int i = 0; i < m_sum_dw.size(); ++i)
-		//{
-		//	adw += m_sum_dw[i]->Avg();
-		//}
-		//adw /= m_sum_dw.size();
-
-		//if (abs(adw) > cEPSILON)
-		//{
-		//	eff *= aw / adw;
-		//}
-
-		//eff *= 1e-4;
-
 		*m_bias -= *m_sum_db * eff;
 		for (Int i = 0; i < m_filters.size(); ++i)
 		{
 			*m_sum_dw[i] *= eff;
 			*m_filters[i] -= *m_sum_dw[i];
+		}
+	}
+
+	virtual void Adagrad(Float eff, Float rho)
+	{
+		Int filterCount = m_filters.size();
+		if (m_db2 == nullptr)
+		{
+			m_db2 = new VectorN(filterCount);
+			m_db2->MakeZero();
+		}
+		if (m_dw2.size() == 0)
+		{
+			//m_dw2 = new MatrixMN(this->Size(), this->m_prev->Size());
+			uInt filterMemSize = sizeof(Float)* m_filterDim.m_width * m_filterDim.m_height * m_filterDim.m_channels;
+			unsigned char *matMem = new unsigned char[filterCount * filterMemSize];
+			memset(matMem, 0, filterCount * filterMemSize);
+			for (Int i = 0; i < filterCount; ++i)
+			{
+				m_dw2.push_back(new Matrix3D(reinterpret_cast<Float*>(matMem + i * filterMemSize), m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
+			}
+		}
+
+		*m_db2 += *m_sum_db ^ *m_sum_db;
+		for (Int i = 0; i < m_filters.size(); ++i)
+		{
+			*m_dw2[i] += *m_sum_dw[i] ^ *m_sum_dw[i];
+		}
+
+		for (Int k = 0; k < m_filters.size(); ++k)
+		{
+			auto f = m_dw2[k];
+			for (unsigned long i = 0; i < f->Width(); ++i)
+			{
+				for (unsigned long j = 0; j < f->Height(); ++j)
+				{
+					for (unsigned long c = 0; c < f->Depth(); ++c)
+					{
+						(*f)(i, j, c) -= eff * (*m_sum_dw[k])(i, j, c) * rho / (rho + sqrt((*m_dw2[k])(i, j, c)));
+					}
+				}
+			}
+		}
+
+		for (unsigned long i = 0; i < m_bias->GetSize(); ++i)
+		{
+			(*m_bias)[i] -= eff * (*m_sum_db)[i] * rho / (rho + sqrt((*m_db2)[i]));
 		}
 	}
 

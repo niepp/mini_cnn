@@ -117,6 +117,18 @@ T _MatrixMN<T>::Avg() const
 }
 
 template <class T>
+void _MatrixMN<T>::Sqrt()
+{
+	for (unsigned long i = 0; i < _row; ++i)
+	{
+		for (unsigned long j = 0; j < _col; ++j)
+		{
+			operator()(i, j) = sqrt(operator()(i, j));
+		}
+	}
+}
+
+template <class T>
 _MatrixMN<T> _MatrixMN<T>::Transpose() const
 {
 	_MatrixMN<T> m(_col, _row);
@@ -206,6 +218,22 @@ _MatrixMN<T> _MatrixMN<T>::operator*(const T &scale)
 		for(unsigned long j = 0; j < _col; j++)
 		{
 			result(i, j) = operator()(i, j) * scale;
+		}
+	}
+	return result;
+}
+
+// Hadamard product
+template <class T>
+_MatrixMN<T> _MatrixMN<T>::operator^(const _MatrixMN<T> &other)
+{
+	assert(_row == other._row && _col == other._col);
+	_MatrixMN<T> result(_row, _col);
+	for (unsigned long i = 0; i < _row; i++)
+	{
+		for (unsigned long j = 0; j < _col; j++)
+		{
+			result(i, j) = operator()(i, j) * other(i, j);
 		}
 	}
 	return result;

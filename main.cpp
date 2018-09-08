@@ -23,15 +23,25 @@ Network CreateFCN()
 	return nn;
 }
 
+//Network CreateCNN()
+//{
+//	Network nn;
+//	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
+//	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
+//	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
+//	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eRelu));
+//	nn.AddLayer(new OutputLayer(C_classCount, eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
+//	return nn;
+//}
+
 Network CreateCNN()
 {
 	Network nn;
 	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
-	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
-	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
+	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), nullptr, eActiveFunc::eRelu));
+	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), nullptr, eActiveFunc::eRelu));
 	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eRelu));
 	nn.AddLayer(new OutputLayer(C_classCount, eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
-	//nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eMSE, eActiveFunc::eSigmod));
 	return nn;
 }
 
@@ -60,18 +70,16 @@ int main()
 
 	long long t0 = GetNow();
 	auto generator = CreateRandom();
-	NormalRandom nrand(generator, 0, 1.0);
+	NormalRandom nrand(generator, 0, 0.1, 2);
 
 	// define neural network
 	Network nn = CreateCNN();
 
 	nn.Init(nrand);
 
-	//Float lrs[] = { 0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1 };
-	//Int l_idx = 0;
-	Float init_learning_rate = 0.1;	
+	Float learning_rate = 0.1;
 	int epoch = 100;
-	int batch_size = 600;
+	int batch_size = 50;
 	int batch = img_count / batch_size;
 	std::vector<int> idx_vec(img_count);
 	for (int k = 0; k < img_count; ++k)
@@ -79,11 +87,10 @@ int main()
 		idx_vec[k] = k;
 	}
 
-	float kef = 0.2f;
 	float maxCorrectRate = 0;
 	for (int c = 0; c < epoch; ++c)
 	{
-		Float learning_rate = init_learning_rate;
+		Float minCost = cMAX_FLOAT;
 		std::shuffle(std::begin(idx_vec), std::end(idx_vec), generator);
 		std::vector<VectorN*> batch_img_vec(batch_size);
 		std::vector<VectorN*> batch_label_vec(batch_size);
@@ -96,22 +103,24 @@ int main()
 				batch_label_vec[k] = lab_vec[j];
 			}
 
-			//if (l_idx < sizeof(lrs) / sizeof(lrs[0]))
-			//{
-			//	learning_rate = lrs[l_idx++];
-			//}
-
-			learning_rate = init_learning_rate / (1.0 + kef * i);
-			learning_rate = std::max(1e-4, learning_rate);
-
 			nn.SGD(batch_img_vec, batch_label_vec, learning_rate);
 
-			Float ca = nn.CalcCost(batch_img_vec, batch_label_vec);
-			std::cout << "learning_rate:" << learning_rate << "\tcost: " << ca << endl;
-
-			if (i % (batch / 5) == 0)
+			if (i % (batch / 20) == 0)
 			{
-				std::cout << "batch: " << i << "/" << batch << endl;
+				Float ca = nn.CalcCost(batch_img_vec, batch_label_vec);
+
+				if (ca < minCost)
+				{
+					minCost = ca;
+					uInt correct = nn.Test(test_img_vec, test_lab_vec);
+					float correct_rate = (1.0f * correct / test_img_count);
+					std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << "  correct_rate: " <<
+						correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
+				}
+				else
+				{
+					std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << endl;
+				}
 			}
 		}
 
@@ -124,7 +133,7 @@ int main()
 
 		Float tot_cost = nn.CalcCost(img_vec, lab_vec);
 
-		std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "\t tot_cost = " << tot_cost << endl;
+		std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "  tot_cost = " << tot_cost << endl;
 	}
 
 	cout << "Max CorrectRate: " << maxCorrectRate << endl;

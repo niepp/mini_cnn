@@ -112,6 +112,14 @@ public:
 		return avg / _size;
 	}
 
+	void Sqrt()
+	{
+		for (unsigned long i = 0; i < _size; ++i)
+		{
+			_buf[i] = sqrt(_buf[i]);
+		}
+	}
+
 	T Dot(const _VectorN<T>& src) const
 	{
 		T dot = 0;

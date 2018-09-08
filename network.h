@@ -113,6 +113,21 @@ public:
 		}
 	}
 
+	void Adagrad(Float eff, Float rho)
+	{
+		// w' = w' + dw * dw;
+		// w = w - learning_rate * dw * rho / (rho + sqrt(dw')); 
+		// forexample: lr»°0.01£¨rho»°3°£
+
+		int len = static_cast<int>(m_layers.size());
+		for (int i = len - 1; i >= 0; --i)
+		{
+			LayerBase *layer = m_layers[i];
+			layer->Adagrad(eff, rho);
+		}
+
+	}
+
 	void SGD(const std::vector<VectorN*> &batch_img_vec, const std::vector<VectorN*> &batch_label_vec, float eta)
 	{
 		int len = static_cast<int>(m_layers.size());
@@ -136,6 +151,8 @@ public:
 
 		float eff = eta / batch_size;
 		UpdateWeightBias(eff);
+
+		//Adagrad(eff, 3.0);
 
 	}
 

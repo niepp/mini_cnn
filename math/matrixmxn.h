@@ -30,7 +30,9 @@ public:
 
 	void MakeZero();
 
-	T Avg() const;	
+	T Avg() const;
+
+	void Sqrt();
 
 	_MatrixMN<T> Transpose() const;
 
@@ -41,6 +43,10 @@ public:
 
 	_MatrixMN<T> operator*(const _MatrixMN<T>&);
 	_MatrixMN<T> operator*(const T &scale);
+
+	// Hadamard product
+	_MatrixMN<T> operator^(const _MatrixMN<T>&);
+
 
 	_MatrixMN<T> operator+(const _MatrixMN<T>&);
 	_MatrixMN<T> operator-(const _MatrixMN<T>&);

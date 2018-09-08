@@ -40,6 +40,8 @@ public:
 
 	_Matrix3D<T>& operator^=(const _Matrix3D<T>& other);
 
+	_Matrix3D<T>& operator^(const _Matrix3D<T>& other);
+
 	void MakeZero();
 
 	_Matrix3D<T>& Copy(const _Matrix3D<T>&);
@@ -554,7 +556,7 @@ _Matrix3D<T>& _Matrix3D<T>::operator*=(const T &scale)
 template <class T>
 inline _Matrix3D<T> operator*(const _Matrix3D<T>& mat, const T &scale)
 {
-	_Matrix3D<T> retMat = new _Matrix3D<T>(mat);
+	_Matrix3D<T> *retMat = new _Matrix3D<T>(mat);
 	for (Int k = 0; k < retMat._d; ++k)
 	{
 		for (Int i = 0; i < retMat._w; ++i)
@@ -584,6 +586,25 @@ _Matrix3D<T>& _Matrix3D<T>::operator^=(const _Matrix3D<T>& other)
 		}
 	}
 	return *this;
+}
+
+// Hadamard product
+template <class T>
+_Matrix3D<T>& _Matrix3D<T>::operator^(const _Matrix3D<T>& other)
+{
+	assert(_w == other._w && _h == other._h && _d == other._d);
+	_Matrix3D<T> *retMat = new _Matrix3D<T>(_w, _h, _d);
+	for (Int k = 0; k < _d; ++k)
+	{
+		for (Int i = 0; i < _w; ++i)
+		{
+			for (Int j = 0; j < _h; ++j)
+			{
+				(*retMat)(i, j, k) = (*this)(i, j, k) * (*this)(i, j, k);
+			}
+		}
+	}
+	return *retMat;
 }
 
 }

@@ -88,6 +88,10 @@ public:
 	{
 	}
 
+	virtual void Adagrad(Float eff, Float rho)
+	{
+	}
+	
 };
 }
 #endif //__LAYER_H__
