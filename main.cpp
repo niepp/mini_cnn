@@ -23,27 +23,27 @@ Network CreateFCN()
 	return nn;
 }
 
-//Network CreateCNN()
-//{
-//	Network nn;
-//	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
-//	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
-//	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
-//	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eRelu));
-//	nn.AddLayer(new OutputLayer(C_classCount, eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
-//	return nn;
-//}
-
 Network CreateCNN()
 {
 	Network nn;
 	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
-	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), nullptr, eActiveFunc::eRelu));
-	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), nullptr, eActiveFunc::eRelu));
+	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
+	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
 	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eRelu));
 	nn.AddLayer(new OutputLayer(C_classCount, eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 	return nn;
 }
+
+//Network CreateCNN()
+//{
+//	Network nn;
+//	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
+//	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), nullptr, eActiveFunc::eRelu));
+//	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), nullptr, eActiveFunc::eRelu));
+//	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eRelu));
+//	nn.AddLayer(new OutputLayer(C_classCount, eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
+//	return nn;
+//}
 
 std::mt19937_64 CreateRandom()
 {
@@ -105,23 +105,23 @@ int main()
 
 			nn.SGD(batch_img_vec, batch_label_vec, learning_rate);
 
-			if (i % (batch / 20) == 0)
-			{
-				Float ca = nn.CalcCost(batch_img_vec, batch_label_vec);
+			//if (i % (batch / 20) == 0)
+			//{
+			//	Float ca = nn.CalcCost(batch_img_vec, batch_label_vec);
 
-				if (ca < minCost)
-				{
-					minCost = ca;
-					uInt correct = nn.Test(test_img_vec, test_lab_vec);
-					float correct_rate = (1.0f * correct / test_img_count);
-					std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << "  correct_rate: " <<
-						correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
-				}
-				else
-				{
-					std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << endl;
-				}
-			}
+			//	if (ca < minCost)
+			//	{
+			//		minCost = ca;
+			//		uInt correct = nn.Test(test_img_vec, test_lab_vec);
+			//		float correct_rate = (1.0f * correct / test_img_count);
+			//		std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << "  correct_rate: " <<
+			//			correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
+			//	}
+			//	else
+			//	{
+			//		std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << endl;
+			//	}
+			//}
 		}
 
 		uInt correct = nn.Test(test_img_vec, test_lab_vec);
