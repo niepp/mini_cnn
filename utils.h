@@ -13,19 +13,36 @@ namespace mini_cnn
 {
 class NormalRandom
 {
+private:
+	Float m_mean;
+	Float m_stdev;
+	Int m_nTruncated;
 public:
 	std::mt19937_64 m_generator;
 	std::normal_distribution<Float> m_distribution;
 public:
-	NormalRandom(std::mt19937_64 generator, Float mean, Float stdev) : m_generator(generator), m_distribution(mean, stdev)
+	NormalRandom(std::mt19937_64 generator, Float mean = 0, Float stdev = 1.0, Int nTruncated = 0) :
+		m_mean(mean), m_stdev(stdev), m_nTruncated(nTruncated), m_generator(generator), m_distribution(mean, stdev)
 	{
 	}
 
 	Float GetRandom()
 	{
-		return m_distribution(m_generator);
+		if (m_nTruncated <= 0)
+		{
+			return m_distribution(m_generator);
+		}
+		else
+		{
+			Float r = m_mean;
+			do
+			{
+				r = m_distribution(m_generator);
+			}
+			while (abs(r - m_mean) >= m_nTruncated * m_stdev);
+			return r;
+		}
 	}
-
 };
 
 class UniformRandom
