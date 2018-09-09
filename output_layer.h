@@ -88,8 +88,9 @@ public:
 		return GetOutput() - *m_label;
 	}
 
-	Float GetCost()
+	Float GetCost(bool check_gradient)
 	{
+		Float e = check_gradient ? 0 : cEPSILON;
 		Float cost = 0;
 		switch (m_loss_func_type)
 		{
@@ -100,15 +101,14 @@ public:
 			}
 			break;
 		case eLossFunc::eSigmod_CrossEntropy:
-			{
+			{							
 				const VectorN &ov = GetOutput();
 				int len = static_cast<int>(ov.GetSize());
 				for (Int i = 0; i < len; ++i)
 				{
 					Float p = (*m_label)[i]; // p is only 0 or 1
 					Float q = ov[i];
-					Float c = p > 0 ? -log(q + cEPSILON) : -log((Float)(1.0) - q + cEPSILON);
-					//c = std::min(c, 1.0f); // 限定代价值上限，防止数值溢出
+					Float c = p > 0 ? -log(q + e) : -log((Float)(1.0) - q + e);
 					cost += c;
 				}
 			}
@@ -117,8 +117,7 @@ public:
 			{
 				const VectorN &ov = GetOutput();
 				Int idx = m_label->ArgMax();
-				cost = -log(ov[idx] + cEPSILON);
-				//cost = std::min(cost, 1.0f); // 限定代价值上限，防止数值溢出
+				cost = -log(ov[idx] + e);
 			}
 			break;
 		default:

@@ -11,6 +11,7 @@ namespace mini_cnn
 
 	typedef double				Float;
 
+	typedef std::vector<Int>	IndexVector;
 }
 
 #endif // __TYPES_H__

@@ -66,11 +66,11 @@ public:
 
 	_VectorN<T>* Flatten() const;
 
-	void DownSample(_Matrix3D<T> *retm, std::vector<Int> &idx_map,
+	void DownSample(_Matrix3D<T> *retm, std::vector<IndexVector*> &idx_maps,
 		Int pool_w, Int pool_h,
 		Int pool_stride_w, Int pool_stride_h) const;
 
-	void UpSample(_Matrix3D<T> *retm, std::vector<Int> &idx_map,
+	void UpSample(_Matrix3D<T> *retm, std::vector<IndexVector*> &idx_maps,
 		Int pool_w, Int pool_h,
 		Int pool_stride_w, Int pool_stride_h) const;
 
@@ -403,16 +403,21 @@ _VectorN<T>* _Matrix3D<T>::Flatten() const
 }
 
 template <class T>
-void _Matrix3D<T>::DownSample(_Matrix3D<T> *retm, std::vector<Int> &idx_map,
+void _Matrix3D<T>::DownSample(_Matrix3D<T> *retm, std::vector<IndexVector*> &idx_maps,
 	Int pool_w, Int pool_h,
 	Int pool_stride_w, Int pool_stride_h) const
 {
 
-	assert(idx_map.size() == _w * _h);
+	assert(idx_maps.size() == _d);
 
-	for (Int i = 0; i < idx_map.size(); ++i)
+	for (Int c = 0; c < idx_maps.size(); ++c)
 	{
-		idx_map[i] = -1;
+		IndexVector &idx_map = *idx_maps[c];
+		assert(idx_map.size() == _w * _h);
+		for (Int i = 0; i < idx_map.size(); ++i)
+		{
+			idx_map[i] = -1;
+		}
 	}
 
 	// Padding::Valid
@@ -421,6 +426,7 @@ void _Matrix3D<T>::DownSample(_Matrix3D<T> *retm, std::vector<Int> &idx_map,
 	Int nd = retm->_d;
 	for (Int d = 0; d < nd; ++d)
 	{
+		IndexVector &idx_map = *idx_maps[d];
 		for (Int i = 0; i < nw; ++i)
 		{
 			for (Int j = 0; j < nh; ++j)
@@ -465,12 +471,16 @@ void _Matrix3D<T>::DownSample(_Matrix3D<T> *retm, std::vector<Int> &idx_map,
 
 
 template <class T>
-void _Matrix3D<T>::UpSample(_Matrix3D<T> *retm, std::vector<Int> &idx_map,
+void _Matrix3D<T>::UpSample(_Matrix3D<T> *retm, std::vector<IndexVector*> &idx_maps,
 	Int pool_w, Int pool_h,
 	Int pool_stride_w, Int pool_stride_h) const
 {
-
-	assert(idx_map.size() == retm->_w * retm->_h);
+	assert(idx_maps.size() == retm->_d);
+	for (Int c = 0; c < idx_maps.size(); ++c)
+	{
+		IndexVector &idx_map = *idx_maps[c];
+		assert(idx_map.size() == retm->_w * retm->_h);
+	}
 
 	// Padding::Valid
 	Int nw = retm->_w;
@@ -478,6 +488,7 @@ void _Matrix3D<T>::UpSample(_Matrix3D<T> *retm, std::vector<Int> &idx_map,
 	Int nd = retm->_d;
 	for (Int d = 0; d < nd; ++d)
 	{
+		IndexVector &idx_map = *idx_maps[d];
 		for (Int i = 0; i < nw; ++i)
 		{
 			for (Int j = 0; j < nh; ++j)

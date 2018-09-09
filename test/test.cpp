@@ -83,7 +83,7 @@ Network create_cnn_sigmod_softmax_pool()
 	Network nn;
 	nn.AddLayer(new InputLayer(cinput_w, cinput_h, cinput_d));
 	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 1, 1), eActiveFunc::eSigmod));
-	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), new Pooling(2, 2, 0, 1, 1), eActiveFunc::eSigmod));
+//	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eSigmod));
 	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 	return nn;
 }
@@ -118,7 +118,7 @@ bool test_nn_gradient_check(Network &nn, const NormalRandom &nrand, VectorN *inp
 }
 
 #define TEST_GRADIENT(model)\
-	cout << #model << "\t" << std::boolalpha << test_nn_gradient_check(model(), nRand, input, label, cAbsPrecision, cRelatePrecision) << endl;
+	cout << setw(30) << setiosflags(ios::left) << #model << "\t" << std::boolalpha << test_nn_gradient_check(model(), nRand, input, label, cAbsPrecision, cRelatePrecision) << endl;
 
 void CheckGradient()
 {
@@ -137,23 +137,23 @@ void CheckGradient()
 	}
 	(*label)[3] = 1.0;
 
-	TEST_GRADIENT(create_fcn_sigmod_mse);
+	//TEST_GRADIENT(create_fcn_sigmod_mse);
 
-	TEST_GRADIENT(create_fcn_sigmod_crossentropy);
+	//TEST_GRADIENT(create_fcn_sigmod_crossentropy);
 
-	TEST_GRADIENT(create_fcn_relu);
+	//TEST_GRADIENT(create_fcn_relu);
 
-	TEST_GRADIENT(create_fcn_softmax);
+	//TEST_GRADIENT(create_fcn_softmax);
 
-	TEST_GRADIENT(create_cnn_sigmod);
+	//TEST_GRADIENT(create_cnn_sigmod);
 
-	TEST_GRADIENT(create_cnn_sigmod_softmax);
+	//TEST_GRADIENT(create_cnn_sigmod_softmax);
 
 	TEST_GRADIENT(create_cnn_sigmod_softmax_pool); // check failed with pooling
 
-	TEST_GRADIENT(create_cnn_relu_mse);
+	//TEST_GRADIENT(create_cnn_relu_mse);
 
-	TEST_GRADIENT(create_cnn_relu_softmax);
+	//TEST_GRADIENT(create_cnn_relu_softmax);
 
 }
 

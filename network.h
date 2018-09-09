@@ -190,7 +190,7 @@ public:
 			m_inputLayer->SetInputData(*img_vec[k]);
 			Forward();
 			m_outputLayer->SetLabelValue(*lab_vec[k]);
-			Float c = m_outputLayer->GetCost();
+			Float c = m_outputLayer->GetCost(false);
 			tot_cost += c;
 		}
 		if (tot_count > 0)
@@ -218,7 +218,7 @@ public:
 				{
 					for (int y = 0; y < w.GetColCount(); ++y)
 					{
-						if (!CalcDelta(test_img, test_lab, w(x, y), dw(x, y), absPrecision, relatePrecision))
+						if (!CalcGradient(test_img, test_lab, w(x, y), dw(x, y), absPrecision, relatePrecision))
 						{
 							check_ok = false;
 						}
@@ -229,7 +229,7 @@ public:
 				VectorN &db = *(fully_layer->m_delta);
 				for (int x = 0; x < b.GetSize(); ++x)
 				{
-					if (!CalcDelta(test_img, test_lab, b[x], db[x], absPrecision, relatePrecision))
+					if (!CalcGradient(test_img, test_lab, b[x], db[x], absPrecision, relatePrecision))
 					{
 						check_ok = false;
 					}
@@ -251,7 +251,7 @@ public:
 						{
 							for (int c = 0; c < w.Depth(); ++c)
 							{
-								if (!CalcDelta(test_img, test_lab, w(x, y, c), dw(x, y, c), absPrecision, relatePrecision))
+								if (!CalcGradient(test_img, test_lab, w(x, y, c), dw(x, y, c), absPrecision, relatePrecision))
 								{
 									check_ok = false;
 								}
@@ -261,7 +261,7 @@ public:
 
 					for (int x = 0; x < b.GetSize(); ++x)
 					{
-						if (!CalcDelta(test_img, test_lab, b[x], db[x], absPrecision, relatePrecision))
+						if (!CalcGradient(test_img, test_lab, b[x], db[x], absPrecision, relatePrecision))
 						{
 							check_ok = false;
 						}
@@ -280,11 +280,11 @@ public:
 		m_inputLayer->SetInputData(test_img);
 		Forward();
 		m_outputLayer->SetLabelValue(test_lab);
-		Float loss = m_outputLayer->GetCost();
+		Float loss = m_outputLayer->GetCost(false);
 		return loss;
 	}
 
-	bool CalcDelta(const VectorN &test_img, const VectorN &test_lab, Float &w, Float &dw, Float absPrecision, Float relatePrecision)
+	bool CalcGradient(const VectorN &test_img, const VectorN &test_lab, Float &w, Float &dw, Float absPrecision, Float relatePrecision)
 	{
 		static const Float EPSILON = 1e-6;
 
@@ -294,11 +294,11 @@ public:
 		Float prev_w = w;
 		w = prev_w + EPSILON;
 		Forward();
-		Float loss_0 = m_outputLayer->GetCost();
+		Float loss_0 = m_outputLayer->GetCost(true);
 
 		w = prev_w - EPSILON;
 		Forward();
-		Float loss_1 = m_outputLayer->GetCost();
+		Float loss_1 = m_outputLayer->GetCost(true);
 		Float delta_by_numerical = (loss_0 - loss_1) / (Float(2) * EPSILON);
 
 		w = prev_w;

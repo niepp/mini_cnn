@@ -3,10 +3,10 @@
 
 namespace mini_cnn
 {
-const float cEPSILON = 1e-4f;
+const Float cEPSILON = 1e-4;
 
 #ifndef PI
-const Float cPI = 3.141592653589793f;
+const Float cPI = 3.141592653589793;
 #endif
 
 const Float cMIN_FLOAT = std::numeric_limits<Float>::min();

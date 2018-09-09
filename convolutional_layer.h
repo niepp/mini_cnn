@@ -83,7 +83,7 @@ protected:
 	Matrix3D *m_pre_pool_img;
 	Matrix3D *m_output_img;
 	Matrix3D *m_middle_prime;
-	std::vector<Int> *m_idx_map;
+	std::vector<IndexVector*> m_idx_maps;
 
 	Matrix3D *m_pre_unpool_delta;
 
@@ -192,7 +192,10 @@ public:
 		{
 			m_pre_pool_img = new Matrix3D(nw, nh, nd);
 
-			m_idx_map = new std::vector<Int>(nw * nh);
+			for (Int i = 0; i < nd; ++i)
+			{
+				m_idx_maps.push_back(new IndexVector(nw * nh));
+			}
 
 			nw = static_cast<Int>(floorf(1.0f * (nw - m_pooling->m_width) / m_pooling->m_stride_w)) + 1;
 			nh = static_cast<Int>(floorf(1.0f * (nh - m_pooling->m_height) / m_pooling->m_stride_h)) + 1;
@@ -247,27 +250,12 @@ public:
 		if (m_pooling != nullptr)
 		{
 			m_activeFunc(*m_middle, *m_pre_pool_img);
-			m_pre_pool_img->DownSample(m_output_img, *m_idx_map, m_pooling->m_width, m_pooling->m_height, m_pooling->m_stride_w, m_pooling->m_stride_h);
+			m_pre_pool_img->DownSample(m_output_img, m_idx_maps, m_pooling->m_width, m_pooling->m_height, m_pooling->m_stride_w, m_pooling->m_stride_h);
 		}
 		else
 		{
 			m_activeFunc(*m_middle, *m_output_img);
 		}
-
-	
-		//VectorN &outp = *m_output_img->Flatten();
-		//for (int i = 0; i < outp.GetSize(); ++i)
-		//{
-		//	Float c = outp[i];
-
-		//	if (std::abs(c) > 10.0f)
-		//	{
-		//		int kkk = 0;
-		//	}
-
-		//}
-
-		
 
 		assert(m_next != nullptr);
 		if (m_next->m_input->m_type != m_output->m_type)
@@ -291,7 +279,7 @@ public:
 			{
 				VectorN flatten_delta = fully_layer->m_weight->Transpose() * (*fully_layer->m_delta);
 				m_pre_unpool_delta->Copy(*flatten_delta.Unflatten(m_pre_unpool_delta->Width(), m_pre_unpool_delta->Height(), m_pre_unpool_delta->Depth()));
-				m_pre_unpool_delta->UpSample(m_delta, *m_idx_map, m_pooling->m_width, m_pooling->m_height, m_pooling->m_stride_w, m_pooling->m_stride_h);
+				m_pre_unpool_delta->UpSample(m_delta, m_idx_maps, m_pooling->m_width, m_pooling->m_height, m_pooling->m_stride_w, m_pooling->m_stride_h);
 				(*m_delta) ^= (*m_middle_prime);
 			}
 			else
@@ -310,20 +298,7 @@ public:
 				conv_layer->m_delta->ConvDepthWise(m_pre_unpool_delta, conv_layer->m_filters,
 					conv_layer->m_filterDim.m_stride_w, conv_layer->m_filterDim.m_stride_h,
 					Padding::Valid);
-				m_pre_unpool_delta->UpSample(m_delta, *m_idx_map, m_pooling->m_width, m_pooling->m_height, m_pooling->m_stride_w, m_pooling->m_stride_h);
-
-
-				//VectorN &outp = *m_delta->Flatten();
-				//for (int i = 0; i < outp.GetSize(); ++i)
-				//{
-				//	Float c = outp[i];
-
-				//	if (std::abs(c) > 10.0f)
-				//	{
-				//		int kkk = 0;
-				//	}
-
-				//}
+				m_pre_unpool_delta->UpSample(m_delta, m_idx_maps, m_pooling->m_width, m_pooling->m_height, m_pooling->m_stride_w, m_pooling->m_stride_h);
 
 			}
 			else
