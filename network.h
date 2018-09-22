@@ -6,6 +6,9 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <thread>
+#include <future>
+
 using namespace std;
 
 #include "types.h"
@@ -81,6 +84,26 @@ public:
 		}
 	}
 
+	void SetTaskCount(int task_count)
+	{
+		int len = static_cast<int>(m_layers.size());
+		for (int i = 0; i < len; ++i)
+		{
+			LayerBase *layer = m_layers[i];
+			layer->SetTaskCount(task_count);
+		}
+	}
+
+	void PreTrain()
+	{
+		int len = static_cast<int>(m_layers.size());
+		for (int i = 0; i < len; ++i)
+		{
+			LayerBase *layer = m_layers[i];
+			layer->PreTrain();
+		}
+	}
+
 	void Forward()
 	{
 		int len = static_cast<int>(m_layers.size());
@@ -101,13 +124,23 @@ public:
 		}
 	}
 
-	void SumGradient()
+	void Forward(int task_idx)
+	{
+		int len = static_cast<int>(m_layers.size());
+		for (int i = 0; i < len; ++i)
+		{
+			LayerBase *layer = m_layers[i];
+			layer->Forward(task_idx);
+		}
+	}
+
+	void BackProp(int task_idx)
 	{
 		int len = static_cast<int>(m_layers.size());
 		for (int i = len - 1; i >= 0; --i)
 		{
 			LayerBase *layer = m_layers[i];
-			layer->SumGradient();
+			layer->BackProp(task_idx);
 		}
 	}
 
@@ -121,49 +154,59 @@ public:
 		}
 	}
 
-	void Adagrad(Float eff, Float rho)
+	//void Adagrad(Float eff, Float rho)
+	//{
+	//	// w' = w' + dw * dw;
+	//	// w = w - learning_rate * dw * rho / (rho + sqrt(dw')); 
+	//	// forexample: lr取0.01，rho取3。
+
+	//	int len = static_cast<int>(m_layers.size());
+	//	for (int i = len - 1; i >= 0; --i)
+	//	{
+	//		LayerBase *layer = m_layers[i];
+	//		layer->Adagrad(eff, rho);
+	//	}
+
+	//}
+
+	void TrainTask(const std::vector<VectorN*> &batch_img_vec, const std::vector<VectorN*> &batch_label_vec
+		, int begin, int end, int task_idx)
 	{
-		// w' = w' + dw * dw;
-		// w = w - learning_rate * dw * rho / (rho + sqrt(dw')); 
-		// forexample: lr取0.01，rho取3。
-
-		int len = static_cast<int>(m_layers.size());
-		for (int i = len - 1; i >= 0; --i)
+		for (int k = begin; k < end; ++k)
 		{
-			LayerBase *layer = m_layers[i];
-			layer->Adagrad(eff, rho);
+			m_inputLayer->SetInputData(*batch_img_vec[k], task_idx);
+			m_outputLayer->SetLabelValue(*batch_label_vec[k]);
+			Forward(task_idx);
+			BackProp(task_idx);
 		}
-
 	}
 
-	void SGD(const std::vector<VectorN*> &batch_img_vec, const std::vector<VectorN*> &batch_label_vec, float eta)
+	void SGD(const std::vector<VectorN*> &batch_img_vec, const std::vector<VectorN*> &batch_label_vec, float eta, const int max_threads)
 	{
-		int len = static_cast<int>(m_layers.size());
-		for (int i = 0; i < len; ++i)
-		{
-			LayerBase *layer = m_layers[i];
-			layer->PreTrain();
-		}
-
 		assert(batch_img_vec.size() == batch_label_vec.size());
+		int batch_size = batch_img_vec.size();		
+		int nthreads = std::min(max_threads, batch_size);
+		int nstep = (batch_size + nthreads - 1) / nthreads;
 
-		unsigned int batch_size = batch_img_vec.size();
-		for (unsigned int k = 0; k < batch_size; ++k)
+		PreTrain();
+
+		std::vector<std::future<void>> futures;
+		for (int k = 0; k < nthreads && k * nstep < batch_size; ++k)
 		{
-			m_inputLayer->SetInputData(*batch_img_vec[k]);
-			m_outputLayer->SetLabelValue(*batch_label_vec[k]);
-			Forward();
-			BackProp();
-			SumGradient();
+			int begin = k * nstep;
+			int end = std::min(batch_size, begin + nstep);
+			futures.push_back(std::move(std::async(std::launch::async, [&, k]() {
+				TrainTask(batch_img_vec, batch_label_vec, begin, end, k);
+			})));
 		}
-
+		for (auto &future : futures)
+		{
+			future.wait();
+		}
 		float eff = eta / batch_size;
 		UpdateWeightBias(eff);
 
-		//Adagrad(eff, 3.0);
-
 	}
-
 
 	uInt Test(const std::vector<VectorN*> &test_img_vec, const std::vector<int> &test_lab_vec)
 	{

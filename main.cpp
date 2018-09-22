@@ -7,6 +7,8 @@
 #include <cmath>
 #include <random>
 #include <algorithm>
+#include <thread>
+#include <future>
 
 #include "mini_cnn.h"
 
@@ -73,7 +75,7 @@ int main()
 	NormalRandom nrand(generator, 0, 0.1, 2);
 
 	// define neural network
-	Network nn = CreateCNN();
+	Network nn = CreateFCN();
 
 	nn.Init(nrand);
 
@@ -88,13 +90,17 @@ int main()
 	}
 
 	float maxCorrectRate = 0;
+
+	const int nthreads = std::thread::hardware_concurrency();
+	nn.SetTaskCount(nthreads);
+
 	for (int c = 0; c < epoch; ++c)
 	{
 		Float minCost = cMAX_FLOAT;
 		std::shuffle(std::begin(idx_vec), std::end(idx_vec), generator);
 		std::vector<VectorN*> batch_img_vec(batch_size);
 		std::vector<VectorN*> batch_label_vec(batch_size);
-		for (int i = 0; i <= batch; ++i)
+		for (int i = 0; i < batch; ++i)
 		{
 			for (int k = 0; k < batch_size; ++k)
 			{
@@ -103,25 +109,24 @@ int main()
 				batch_label_vec[k] = lab_vec[j];
 			}
 
-			nn.SGD(batch_img_vec, batch_label_vec, learning_rate);
+			nn.SGD(batch_img_vec, batch_label_vec, learning_rate, nthreads);
+			if (i % (batch / 20) == 0)
+			{
+				Float ca = nn.CalcCost(batch_img_vec, batch_label_vec);
 
-			//if (i % (batch / 20) == 0)
-			//{
-			//	Float ca = nn.CalcCost(batch_img_vec, batch_label_vec);
-
-			//	if (ca < minCost)
-			//	{
-			//		minCost = ca;
-			//		uInt correct = nn.Test(test_img_vec, test_lab_vec);
-			//		float correct_rate = (1.0f * correct / test_img_count);
-			//		std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << "  correct_rate: " <<
-			//			correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
-			//	}
-			//	else
-			//	{
-			//		std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << endl;
-			//	}
-			//}
+				if (ca < minCost)
+				{
+					minCost = ca;
+					uInt correct = nn.Test(test_img_vec, test_lab_vec);
+					float correct_rate = (1.0f * correct / test_img_count);
+					std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << "  correct_rate: " <<
+						correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
+				}
+				else
+				{
+					std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << endl;
+				}
+			}
 		}
 
 		uInt correct = nn.Test(test_img_vec, test_lab_vec);
@@ -132,7 +137,6 @@ int main()
 		}
 
 		Float tot_cost = nn.CalcCost(img_vec, lab_vec);
-
 		std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "  tot_cost = " << tot_cost << endl;
 	}
 

@@ -24,23 +24,22 @@ public:
 	VectorN *m_bias;     // m_bias[i] : 当前层的第i个神经元的偏置
 	VectorN *m_middle;	// middle value
 
-	//const VectorN *m_input;		// input of this layer, this is a ref to prev layer's output
-	//VectorN *m_output;			// output of this layer
-	VectorN *m_middle_prime;
-
 	VectorN *m_delta;	// equal to dJ/d(bias)
 	MatrixMN *m_dw;		// equal to dJ/d(w)
 
-	VectorN *m_sum_delta;
-	MatrixMN *m_sum_dw;
+	struct TaskStorage
+	{
+		VectorN *m_middle;
+		VectorN *m_delta;
+		MatrixMN *m_dw;
+	};
 
-	VectorN *m_delta2;
-	MatrixMN *m_dw2;
+	std::vector<TaskStorage> m_task_storage;
 
 protected:
 	eActiveFunc m_func_type;
 	ActiveFunc m_func;
-	ActiveFunc m_prime_func;
+	ActiveFuncDerived m_derived_func;
 
 public:
 	FullyConnectedLayer(uInt neuralCount, eActiveFunc act)
@@ -48,29 +47,24 @@ public:
 	{
 		m_bias = new VectorN(neuralCount);
 		m_middle = new VectorN(neuralCount);
-	
-		//VectorInOut* vec_in = dynamic_cast<VectorInOut*>(m_input);
-		//vec_in->m_value = new VectorN(neuralCount);
 
 		VectorInOut* vec_out = dynamic_cast<VectorInOut*>(m_output);
 		vec_out->m_value = new VectorN(neuralCount);
-
-		m_middle_prime = new VectorN(neuralCount);
 
 		m_func_type = act;
 		switch (act)
 		{
 		case eActiveFunc::eSigmod:
 			m_func = Sigmoid;
-			m_prime_func = SigmoidPrime;
+			m_derived_func = SigmoidPrime;
 			break;
 		case eActiveFunc::eTanh:
 			m_func = Tanh;
-			m_prime_func = TanhPrime;
+			m_derived_func = TanhPrime;
 			break;
 		case eActiveFunc::eRelu:
 			m_func = Relu;
-			m_prime_func = ReluPrime;
+			m_derived_func = ReluPrime;
 			break;
 		case eActiveFunc::eSoftMax:
 			m_func = Softmax;
@@ -92,6 +86,23 @@ public:
 		return *(vec_out->m_value);
 	}
 
+	const VectorN& GetInput(TaskStorageBase &ts) const
+	{
+		VectorInOut* vec_in = dynamic_cast<VectorInOut*>(ts.m_input);
+		return *(vec_in->m_value);
+	}
+
+	VectorN& GetOutput(TaskStorageBase &ts) const
+	{
+		VectorInOut* vec_out = dynamic_cast<VectorInOut*>(ts.m_output);
+		return *(vec_out->m_value);
+	}
+
+	TaskStorage& GetTaskStorage(int task_idx)
+	{
+		return m_task_storage[task_idx];
+	}
+
 	virtual void Connect(LayerBase *next)
 	{
 		LayerBase::Connect(next);
@@ -100,9 +111,6 @@ public:
 
 		m_delta = new VectorN(this->Size());
 		m_dw = new MatrixMN(this->Size(), this->m_prev->Size());
-
-		m_sum_delta = new VectorN(this->Size());
-		m_sum_dw = new MatrixMN(this->Size(), this->m_prev->Size());
 
 	}
 
@@ -122,6 +130,18 @@ public:
 		}
 	}
 
+	virtual void SetTaskCount(int task_count)
+	{
+		m_task_storage.resize(task_count);
+		for (auto& ts : m_task_storage)
+		{
+			ts.m_delta = new VectorN(this->Size());
+			ts.m_dw = new MatrixMN(this->Size(), this->m_prev->Size());
+			ts.m_middle = new VectorN(this->Size());
+		}
+		LayerBase::SetTaskCount(task_count);
+	}
+
 	virtual void Forward()
 	{
 		m_middle->Copy(*m_weight * GetInput() + *m_bias);
@@ -130,101 +150,62 @@ public:
 		{
 			m_next->m_input = m_output;
 		}
-
-		//VectorN &outp = GetOutput();
-		//for (int i = 0; i < outp.GetSize(); ++i)
-		//{
-		//	Float c = outp[i];
-
-		//	if (std::abs(c) > 10.0f)
-		//	{
-		//		std::cout << "c:" << c << endl;
-		//	}
-
-		//	if (std::isinf(c) || std::isnan(c))
-		//	{
-		//		std::cout << "c:" << c << endl;
-		//	}
-		//}
-
 	}
 
-	virtual void BackProp()
+	virtual void Forward(int task_idx)
 	{
-		FullyConnectedLayer *fc = dynamic_cast<FullyConnectedLayer*>(m_next);
-		if (fc != nullptr) 
+		TaskStorage &ts = m_task_storage[task_idx];
+		TaskStorageBase &tsb = GetTaskStorageBase(task_idx);
+		VectorN &_m = *ts.m_middle;
+		_m.Copy(*m_weight * GetInput(tsb) + *m_bias);
+		m_func(_m, GetOutput(tsb));
+		if (m_next != nullptr)
 		{
-			m_prime_func(*m_middle, *m_middle_prime);
-			m_delta->Copy((fc->m_weight->Transpose() * (*fc->m_delta)) ^ (*m_middle_prime));
-			m_dw->Copy(*m_delta * GetInput());
+			TaskStorageBase &next_tsb = m_next->GetTaskStorageBase(task_idx);
+			next_tsb.m_input = tsb.m_output;
 		}
+	}
 
-		//VectorN &outp = *m_delta;
-		//for (int i = 0; i < outp.GetSize(); ++i)
-		//{
-		//	Float c = outp[i];
-
-		//	if (std::abs(c) > 10.0f)
-		//	{
-		//		std::cout << "c:" << c << endl;
-		//	}
-
-		//	if (std::isinf(c) || std::isnan(c))
-		//	{
-		//		std::cout << "c:" << c << endl;
-		//	}
-		//}
-
+	virtual void BackProp(int task_idx)
+	{
+		TaskStorage &ts = m_task_storage[task_idx];
+		TaskStorageBase &tsb = GetTaskStorageBase(task_idx);
+		FullyConnectedLayer *fc = dynamic_cast<FullyConnectedLayer*>(m_next);
+		if (fc != nullptr)
+		{
+			VectorN &_d = *ts.m_delta;
+			MatrixMN &_w = *ts.m_dw;
+			VectorN &_m = *ts.m_middle;
+			TaskStorage &next_ts = fc->GetTaskStorage(task_idx);
+			m_derived_func(_m);
+			_d += (fc->m_weight->Transpose() * (*next_ts.m_delta)) ^ _m;
+			_w += _d * GetInput(tsb);
+		}
 	}
 
 	virtual void PreTrain()
 	{
-		m_sum_delta->MakeZero();
-		m_sum_dw->MakeZero();
-	}
-
-	virtual void SumGradient()
-	{
-		m_sum_delta->Copy(*m_sum_delta + *m_delta);
-		m_sum_dw->Copy(*m_sum_dw + *m_dw);
+		m_delta->MakeZero();
+		m_dw->MakeZero();
+		for (auto& ts : m_task_storage)
+		{
+			ts.m_delta->MakeZero();
+			ts.m_dw->MakeZero();
+		}
 	}
 
 	virtual void UpdateWeightBias(Float eff)
 	{
-		*m_weight -= *m_sum_dw * eff;
-		*m_bias -= *m_sum_delta * eff;
-	}
-
-	virtual void Adagrad(Float eff, Float rho)
-	{
-		if (m_delta2 == nullptr)
+		for (auto& ts : m_task_storage)
 		{
-			m_delta2 = new VectorN(this->Size());
-			m_delta2->MakeZero();
+			*m_delta += *ts.m_delta;
+			*m_dw += *ts.m_dw;
 		}
-		if (m_dw2 == nullptr)
-		{
-			m_dw2 = new MatrixMN(this->Size(), this->m_prev->Size());
-			m_dw2->MakeZero();
-		}
-
-		*m_delta2 += *m_sum_delta ^ *m_sum_delta;
-		*m_dw2 += *m_sum_dw ^ *m_sum_dw;
-
-		for (unsigned long i = 0; i < m_weight->GetRowCount(); ++i)
-		{
-			for (unsigned long j = 0; j < m_weight->GetColCount(); ++j)
-			{
-				(*m_weight)(i, j) -= eff * (*m_sum_dw)(i, j) * rho / (rho + sqrt((*m_dw2)(i, j)));
-			}
-		}
-
-		for (unsigned long i = 0; i < m_bias->GetSize(); ++i)
-		{
-			(*m_bias)[i] -= eff * (*m_sum_delta)[i] * rho / (rho + sqrt((*m_delta2)[i]));
-		}
+		*m_weight -= *m_dw * eff;
+		*m_bias -= *m_delta * eff;
 	}
 
 };
 }
 #endif //__FULLYCONNECTED_LAYER_H__
+

@@ -43,9 +43,9 @@ public:
 		{
 		case eLossFunc::eMSE:
 			{
-				m_prime_func(*m_middle, *m_middle_prime);
-				m_delta->Copy(MseDerive() ^ (*m_middle_prime));
-				m_dw->Copy(*m_delta * GetInput());
+				m_derived_func(*m_middle);
+				*m_delta += MseDerive() ^ (*m_middle);
+				*m_dw += *m_delta * GetInput();
 			}
 			break;
 		case eLossFunc::eSigmod_CrossEntropy:
@@ -54,8 +54,8 @@ public:
 				// 交叉熵CrossEntropy损失函数和Sigmod激活函数的组合：
 				// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
 				// ref： http://neuralnetworksanddeeplearning.com/chap3.html#introducing_the_cross-entropy_cost_function
-				m_delta->Copy(GetOutput() - *m_label);
-				m_dw->Copy(*m_delta * GetInput());
+				*m_delta += GetOutput() - *m_label;
+				*m_dw += *m_delta * GetInput();
 			}
 			break;
 		case eLossFunc::eSoftMax_LogLikelihood:
@@ -71,9 +71,9 @@ public:
 				Int len = static_cast<Int>(m_delta->GetSize());
 				for (Int i = 0; i < len; ++i)
 				{
-					(*m_delta)[i] = (i == idx) ? (output[i] - (Float)(1.0)) : output[i];
+					(*m_delta)[i] += (i == idx) ? (output[i] - (Float)(1.0)) : output[i];
 				}
-				m_dw->Copy(*m_delta * GetInput());
+				*m_dw += *m_delta * GetInput();
 			}
 			break;
 		default:

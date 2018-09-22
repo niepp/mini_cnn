@@ -37,8 +37,18 @@ enum eLossFunc
 class LayerBase
 {
 public:
+	// input of this layer, this is a ref to prev layer's output
 	InOut *m_input;
 	InOut *m_output;
+
+	struct TaskStorageBase
+	{
+		InOut *m_input;
+		InOut *m_output;
+	};
+
+	std::vector<TaskStorageBase> m_task_storage_base;
+
 protected:
 	uInt m_neuralCount;	
 	LayerBase *m_prev;
@@ -55,6 +65,11 @@ public:
 		return m_neuralCount;
 	}
 
+	TaskStorageBase& GetTaskStorageBase(int task_idx)
+	{
+		return m_task_storage_base[task_idx];
+	}
+
 	virtual void Connect(LayerBase *next)
 	{
 		if (next != nullptr)
@@ -68,6 +83,20 @@ public:
 	{
 	}
 
+	virtual void SetTaskCount(int task_count)
+	{
+		m_task_storage_base.resize(task_count);
+		for (auto& ts : m_task_storage_base)
+		{
+			VectorInOut *vec_in = new VectorInOut();
+			ts.m_input = vec_in;
+
+			VectorInOut *vec_out = new VectorInOut();
+			vec_out->m_value = new VectorN(m_neuralCount);
+			ts.m_output = vec_out;
+		}
+	}
+
 	virtual void Forward()
 	{
 	}
@@ -76,11 +105,15 @@ public:
 	{
 	}
 
-	virtual void PreTrain()
+	virtual void Forward(int task_idx)
 	{
 	}
 
-	virtual void SumGradient()
+	virtual void BackProp(int task_idx)
+	{
+	}
+
+	virtual void PreTrain()
 	{
 	}
 
@@ -88,10 +121,6 @@ public:
 	{
 	}
 
-	virtual void Adagrad(Float eff, Float rho)
-	{
-	}
-	
 };
 }
 #endif //__LAYER_H__

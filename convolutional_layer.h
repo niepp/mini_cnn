@@ -82,24 +82,16 @@ protected:
 	Matrix3D *m_input_img;
 	Matrix3D *m_pre_pool_img;
 	Matrix3D *m_output_img;
-	Matrix3D *m_middle_prime;
 	std::vector<IndexVector*> m_idx_maps;
 
 	Matrix3D *m_pre_unpool_delta;
-
-	// mini-batch中每个batch里的多个训练样本的梯度之和
-	VectorN *m_sum_db;
-	std::vector<Matrix3D*> m_sum_dw;
-
-	VectorN *m_db2;
-	std::vector<Matrix3D*> m_dw2;
 
 protected:
 	FilterDimension m_filterDim;
 	Pooling *m_pooling;
 	eActiveFunc m_activeFuncType;
-	MatActiveFunc m_activeFunc;
-	MatActiveFunc m_activePrimeFunc;
+	MatActiveFunc m_func;
+	MatActiveFuncDerived m_derived_func;
 
 public:
 	ConvolutionalLayer(Int filterCount
@@ -128,27 +120,19 @@ public:
 		}
 		m_db = new VectorN(filterCount);
 		
-		matMem = new unsigned char[filterCount * filterMemSize];
-		memset(matMem, 0, filterCount * filterMemSize);
-		for (Int i = 0; i < filterCount; ++i)
-		{
-			m_sum_dw.push_back(new Matrix3D(reinterpret_cast<Float*>(matMem + i * filterMemSize), m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
-		}
-		m_sum_db = new VectorN(filterCount);
-
 		switch (act)
 		{
 		case eActiveFunc::eSigmod:
-			m_activeFunc = Sigmoid;
-			m_activePrimeFunc = SigmoidPrime;
+			m_func = Sigmoid;
+			m_derived_func = SigmoidPrime;
 			break;
 		case eActiveFunc::eTanh:
-			m_activeFunc = Tanh;
-			m_activePrimeFunc = TanhPrime;
+			m_func = Tanh;
+			m_derived_func = TanhPrime;
 			break;
 		case eActiveFunc::eRelu:
-			m_activeFunc = Relu;
-			m_activePrimeFunc = ReluPrime;
+			m_func = Relu;
+			m_derived_func = ReluPrime;
 			break;
 		default:
 			break;
@@ -184,8 +168,6 @@ public:
 		Int nh = static_cast<Int>(floorf(1.0f * (input_h - m_filterDim.m_height) / m_filterDim.m_stride_h)) + 1;
 
 		m_middle = new Matrix3D(nw, nh, nd);
-		m_middle_prime = new Matrix3D(nw, nh, nd);
-
 		m_delta = new Matrix3D(nw, nh, nd);
 
 		if (m_pooling != nullptr)
@@ -249,12 +231,12 @@ public:
 
 		if (m_pooling != nullptr)
 		{
-			m_activeFunc(*m_middle, *m_pre_pool_img);
+			m_func(*m_middle, *m_pre_pool_img);
 			m_pre_pool_img->DownSample(m_output_img, m_idx_maps, m_pooling->m_width, m_pooling->m_height, m_pooling->m_stride_w, m_pooling->m_stride_h);
 		}
 		else
 		{
-			m_activeFunc(*m_middle, *m_output_img);
+			m_func(*m_middle, *m_output_img);
 		}
 
 		assert(m_next != nullptr);
@@ -271,7 +253,7 @@ public:
 		FullyConnectedLayer *fully_layer = dynamic_cast<FullyConnectedLayer*>(m_next);
 		ConvolutionalLayer *conv_layer = dynamic_cast<ConvolutionalLayer*>(m_next);
 
-		m_activePrimeFunc(*m_middle, *m_middle_prime);
+		m_derived_func(*m_middle);
 
 		if (fully_layer != nullptr)
 		{
@@ -280,16 +262,13 @@ public:
 				VectorN flatten_delta = fully_layer->m_weight->Transpose() * (*fully_layer->m_delta);
 				m_pre_unpool_delta->Copy(*flatten_delta.Unflatten(m_pre_unpool_delta->Width(), m_pre_unpool_delta->Height(), m_pre_unpool_delta->Depth()));
 				m_pre_unpool_delta->UpSample(m_delta, m_idx_maps, m_pooling->m_width, m_pooling->m_height, m_pooling->m_stride_w, m_pooling->m_stride_h);
-				(*m_delta) ^= (*m_middle_prime);
+				(*m_delta) ^= (*m_middle);
 			}
 			else
 			{
-				VectorN flatten_delta = (fully_layer->m_weight->Transpose() * (*fully_layer->m_delta)) ^ (*(m_middle_prime->Flatten()));
+				VectorN flatten_delta = (fully_layer->m_weight->Transpose() * (*fully_layer->m_delta)) ^ (*(m_middle->Flatten()));
 				m_delta->Copy(*flatten_delta.Unflatten(m_delta->Width(), m_delta->Height(), m_delta->Depth()));
 			}
-
-		
-
 		}
 		else if (conv_layer != nullptr)
 		{
@@ -307,13 +286,14 @@ public:
 					conv_layer->m_filterDim.m_stride_w, conv_layer->m_filterDim.m_stride_h,
 					Padding::Valid);
 			}
-			(*m_delta) ^= (*m_middle_prime);
+			(*m_delta) ^= (*m_middle);
 		}
 		else
 		{
 			throw new std::exception("no implement!");
 		}
 
+		// todo
 		m_input_img->ConvDepthWise(m_dw, *m_delta, m_filterDim.m_stride_w, m_filterDim.m_stride_h, Padding::Valid);
 
 		assert(m_filters.size() == m_db->GetSize() &&
@@ -323,82 +303,26 @@ public:
 
 		for (int i = 0; i < nFilter; ++i)
 		{
-			(*m_db)[i] = m_delta->SumByDepthWise(i);
+			(*m_db)[i] += m_delta->SumByDepthWise(i);
 		}
 	}
 
 	virtual void PreTrain()
 	{
-		m_sum_db->MakeZero();
+		m_db->MakeZero();
 		for (Int i = 0; i < m_filters.size(); ++i)
 		{
-			m_sum_dw[i]->MakeZero();
-		}
-	}
-
-	virtual void SumGradient()
-	{
-		m_sum_db->Copy(*m_sum_db + *m_db);
-		for (Int i = 0; i < m_filters.size(); ++i)
-		{
-			*m_sum_dw[i] += *m_dw[i];
+			m_dw[i]->MakeZero();
 		}
 	}
 
 	virtual void UpdateWeightBias(Float eff)
 	{
-		*m_bias -= *m_sum_db * eff;
+		*m_bias -= *m_db * eff;
 		for (Int i = 0; i < m_filters.size(); ++i)
 		{
-			*m_sum_dw[i] *= eff;
-			*m_filters[i] -= *m_sum_dw[i];
-		}
-	}
-
-	virtual void Adagrad(Float eff, Float rho)
-	{
-		Int filterCount = m_filters.size();
-		if (m_db2 == nullptr)
-		{
-			m_db2 = new VectorN(filterCount);
-			m_db2->MakeZero();
-		}
-		if (m_dw2.size() == 0)
-		{
-			//m_dw2 = new MatrixMN(this->Size(), this->m_prev->Size());
-			uInt filterMemSize = sizeof(Float)* m_filterDim.m_width * m_filterDim.m_height * m_filterDim.m_channels;
-			unsigned char *matMem = new unsigned char[filterCount * filterMemSize];
-			memset(matMem, 0, filterCount * filterMemSize);
-			for (Int i = 0; i < filterCount; ++i)
-			{
-				m_dw2.push_back(new Matrix3D(reinterpret_cast<Float*>(matMem + i * filterMemSize), m_filterDim.m_width, m_filterDim.m_height, m_filterDim.m_channels));
-			}
-		}
-
-		*m_db2 += *m_sum_db ^ *m_sum_db;
-		for (Int i = 0; i < m_filters.size(); ++i)
-		{
-			*m_dw2[i] += *m_sum_dw[i] ^ *m_sum_dw[i];
-		}
-
-		for (Int k = 0; k < m_filters.size(); ++k)
-		{
-			auto f = m_dw2[k];
-			for (unsigned long i = 0; i < f->Width(); ++i)
-			{
-				for (unsigned long j = 0; j < f->Height(); ++j)
-				{
-					for (unsigned long c = 0; c < f->Depth(); ++c)
-					{
-						(*f)(i, j, c) -= eff * (*m_sum_dw[k])(i, j, c) * rho / (rho + sqrt((*m_dw2[k])(i, j, c)));
-					}
-				}
-			}
-		}
-
-		for (unsigned long i = 0; i < m_bias->GetSize(); ++i)
-		{
-			(*m_bias)[i] -= eff * (*m_sum_db)[i] * rho / (rho + sqrt((*m_db2)[i]));
+			*m_dw[i] *= eff;
+			*m_filters[i] -= *m_dw[i];
 		}
 	}
 
