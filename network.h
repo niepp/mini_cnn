@@ -208,41 +208,78 @@ public:
 
 	}
 
-	uInt Test(const std::vector<VectorN*> &test_img_vec, const std::vector<int> &test_lab_vec)
+	int TestTask(const std::vector<VectorN*> &test_img_vec, const std::vector<int> &test_lab_vec
+		, int begin, int end, int task_idx)
 	{
-
-		assert(test_img_vec.size() == test_lab_vec.size());
-
-		int test_count = test_img_vec.size();
-		uInt correct = 0;
-		for (int k = 0; k < test_count; ++k)
+		int c_count = 0;
+		for (int i = begin; i < end; ++i)
 		{
-			m_inputLayer->SetInputData(*test_img_vec[k]);
-			Forward();
-			int lab = m_outputLayer->GetOutput().ArgMax();
-			int std_lab = test_lab_vec[k];
-			if (lab == std_lab)
+			m_inputLayer->SetInputData(*test_img_vec[i], task_idx);
+			Forward(task_idx);
+			int lab = m_outputLayer->GetOutput(task_idx).ArgMax();
+			if (lab == test_lab_vec[i])
 			{
-				++correct;
+				++c_count;
 			}
 		}
-
-		return correct;
-
+		return c_count;
 	}
 
-	Float CalcCost(const std::vector<VectorN*> &img_vec, const std::vector<VectorN*> &lab_vec)
+	uInt Test(const std::vector<VectorN*> &test_img_vec, const std::vector<int> &test_lab_vec, const int max_threads)
+	{
+		assert(test_img_vec.size() == test_lab_vec.size());
+		int test_count = test_img_vec.size();
+
+		int nthreads = max_threads;
+		int nstep = (test_count + nthreads - 1) / nthreads;
+
+		std::vector<std::future<int>> futures;
+		for (int k = 0; k < nthreads && k * nstep < test_count; ++k)
+		{
+			int begin = k * nstep;
+			int end = std::min(test_count, begin + nstep);
+			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
+				return TestTask(test_img_vec, test_lab_vec, begin, end, k);
+			})));
+		}
+		uInt correct = 0;
+		for (auto &future : futures)
+		{
+			correct += future.get();
+		}
+		return correct;
+	}
+
+	Float CalcCost(const std::vector<VectorN*> &img_vec, const std::vector<VectorN*> &lab_vec, const int max_threads)
 	{
 		assert(img_vec.size() == lab_vec.size());
 		int tot_count = img_vec.size();
-		Float tot_cost = 0;
-		for (int k = 0; k < tot_count; ++k)
+
+		int nthreads = max_threads;
+		int nstep = (tot_count + nthreads - 1) / nthreads;
+
+		std::vector<std::future<Float>> futures;
+		for (int k = 0; k < nthreads && k * nstep < tot_count; ++k)
 		{
-			m_inputLayer->SetInputData(*img_vec[k]);
-			Forward();
-			m_outputLayer->SetLabelValue(*lab_vec[k]);
-			Float c = m_outputLayer->GetCost(false);
-			tot_cost += c;
+			int begin = k * nstep;
+			int end = std::min(tot_count, begin + nstep);
+			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
+				Float cost = 0;
+				for (int i = begin; i < end; ++i)
+				{
+					m_inputLayer->SetInputData(*img_vec[i], k);
+					Forward(k);
+					m_outputLayer->SetLabelValue(*lab_vec[i], k);
+					Float c = m_outputLayer->GetCost(false, k);
+					cost += c;
+				}
+				return cost;
+			})));
+		}
+		Float tot_cost = 0;
+		for (auto &future : futures)
+		{
+			tot_cost += future.get();
 		}
 		if (tot_count > 0)
 		{

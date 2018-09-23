@@ -111,33 +111,33 @@ int main()
 
 			nn.SGD(batch_img_vec, batch_label_vec, learning_rate, nthreads);
 
-			if (i % (batch / 50) == 0)
-			{
-				Float ca = nn.CalcCost(batch_img_vec, batch_label_vec);
+			//if (i % (batch / 50) == 0)
+			//{
+			//	Float ca = nn.CalcCost(batch_img_vec, batch_label_vec, nthreads);
 
-				if (ca < minCost)
-				{
-					minCost = ca;
-					uInt correct = nn.Test(test_img_vec, test_lab_vec);
-					float correct_rate = (1.0f * correct / test_img_count);
-					std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << "  correct_rate: " <<
-						correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
-				}
-				else
-				{
-					std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << endl;
-				}
-			}
+			//	if (ca < minCost)
+			//	{
+			//		minCost = ca;
+			//		uInt correct = nn.Test(test_img_vec, test_lab_vec, nthreads);
+			//		float correct_rate = (1.0f * correct / test_img_count);
+			//		std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << "  correct_rate: " <<
+			//			correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
+			//	}
+			//	else
+			//	{
+			//		std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << endl;
+			//	}
+			//}
 		}
 
-		uInt correct = nn.Test(test_img_vec, test_lab_vec);
+		uInt correct = nn.Test(test_img_vec, test_lab_vec, nthreads);
 		float correct_rate = (1.0f * correct / test_img_count);
 		if (correct_rate > maxCorrectRate)
 		{
 			maxCorrectRate = correct_rate;
 		}
 
-		Float tot_cost = nn.CalcCost(img_vec, lab_vec);
+		Float tot_cost = nn.CalcCost(img_vec, lab_vec, nthreads);
 		std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "  tot_cost = " << tot_cost << endl;
 		//std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
 

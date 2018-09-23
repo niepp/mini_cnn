@@ -98,6 +98,12 @@ public:
 		return *(vec_out->m_value);
 	}
 
+	VectorN& GetOutput(int task_idx) const
+	{
+		VectorInOut* vec_out = dynamic_cast<VectorInOut*>(m_task_storage_base[task_idx].m_output);
+		return *(vec_out->m_value);
+	}
+
 	TaskStorage& GetTaskStorage(int task_idx)
 	{
 		return m_task_storage[task_idx];

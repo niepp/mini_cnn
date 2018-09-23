@@ -80,44 +80,58 @@ public:
 		BackPropImpl(_d, _w, _m, _in, _out, _lab);
 	}
 
-	void BackPropImpl(VectorN &_d, MatrixMN &_w, VectorN &_m, 
+	Float GetCost(bool check_gradient)
+	{
+		return GetCostImpl(check_gradient, GetOutput(), *m_label);
+	}
+
+	Float GetCost(bool check_gradient, int task_idx)
+	{
+		TaskStorageBase &tsb = GetTaskStorageBase(task_idx);
+		const VectorN &_out = GetOutput(tsb);
+		const VectorN &_lab = *m_task_storage_output[task_idx].m_label;
+		return GetCostImpl(check_gradient, _out, _lab);
+	}
+
+private:
+	void BackPropImpl(VectorN &_d, MatrixMN &_w, VectorN &_m,
 		const VectorN &_in, const VectorN &_out, const VectorN &_lab)
 	{
 		switch (m_loss_func_type)
 		{
 		case eLossFunc::eMSE:
-			{
-				m_derived_func(_m);
-				_d += (_out - _lab) ^ _m; // 均方误差损失函数对输出层的输出值的偏导数
-				_w += _d * _in;
-			}
+		{
+			m_derived_func(_m);
+			_d += (_out - _lab) ^ _m; // 均方误差损失函数对输出层的输出值的偏导数
+			_w += _d * _in;
+		}
 			break;
 		case eLossFunc::eSigmod_CrossEntropy:
-			{
-				// J = -[t * ln(y) + (1 - t) * ln(1 - y)]      : t is the label; y is network output
-				// 交叉熵CrossEntropy损失函数和Sigmod激活函数的组合：
-				// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
-				// ref： http://neuralnetworksanddeeplearning.com/chap3.html#introducing_the_cross-entropy_cost_function
-				_d += _out - _lab;
-				_w += _d * _in;
-			}
+		{
+			// J = -[t * ln(y) + (1 - t) * ln(1 - y)]      : t is the label; y is network output
+			// 交叉熵CrossEntropy损失函数和Sigmod激活函数的组合：
+			// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
+			// ref： http://neuralnetworksanddeeplearning.com/chap3.html#introducing_the_cross-entropy_cost_function
+			_d += _out - _lab;
+			_w += _d * _in;
+		}
 			break;
 		case eLossFunc::eSoftMax_LogLikelihood:
+		{
+			// J = -t * ln(y)     : t is the label; y is network output
+			// LogLikelihood损失函数和Softmax激活函数的组合下：
+			// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
+			// delta(i) = output(k) - 1    (i==k时， k是one-hot标签对应的index)
+			//          = 0                (i!=k时)
+			// ref： https://www.cnblogs.com/ZJUT-jiangnan/p/5489047.html
+			int idx = _lab.ArgMax();
+			Int len = static_cast<Int>(_d.GetSize());
+			for (Int i = 0; i < len; ++i)
 			{
-				// J = -t * ln(y)     : t is the label; y is network output
-				// LogLikelihood损失函数和Softmax激活函数的组合下：
-				// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
-				// delta(i) = output(k) - 1    (i==k时， k是one-hot标签对应的index)
-				//          = 0                (i!=k时)
-				// ref： https://www.cnblogs.com/ZJUT-jiangnan/p/5489047.html
-				int idx = _lab.ArgMax();				
-				Int len = static_cast<Int>(_d.GetSize());
-				for (Int i = 0; i < len; ++i)
-				{
-					_d[i] += (i == idx) ? (_out[i] - (Float)(1.0)) : _out[i];
-				}
-				_w += _d * _in;
+				_d[i] += (i == idx) ? (_out[i] - (Float)(1.0)) : _out[i];
 			}
+			_w += _d * _in;
+		}
 			break;
 		default:
 			assert(false);
@@ -125,7 +139,7 @@ public:
 		}
 	}
 
-	Float GetCost(bool check_gradient)
+	Float GetCostImpl(bool check_gradient, const VectorN &_out, const VectorN &_lab)
 	{
 		Float e = check_gradient ? 0 : cEPSILON;
 		Float cost = 0;
@@ -133,18 +147,17 @@ public:
 		{
 		case eLossFunc::eMSE:
 			{
-				VectorN diff = GetOutput() - *m_label;
+				VectorN diff = _out - _lab;
 				cost = (Float)(0.5) * diff.SquareMagnitude();
 			}
 			break;
 		case eLossFunc::eSigmod_CrossEntropy:
-			{							
-				const VectorN &ov = GetOutput();
-				int len = static_cast<int>(ov.GetSize());
+			{
+				int len = static_cast<int>(_out.GetSize());
 				for (Int i = 0; i < len; ++i)
 				{
-					Float p = (*m_label)[i]; // p is only 0 or 1
-					Float q = ov[i];
+					Float p = (_lab)[i]; // p is only 0 or 1
+					Float q = _out[i];
 					Float c = p > 0 ? -log(q + e) : -log((Float)(1.0) - q + e);
 					cost += c;
 				}
@@ -152,9 +165,8 @@ public:
 			break;
 		case eLossFunc::eSoftMax_LogLikelihood:
 			{
-				const VectorN &ov = GetOutput();
-				Int idx = m_label->ArgMax();
-				cost = -log(ov[idx] + e);
+				Int idx = _lab.ArgMax();
+				cost = -log(_out[idx] + e);
 			}
 			break;
 		default:
