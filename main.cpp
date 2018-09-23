@@ -19,7 +19,7 @@ Network CreateFCN()
 {
 	Network nn;
 	nn.AddLayer(new InputLayer(N_inputCount));
-	nn.AddLayer(new FullyConnectedLayer(100, eActiveFunc::eRelu));
+//	nn.AddLayer(new FullyConnectedLayer(100, eActiveFunc::eRelu));
 	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eRelu));
 	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
 	return nn;
@@ -110,7 +110,7 @@ int main()
 			}
 
 			nn.SGD(batch_img_vec, batch_label_vec, learning_rate, nthreads);
-			if (i % (batch / 20) == 0)
+			/*if (i % (batch / 20) == 0)
 			{
 				Float ca = nn.CalcCost(batch_img_vec, batch_label_vec);
 
@@ -126,8 +126,10 @@ int main()
 				{
 					std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << endl;
 				}
-			}
+			}*/
 		}
+
+		cout << "test correct" << endl;
 
 		uInt correct = nn.Test(test_img_vec, test_lab_vec);
 		float correct_rate = (1.0f * correct / test_img_count);
@@ -136,8 +138,10 @@ int main()
 			maxCorrectRate = correct_rate;
 		}
 
-		Float tot_cost = nn.CalcCost(img_vec, lab_vec);
-		std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "  tot_cost = " << tot_cost << endl;
+		//Float tot_cost = nn.CalcCost(img_vec, lab_vec);
+		//std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "  tot_cost = " << tot_cost << endl;
+		std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
+
 	}
 
 	cout << "Max CorrectRate: " << maxCorrectRate << endl;

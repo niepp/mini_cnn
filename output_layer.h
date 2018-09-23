@@ -23,6 +23,14 @@ class OutputLayer : public FullyConnectedLayer
 protected:
 	const VectorN *m_label;  // 学习的正确值
 	eLossFunc m_loss_func_type;
+
+	struct TaskStorageOutput
+	{
+		VectorN *m_label;
+	};
+
+	std::vector<TaskStorageOutput> m_task_storage_output;
+
 public:
 	OutputLayer(unsigned int neuralCount, eLossFunc lossFunc, eActiveFunc act) : FullyConnectedLayer(neuralCount, act)
 	{
@@ -37,15 +45,51 @@ public:
 		m_label = &label;
 	}
 
+	void SetLabelValue(const VectorN &label, int task_idx)
+	{
+		TaskStorageOutput &ts_output = m_task_storage_output[task_idx];
+		ts_output.m_label->Copy(label);
+	}
+
+	virtual void SetTaskCount(int task_count)
+	{
+		FullyConnectedLayer::SetTaskCount(task_count);
+		m_task_storage_output.resize(task_count);
+		for (auto& ts : m_task_storage_output)
+		{
+			ts.m_label = new VectorN(m_neuralCount);
+		}
+	}
+
 	virtual void BackProp()
+	{
+		BackPropImpl(*m_delta, *m_dw, *m_middle, GetInput(), GetOutput(), *m_label);
+	}
+
+	virtual void BackProp(int task_idx)
+	{
+		TaskStorage &ts = m_task_storage[task_idx];
+		TaskStorageBase &tsb = GetTaskStorageBase(task_idx);
+
+		VectorN &_d = *ts.m_delta;
+		MatrixMN &_w = *ts.m_dw;
+		VectorN &_m = *ts.m_middle;
+		const VectorN &_in = GetInput(tsb);
+		const VectorN &_out = GetOutput(tsb);
+		const VectorN &_lab = *m_task_storage_output[task_idx].m_label;
+		BackPropImpl(_d, _w, _m, _in, _out, _lab);
+	}
+
+	void BackPropImpl(VectorN &_d, MatrixMN &_w, VectorN &_m, 
+		const VectorN &_in, const VectorN &_out, const VectorN &_lab)
 	{
 		switch (m_loss_func_type)
 		{
 		case eLossFunc::eMSE:
 			{
-				m_derived_func(*m_middle);
-				*m_delta += MseDerive() ^ (*m_middle);
-				*m_dw += *m_delta * GetInput();
+				m_derived_func(_m);
+				_d += (_out - _lab) ^ _m; // 均方误差损失函数对输出层的输出值的偏导数
+				_w += _d * _in;
 			}
 			break;
 		case eLossFunc::eSigmod_CrossEntropy:
@@ -54,8 +98,8 @@ public:
 				// 交叉熵CrossEntropy损失函数和Sigmod激活函数的组合：
 				// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
 				// ref： http://neuralnetworksanddeeplearning.com/chap3.html#introducing_the_cross-entropy_cost_function
-				*m_delta += GetOutput() - *m_label;
-				*m_dw += *m_delta * GetInput();
+				_d += _out - _lab;
+				_w += _d * _in;
 			}
 			break;
 		case eLossFunc::eSoftMax_LogLikelihood:
@@ -66,26 +110,19 @@ public:
 				// delta(i) = output(k) - 1    (i==k时， k是one-hot标签对应的index)
 				//          = 0                (i!=k时)
 				// ref： https://www.cnblogs.com/ZJUT-jiangnan/p/5489047.html
-				int idx = m_label->ArgMax();
-				const VectorN &output = GetOutput();
-				Int len = static_cast<Int>(m_delta->GetSize());
+				int idx = _lab.ArgMax();				
+				Int len = static_cast<Int>(_d.GetSize());
 				for (Int i = 0; i < len; ++i)
 				{
-					(*m_delta)[i] += (i == idx) ? (output[i] - (Float)(1.0)) : output[i];
+					_d[i] += (i == idx) ? (_out[i] - (Float)(1.0)) : _out[i];
 				}
-				*m_dw += *m_delta * GetInput();
+				_w += _d * _in;
 			}
 			break;
 		default:
 			assert(false);
 			break;
 		}
-	}
-
-	// 均方误差损失函数对输出层的输出值的偏导数
-	VectorN MseDerive()
-	{
-		return GetOutput() - *m_label;
 	}
 
 	Float GetCost(bool check_gradient)

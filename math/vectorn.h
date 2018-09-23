@@ -191,7 +191,7 @@ public:
 		return *this;
 	}
 
-	_VectorN<T> operator*(const T &scale)
+	_VectorN<T> operator*(const T &scale) const
 	{
 		_VectorN<T> result(_size);
 		for(unsigned long i = 0; i < _size; ++i)
@@ -201,7 +201,7 @@ public:
 		return result;
 	}
 
-	_VectorN<T> operator+(const _VectorN<T>&other)
+	_VectorN<T> operator+(const _VectorN<T>&other) const
 	{
 		assert(_size == other._size);
 		_VectorN<T> result(_size);
@@ -212,7 +212,7 @@ public:
 		return result;
 	}
 
-	_VectorN<T> operator-(const _VectorN<T>&other)
+	_VectorN<T> operator-(const _VectorN<T>&other) const
 	{
 		assert(_size == other._size);
 		_VectorN<T> result(_size);
@@ -224,7 +224,7 @@ public:
 	}
 
 	// Hadamard product
-	_VectorN<T> operator^(const _VectorN<T>&other)
+	_VectorN<T> operator^(const _VectorN<T>&other) const
 	{
 		assert(_size == other._size);
 		_VectorN<T> result(_size);
@@ -235,7 +235,7 @@ public:
 		return result;
 	}
 
-	_MatrixMN<T> operator*(const _VectorN<T>&other)
+	_MatrixMN<T> operator*(const _VectorN<T>&other) const
 	{
 		_MatrixMN<T> result(_size, other._size);
 		for (unsigned long i = 0; i < _size; ++i)

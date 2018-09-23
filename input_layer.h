@@ -59,18 +59,21 @@ public:
 
 	void SetInputData(const VectorN &input, int task_idx)
 	{
-		if (m_output->m_type == InOutType::IO_Vector)
+		TaskStorageBase &curr_tsb = this->GetTaskStorageBase(task_idx);
+		InOut *_out = curr_tsb.m_output;
+
+		if (_out->m_type == InOutType::IO_Vector)
 		{
-			VectorInOut* vec_out = dynamic_cast<VectorInOut*>(m_output);
+			VectorInOut* vec_out = dynamic_cast<VectorInOut*>(_out);
 			vec_out->m_value->Copy(input);
 		}
 		else
 		{
-			MatrixInOut* mat_out = dynamic_cast<MatrixInOut*>(m_output);
+			MatrixInOut* mat_out = dynamic_cast<MatrixInOut*>(_out);
 			mat_out->m_value = input.Unflatten(m_width, m_height, m_depth);
 		}
 		TaskStorageBase &next_tsb = m_next->GetTaskStorageBase(task_idx);
-		next_tsb.m_input = m_output;
+		next_tsb.m_input = _out;
 	}
 
 };

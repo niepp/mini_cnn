@@ -172,10 +172,10 @@ public:
 	void TrainTask(const std::vector<VectorN*> &batch_img_vec, const std::vector<VectorN*> &batch_label_vec
 		, int begin, int end, int task_idx)
 	{
-		for (int k = begin; k < end; ++k)
+		for (int i = begin; i < end; ++i)
 		{
-			m_inputLayer->SetInputData(*batch_img_vec[k], task_idx);
-			m_outputLayer->SetLabelValue(*batch_label_vec[k]);
+			m_inputLayer->SetInputData(*batch_img_vec[i], task_idx);
+			m_outputLayer->SetLabelValue(*batch_label_vec[i], task_idx);
 			Forward(task_idx);
 			BackProp(task_idx);
 		}
@@ -195,7 +195,7 @@ public:
 		{
 			int begin = k * nstep;
 			int end = std::min(batch_size, begin + nstep);
-			futures.push_back(std::move(std::async(std::launch::async, [&, k]() {
+			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
 				TrainTask(batch_img_vec, batch_label_vec, begin, end, k);
 			})));
 		}
