@@ -185,8 +185,6 @@ public:
 
 	virtual void PreTrain()
 	{
-		m_delta->MakeZero();
-		m_dw->MakeZero();
 		for (auto& ts : m_task_storage)
 		{
 			ts.m_delta->MakeZero();
@@ -196,6 +194,8 @@ public:
 
 	virtual void UpdateWeightBias(Float eff)
 	{
+		m_delta->MakeZero();
+		m_dw->MakeZero();
 		for (auto& ts : m_task_storage)
 		{
 			*m_delta += *ts.m_delta;
