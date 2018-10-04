@@ -4,162 +4,164 @@
 #include <string>
 #include <map>
 #include <cassert>
-#include <cmath>
 #include <random>
 #include <algorithm>
-#include <chrono>
 
 #include "../mini_cnn.h"
 
-using namespace std;
-using namespace mini_cnn;
-
-const Float cAbsPrecision = 1e-4;
-const Float cRelatePrecision = 1e-2;
-const Int cinput_w = 12;
-const Int cinput_h = 12;
-const Int cinput_d = 1;
-Int cinput_n = cinput_w * cinput_h * cinput_d;
-Int coutput_n = 10;
-
-Network create_fcn_sigmod_mse()
+namespace mini_cnn
 {
-	Network nn;
-	nn.AddLayer(new InputLayer(cinput_n));
-	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eMSE, eActiveFunc::eSigmod));
-	return nn;
-}
 
-Network create_fcn_sigmod_crossentropy()
+class gradient_checker
 {
-	Network nn;
-	nn.AddLayer(new InputLayer(cinput_n));
-	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSigmod_CrossEntropy, eActiveFunc::eSigmod));
-	return nn;
-}
-
-Network create_fcn_relu()
-{
-	Network nn;
-	nn.AddLayer(new InputLayer(cinput_n));
-	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eRelu));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
-	return nn;
-}
-
-Network create_fcn_softmax()
-{
-	Network nn;
-	nn.AddLayer(new InputLayer(cinput_n));
-	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eSigmod));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
-	return nn;
-}
-
-Network create_cnn_sigmod()
-{
-	Network nn;
-	nn.AddLayer(new InputLayer(cinput_w, cinput_h, cinput_d));
-	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), nullptr, eActiveFunc::eSigmod));
-	nn.AddLayer(new ConvolutionalLayer(8, new FilterDimension(3, 3, 4, 0, 1, 1), nullptr, eActiveFunc::eSigmod));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eMSE, eActiveFunc::eSigmod));
-	return nn;
-}
-
-Network create_cnn_sigmod_softmax()
-{
-	Network nn;
-	nn.AddLayer(new InputLayer(cinput_w, cinput_h, cinput_d));
-	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), nullptr, eActiveFunc::eSigmod));
-	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), nullptr, eActiveFunc::eSigmod));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
-	return nn;
-}
-
-Network create_cnn_sigmod_softmax_pool()
-{
-	Network nn;
-	nn.AddLayer(new InputLayer(cinput_w, cinput_h, cinput_d));
-	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 1, 1), eActiveFunc::eSigmod));
-//	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eSigmod));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
-	return nn;
-}
-
-Network create_cnn_relu_mse()
-{
-	Network nn;
-	nn.AddLayer(new InputLayer(cinput_w, cinput_h, cinput_d));
-	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), nullptr, eActiveFunc::eRelu));
-	nn.AddLayer(new ConvolutionalLayer(5, new FilterDimension(3, 3, 4, 0, 1, 1), nullptr, eActiveFunc::eRelu));
-	nn.AddLayer(new ConvolutionalLayer(6, new FilterDimension(3, 3, 5, 0, 1, 1), nullptr, eActiveFunc::eRelu));
-	nn.AddLayer(new FullyConnectedLayer(16, eActiveFunc::eRelu));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eMSE, eActiveFunc::eRelu));
-	return nn;
-}
-
-Network create_cnn_relu_softmax()
-{
-	Network nn;
-	nn.AddLayer(new InputLayer(cinput_w, cinput_h, cinput_d));
-	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), nullptr, eActiveFunc::eRelu));
-	nn.AddLayer(new ConvolutionalLayer(5, new FilterDimension(3, 3, 4, 0, 1, 1), nullptr, eActiveFunc::eRelu));
-	nn.AddLayer(new FullyConnectedLayer(12, eActiveFunc::eRelu));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
-	return nn;
-}
-
-bool test_nn_gradient_check(Network &nn, const NormalRandom &nrand, VectorN *input, VectorN *label, Float absPrecision = 1e-4, Float relatePrecision = 1e-2)
-{
-	nn.Init(nrand);
-	return nn.GradientCheck(*input, *label, absPrecision, relatePrecision);
-}
-
+	const float_t cPrecision = 1e-4;
+	const int_t cInput_w = 12;
+	const int_t cInput_h = 12;
+	const int_t cInput_d = 1;
+	const int_t cInput_n = cInput_w * cInput_h * cInput_d;
+	const int_t cOutput_n = 10;
+public:
 #define TEST_GRADIENT(model)\
-	cout << setw(30) << setiosflags(ios::left) << #model << "\t" << std::boolalpha << test_nn_gradient_check(model(), nRand, input, label, cAbsPrecision, cRelatePrecision) << endl;
+std::cout << std::setw(30) << std::setiosflags(std::ios::left) << #model << "\t" << std::boolalpha << test_nn_gradient_check(model(), nRand, input, label, cPrecision) << std::endl;
 
-void CheckGradient()
-{
-	uInt seed = GetNow();
-
-	seed = 2572007265;
-	std::mt19937_64 generator(seed);
-	NormalRandom nRand(generator, 0, 1.0);
-	UniformRandom uRand(generator, 0, 1.0);
-
-	VectorN *input = new VectorN(cinput_n, 0);
-	VectorN *label = new VectorN(coutput_n, 0);
-	for (Int i = 0; i < input->GetSize(); ++i)
+	gradient_checker()
 	{
-		(*input)[i] = uRand.GetRandom();
+		int_t seed = get_now();
+		//seed = 2572007265;
+		std::mt19937_64 generator(seed);
+		normal_random nRand(generator, 0, 1.0);
+		uniform_random uRand(generator, 0, 1.0);
+
+		varray *input = new varray(cInput_n);
+		varray *label = new varray(cOutput_n);
+		for (int_t i = 0; i < input->size(); ++i)
+		{
+			(*input)[i] = uRand.get_random();
+		}
+		(*label)[3] = 1.0;
+
+		TEST_GRADIENT(create_fcn_sigmod_mse);
+
+		TEST_GRADIENT(create_fcn_sigmod_crossentropy);
+
+		TEST_GRADIENT(create_fcn_relu);
+
+		TEST_GRADIENT(create_fcn_softmax);
+
+		TEST_GRADIENT(create_cnn_sigmod);
+
+		TEST_GRADIENT(create_cnn_sigmod_softmax);
+
+		TEST_GRADIENT(create_cnn_sigmod_softmax_pool);
+
+		TEST_GRADIENT(create_cnn_relu_mse);
+
+		TEST_GRADIENT(create_cnn_relu_softmax);
+
 	}
-	(*label)[3] = 1.0;
 
-	//TEST_GRADIENT(create_fcn_sigmod_mse);
+private:
+	network create_fcn_sigmod_mse()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_n));
+		nn.add_layer(new fully_connected_layer(30, activation_type::eSigmod));
+		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eMSE, activation_type::eSigmod));
+		return nn;
+	}
 
-	//TEST_GRADIENT(create_fcn_sigmod_crossentropy);
+	network create_fcn_sigmod_crossentropy()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_n));
+		nn.add_layer(new fully_connected_layer(30, activation_type::eSigmod));
+		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSigmod_CrossEntropy, activation_type::eSigmod));
+		return nn;
+	}
 
-	//TEST_GRADIENT(create_fcn_relu);
+	network create_fcn_relu()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_n));
+		nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
+		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+		return nn;
+	}
 
-	//TEST_GRADIENT(create_fcn_softmax);
+	network create_fcn_softmax()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_n));
+		nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
+		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+		return nn;
+	}
 
-	//TEST_GRADIENT(create_cnn_sigmod);
+	network create_cnn_sigmod()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_w * cInput_h * cInput_d));
+		nn.add_layer(new convolutional_layer(4, new filter_dim(3, 3, 1, 0, 1, 1), activation_type::eSigmod));
+		nn.add_layer(new convolutional_layer(8, new filter_dim(3, 3, 4, 0, 1, 1), activation_type::eSigmod));
+		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eMSE, activation_type::eSigmod));
+		return nn;
+	}
 
-	//TEST_GRADIENT(create_cnn_sigmod_softmax);
+	network create_cnn_sigmod_softmax()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_w * cInput_h * cInput_d));
+		nn.add_layer(new convolutional_layer(4, new filter_dim(3, 3, 1, 0, 1, 1), activation_type::eSigmod));
+		nn.add_layer(new convolutional_layer(16, new filter_dim(3, 3, 4, 0, 1, 1), activation_type::eSigmod));
+		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+		return nn;
+	}
 
-	TEST_GRADIENT(create_cnn_sigmod_softmax_pool); // check failed with pooling
+	network create_cnn_sigmod_softmax_pool()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_w * cInput_h * cInput_d));
+		nn.add_layer(new convolutional_layer(4, new filter_dim(3, 3, 1, 0, 1, 1), activation_type::eSigmod));
+		nn.add_layer(new convolutional_layer(16, new filter_dim(3, 3, 4, 0, 1, 1), activation_type::eSigmod));
+		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+		return nn;
+	}
 
-	//TEST_GRADIENT(create_cnn_relu_mse);
+	network create_cnn_relu_mse()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_w * cInput_h * cInput_d));
+		nn.add_layer(new convolutional_layer(4, new filter_dim(3, 3, 1, 0, 1, 1), activation_type::eRelu));
+		nn.add_layer(new convolutional_layer(5, new filter_dim(3, 3, 4, 0, 1, 1), activation_type::eRelu));
+		nn.add_layer(new convolutional_layer(6, new filter_dim(3, 3, 5, 0, 1, 1), activation_type::eRelu));
+		nn.add_layer(new fully_connected_layer(16, activation_type::eRelu));
+		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eMSE, activation_type::eRelu));
+		return nn;
+	}
 
-	//TEST_GRADIENT(create_cnn_relu_softmax);
+	network create_cnn_relu_softmax()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_w * cInput_h * cInput_d));
+		nn.add_layer(new convolutional_layer(4, new filter_dim(3, 3, 1, 0, 1, 1), activation_type::eRelu));
+		nn.add_layer(new convolutional_layer(5, new filter_dim(3, 3, 4, 0, 1, 1), activation_type::eRelu));
+		nn.add_layer(new fully_connected_layer(12, activation_type::eRelu));
+		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+		return nn;
+	}
+
+	bool test_nn_gradient_check(network &nn, const normal_random &nrand, varray *input, varray *label, float_t precision = 1e-4)
+	{
+		nn.init_all_weight(nrand);
+		return nn.gradient_check(*input, *label, precision);
+	}
+};
 
 }
 
 int main()
 {
-	CheckGradient();
+	gradient_checker();
 	system("pause");
 	return 0;
 }

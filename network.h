@@ -3,70 +3,58 @@
 
 #include <cassert>
 #include <cmath>
-#include <iostream>
 #include <vector>
 #include <algorithm>
 #include <thread>
 #include <future>
 
-using namespace std;
-
-#include "types.h"
-#include "utils.h"
-#include "math/vectorn.h"
-#include "math/matrixmxn.h"
-#include "math/mathdef.h"
-#include "layer.h"
-#include "input_layer.h"
-#include "fully_connected_layer.h"
-#include "convolutional_layer.h"
-#include "output_layer.h"
-
 namespace mini_cnn
 {
-class Network
+class network
 {
-	InputLayer* m_inputLayer;
-	OutputLayer* m_outputLayer;
-	std::vector<LayerBase*> m_layers;
 public:
-	Network()
+	input_layer *m_input_layer;
+	output_layer *m_output_layer;
+	std::vector<layer_base*> m_layers;
+
+public:
+	network()
 	{
 	}
 
-	void AddLayer(LayerBase *layer)
+	void add_layer(layer_base *layer)
 	{
-		if (m_outputLayer != NULL)
+		if (m_output_layer != nullptr)
 		{
 			throw std::exception("add layer after output!");
 		}
 
-		if (m_inputLayer == nullptr)
+		if (m_input_layer == nullptr)
 		{
-			InputLayer *inl = dynamic_cast<InputLayer*>(layer);
-			if (inl == nullptr)
+			input_layer *in = dynamic_cast<input_layer*>(layer);
+			if (in == nullptr)
 			{
 				throw std::exception("must add input layer first!");
-			}	
+			}
 			m_layers.push_back(layer);
-			m_inputLayer = inl;
+			m_input_layer = in;
 		}
 		else
 		{
-			LayerBase* lastLayer = *m_layers.rbegin();
-			lastLayer->Connect(layer);
+			layer_base* last = *m_layers.rbegin();
+			last->connect(layer);
 			m_layers.push_back(layer);
 
-			OutputLayer *ol = dynamic_cast<OutputLayer*>(layer);
-			if (ol != nullptr)
+			output_layer *out = dynamic_cast<output_layer*>(layer);
+			if (out != nullptr)
 			{
-				m_outputLayer = ol;
-				m_outputLayer->Connect(nullptr);
+				m_output_layer = out;
+				m_output_layer->connect(nullptr);
 			}
 		}
 	}
 
-	void Init(NormalRandom nrand)
+	void init_all_weight(normal_random nrand)
 	{
 		//1. Gaussian initialize
 		//	Weights are randomly drawn from Gaussian distributions with fixed mean(e.g., 0) and fixed standard deviation(e.g., 0.01).
@@ -76,173 +64,68 @@ public:
 		//3. He initialize
 		//  Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.Delving Deep into Rectifiers : Surpassing Human - Level Performance on ImageNet Classification, Technical report, arXiv, Feb. 2015
 
-		int len = static_cast<int>(m_layers.size());
-		for (int i = 0; i < len; ++i)
+		int_t len = static_cast<int_t>(m_layers.size());
+		for (int_t i = 0; i < len; ++i)
 		{
-			LayerBase *layer = m_layers[i];
-			layer->Init(nrand);
+			layer_base *layer = m_layers[i];
+			layer->init_weight(nrand);
 		}
 	}
 
-	void SetTaskCount(int task_count)
+	void set_task_count(int_t task_count)
 	{
-		int len = static_cast<int>(m_layers.size());
-		for (int i = 0; i < len; ++i)
+		int_t len = static_cast<int_t>(m_layers.size());
+		for (int_t i = 0; i < len; ++i)
 		{
-			LayerBase *layer = m_layers[i];
-			layer->SetTaskCount(task_count);
+			layer_base *layer = m_layers[i];
+			layer->set_task_count(task_count);
 		}
 	}
 
-	void PreTrain()
+	void train(const varray_vec &batch_img_vec, const varray_vec &batch_label_vec, float_t eta, const int_t max_threads)
 	{
-		int len = static_cast<int>(m_layers.size());
-		for (int i = 0; i < len; ++i)
-		{
-			LayerBase *layer = m_layers[i];
-			layer->PreTrain();
-		}
-	}
+		nn_assert(batch_img_vec.size() == batch_label_vec.size());
+		int_t batch_size = batch_img_vec.size();
+		int_t nthreads = std::min(max_threads, batch_size);
+		int_t nstep = (batch_size + nthreads - 1) / nthreads;
 
-	void Forward()
-	{
-		int len = static_cast<int>(m_layers.size());
-		for (int i = 0; i < len; ++i)
-		{
-			LayerBase *layer = m_layers[i];
-			layer->Forward();
-		}
-	}
-
-	void BackProp()
-	{
-		int len = static_cast<int>(m_layers.size());
-		for (int i = len - 1; i >= 0; --i)
-		{
-			LayerBase *layer = m_layers[i];
-			layer->BackProp();
-		}
-	}
-
-	void Forward(int task_idx)
-	{
-		int len = static_cast<int>(m_layers.size());
-		for (int i = 0; i < len; ++i)
-		{
-			LayerBase *layer = m_layers[i];
-			layer->Forward(task_idx);
-		}
-	}
-
-	void BackProp(int task_idx)
-	{
-		int len = static_cast<int>(m_layers.size());
-		for (int i = len - 1; i >= 0; --i)
-		{
-			LayerBase *layer = m_layers[i];
-			layer->BackProp(task_idx);
-		}
-	}
-
-	void UpdateWeightBias(Float eff)
-	{
-		int len = static_cast<int>(m_layers.size());
-		for (int i = len - 1; i >= 0; --i)
-		{
-			LayerBase *layer = m_layers[i];
-			layer->UpdateWeightBias(eff);
-		}
-	}
-
-	//void Adagrad(Float eff, Float rho)
-	//{
-	//	// w' = w' + dw * dw;
-	//	// w = w - learning_rate * dw * rho / (rho + sqrt(dw')); 
-	//	// forexample: lr»°0.01£¨rho»°3°£
-
-	//	int len = static_cast<int>(m_layers.size());
-	//	for (int i = len - 1; i >= 0; --i)
-	//	{
-	//		LayerBase *layer = m_layers[i];
-	//		layer->Adagrad(eff, rho);
-	//	}
-
-	//}
-
-	void TrainTask(const std::vector<VectorN*> &batch_img_vec, const std::vector<VectorN*> &batch_label_vec
-		, int begin, int end, int task_idx)
-	{
-		for (int i = begin; i < end; ++i)
-		{
-			m_inputLayer->SetInputData(*batch_img_vec[i], task_idx);
-			m_outputLayer->SetLabelValue(*batch_label_vec[i], task_idx);
-			Forward(task_idx);
-			BackProp(task_idx);
-		}
-	}
-
-	void SGD(const std::vector<VectorN*> &batch_img_vec, const std::vector<VectorN*> &batch_label_vec, float eta, const int max_threads)
-	{
-		assert(batch_img_vec.size() == batch_label_vec.size());
-		int batch_size = batch_img_vec.size();		
-		int nthreads = std::min(max_threads, batch_size);
-		int nstep = (batch_size + nthreads - 1) / nthreads;
-
-		PreTrain();
+		pre_train();
 
 		std::vector<std::future<void>> futures;
-		for (int k = 0; k < nthreads && k * nstep < batch_size; ++k)
+		for (int_t k = 0; k < nthreads && k * nstep < batch_size; ++k)
 		{
-			int begin = k * nstep;
-			int end = std::min(batch_size, begin + nstep);
+			int_t begin = k * nstep;
+			int_t end = std::min(batch_size, begin + nstep);
 			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
-				TrainTask(batch_img_vec, batch_label_vec, begin, end, k);
+				train_task(batch_img_vec, batch_label_vec, begin, end, k);
 			})));
 		}
 		for (auto &future : futures)
 		{
 			future.wait();
 		}
-		float eff = eta / batch_size;
-		UpdateWeightBias(eff);
-
+		float_t eff = eta / batch_size;
+		update_all_weight(eff);
 	}
 
-	int TestTask(const std::vector<VectorN*> &test_img_vec, const std::vector<int> &test_lab_vec
-		, int begin, int end, int task_idx)
+	int_t test(const varray_vec &test_img_vec, const index_vec &test_lab_vec, const int_t max_threads)
 	{
-		int c_count = 0;
-		for (int i = begin; i < end; ++i)
+		nn_assert(test_img_vec.size() == test_lab_vec.size());
+		int_t test_count = test_img_vec.size();
+
+		int_t nthreads = max_threads;
+		int_t nstep = (test_count + nthreads - 1) / nthreads;
+
+		std::vector<std::future<int_t>> futures;
+		for (int_t k = 0; k < nthreads && k * nstep < test_count; ++k)
 		{
-			m_inputLayer->SetInputData(*test_img_vec[i], task_idx);
-			Forward(task_idx);
-			int lab = m_outputLayer->GetOutput(task_idx).ArgMax();
-			if (lab == test_lab_vec[i])
-			{
-				++c_count;
-			}
-		}
-		return c_count;
-	}
-
-	uInt Test(const std::vector<VectorN*> &test_img_vec, const std::vector<int> &test_lab_vec, const int max_threads)
-	{
-		assert(test_img_vec.size() == test_lab_vec.size());
-		int test_count = test_img_vec.size();
-
-		int nthreads = max_threads;
-		int nstep = (test_count + nthreads - 1) / nthreads;
-
-		std::vector<std::future<int>> futures;
-		for (int k = 0; k < nthreads && k * nstep < test_count; ++k)
-		{
-			int begin = k * nstep;
-			int end = std::min(test_count, begin + nstep);
+			int_t begin = k * nstep;
+			int_t end = std::min(test_count, begin + nstep);
 			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
-				return TestTask(test_img_vec, test_lab_vec, begin, end, k);
+				return test_task(test_img_vec, test_lab_vec, begin, end, k);
 			})));
 		}
-		uInt correct = 0;
+		int_t correct = 0;
 		for (auto &future : futures)
 		{
 			correct += future.get();
@@ -250,33 +133,24 @@ public:
 		return correct;
 	}
 
-	Float CalcCost(const std::vector<VectorN*> &img_vec, const std::vector<VectorN*> &lab_vec, const int max_threads)
+	float_t get_cost(const varray_vec &img_vec, const varray_vec &lab_vec, const int max_threads)
 	{
-		assert(img_vec.size() == lab_vec.size());
+		nn_assert(img_vec.size() == lab_vec.size());
 		int tot_count = img_vec.size();
 
 		int nthreads = max_threads;
 		int nstep = (tot_count + nthreads - 1) / nthreads;
 
-		std::vector<std::future<Float>> futures;
+		std::vector<std::future<float_t>> futures;
 		for (int k = 0; k < nthreads && k * nstep < tot_count; ++k)
 		{
 			int begin = k * nstep;
 			int end = std::min(tot_count, begin + nstep);
 			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
-				Float cost = 0;
-				for (int i = begin; i < end; ++i)
-				{
-					m_inputLayer->SetInputData(*img_vec[i], k);
-					Forward(k);
-					m_outputLayer->SetLabelValue(*lab_vec[i], k);
-					Float c = m_outputLayer->GetCost(false, k);
-					cost += c;
-				}
-				return cost;
+				return cost_task(img_vec, lab_vec, begin, end, k);
 			})));
 		}
-		Float tot_cost = 0;
+		float_t tot_cost = 0;
 		for (auto &future : futures)
 		{
 			tot_cost += future.get();
@@ -288,136 +162,143 @@ public:
 		return tot_cost;
 	}
 
-	bool GradientCheck(const VectorN &test_img, const VectorN &test_lab, Float absPrecision = 1e-4, Float relatePrecision = 1e-2)
+	bool gradient_check(const varray &test_img, const varray &test_lab, float_t precision = 1e-4)
 	{
-		assert(!m_layers.empty());
+		nn_assert(!m_layers.empty());
+
+		set_task_count(1);
+
+		pre_train();
+
 		bool check_ok = true;
-		int len = static_cast<int>(m_layers.size());
-		for (int i = 0; i < len; ++i)
+		int_t len = static_cast<int_t>(m_layers.size());
+		for (auto &layer : m_layers)
 		{
-			LayerBase *layer = m_layers[i];
-			FullyConnectedLayer *fully_layer = dynamic_cast<FullyConnectedLayer*>(layer);
-			ConvolutionalLayer *conv_layer = dynamic_cast<ConvolutionalLayer*>(layer);
-			if (fully_layer != nullptr)
+			auto &ts = layer->get_task_storage(0);
+			varray &w = layer->m_w;
+			varray &dw = ts.m_dw;
+			int_t w_sz = w.size();
+			for (int_t i = 0; i < w_sz; ++i)
 			{
-				MatrixMN &w = *(fully_layer->m_weight);
-				MatrixMN &dw = *(fully_layer->m_dw);
-				for (int x = 0; x < w.GetRowCount(); ++x)
+				if (!calc_gradient(test_img, test_lab, w[i], dw[i], precision))
 				{
-					for (int y = 0; y < w.GetColCount(); ++y)
-					{
-						if (!CalcGradient(test_img, test_lab, w(x, y), dw(x, y), absPrecision, relatePrecision))
-						{
-							check_ok = false;
-						}
-					}
+					check_ok = false;
 				}
-
-				VectorN &b = *(fully_layer->m_bias);
-				VectorN &db = *(fully_layer->m_delta);
-				for (int x = 0; x < b.GetSize(); ++x)
-				{
-					if (!CalcGradient(test_img, test_lab, b[x], db[x], absPrecision, relatePrecision))
-					{
-						check_ok = false;
-					}
-				}
-				//cout << "fully_layer " << std::boolalpha << check_ok << endl;
 			}
-			else if (conv_layer != nullptr)
+
+			varray &b = layer->m_b;
+			varray &db = ts.m_db;
+			int_t b_sz = b.size();
+			for (int_t i = 0; i < b_sz; ++i)
 			{
-				VectorN &b = *(conv_layer->m_bias);
-				VectorN &db = *(conv_layer->m_db);
-				Int filter_count = conv_layer->m_filters.size();
-				for (int k = 0; k < filter_count; ++k)
+				if (!calc_gradient(test_img, test_lab, b[i], db[i], precision))
 				{
-					Matrix3D &w = *(conv_layer->m_filters[k]);
-					Matrix3D &dw = *(conv_layer->m_dw[k]);
-					for (int x = 0; x < w.Width(); ++x)
-					{
-						for (int y = 0; y < w.Height(); ++y)
-						{
-							for (int c = 0; c < w.Depth(); ++c)
-							{
-								if (!CalcGradient(test_img, test_lab, w(x, y, c), dw(x, y, c), absPrecision, relatePrecision))
-								{
-									check_ok = false;
-								}
-							}
-						}
-					}
-
-					for (int x = 0; x < b.GetSize(); ++x)
-					{
-						if (!CalcGradient(test_img, test_lab, b[x], db[x], absPrecision, relatePrecision))
-						{
-							check_ok = false;
-						}
-					}
+					check_ok = false;
 				}
-
-				//cout << "conv_layer " << std::boolalpha << check_ok << endl;
-
 			}
+
 		}
 		return check_ok;
 	}
 
-	Float CalcLoss(const VectorN &test_img, const VectorN &test_lab)
+private:
+	void pre_train()
 	{
-		m_inputLayer->SetInputData(test_img);
-		Forward();
-		m_outputLayer->SetLabelValue(test_lab);
-		Float loss = m_outputLayer->GetCost(false);
-		return loss;
+		int_t len = static_cast<int_t>(m_layers.size());
+		for (int_t i = 0; i < len; ++i)
+		{
+			layer_base *layer = m_layers[i];
+			layer->pre_train();
+		}
 	}
 
-	bool CalcGradient(const VectorN &test_img, const VectorN &test_lab, Float &w, Float &dw, Float absPrecision, Float relatePrecision)
+	const varray& forward(const varray& input, int_t task_idx)
 	{
-		static const Float EPSILON = 1e-6;
+		return m_input_layer->forw_prop(input, task_idx);
+	}
 
-		m_inputLayer->SetInputData(test_img);
-		m_outputLayer->SetLabelValue(test_lab);
+	void backward(const varray &label, int_t task_idx)
+	{
+		m_output_layer->backward(label, task_idx);
+	}
 
-		Float prev_w = w;
+	void update_all_weight(float_t eff)
+	{
+		for (auto &layer : m_layers)
+		{
+			layer->update_weights(eff);
+		}
+	}
+
+	void train_task(const varray_vec &batch_img_vec, const varray_vec &batch_label_vec, int_t begin, int_t end, int_t task_idx)
+	{
+		for (int_t i = begin; i < end; ++i)
+		{
+			forward(*batch_img_vec[i], task_idx);
+			backward(*batch_label_vec[i], task_idx);
+		}
+	}
+
+	int_t test_task(const varray_vec &test_img_vec, const index_vec &test_lab_vec, int_t begin, int_t end, int_t task_idx)
+	{
+		int_t c_count = 0;
+		for (int_t i = begin; i < end; ++i)
+		{
+			const varray&out = forward(*test_img_vec[i], task_idx);
+			int_t lab = out.arg_max();
+			if (lab == test_lab_vec[i])
+			{
+				++c_count;
+			}
+		}
+		return c_count;
+	}
+
+	float_t cost_task(const varray_vec &img_vec, const varray_vec &label_vec, int_t begin, int_t end, int_t task_idx)
+	{
+		float_t cost = 0;
+		for (int_t i = begin; i < end; ++i)
+		{
+			const varray&out = m_input_layer->forw_prop(*img_vec[i], task_idx);
+			cost += m_output_layer->calc_cost(false, *label_vec[i], task_idx);
+		}
+		return cost;
+	}
+
+	bool calc_gradient(const varray &test_img, const varray &test_lab, float_t &w, float_t &dw, float_t precision)
+	{
+		static const float_t EPSILON = 1e-6;
+
+		float_t prev_w = w;
 		w = prev_w + EPSILON;
-		Forward();
-		Float loss_0 = m_outputLayer->GetCost(true);
+		m_input_layer->forw_prop(test_img, 0);
+		float_t loss_0 = m_output_layer->calc_cost(true, test_lab, 0);
 
 		w = prev_w - EPSILON;
-		Forward();
-		Float loss_1 = m_outputLayer->GetCost(true);
-		Float delta_by_numerical = (loss_0 - loss_1) / (Float(2) * EPSILON);
+		m_input_layer->forw_prop(test_img, 0);
+		float_t loss_1 = m_output_layer->calc_cost(true, test_lab, 0);
+		float_t delta_by_numerical = (loss_0 - loss_1) / (float_t(2.0) * EPSILON);
 
 		w = prev_w;
-		Forward();
-		BackProp();
+		this->pre_train();
+		m_input_layer->forw_prop(test_img, 0);
+		m_output_layer->backward(test_lab, 0);
 
-		Float delta_by_bprop = dw;
+		float_t delta_by_bprop = dw;
 
 		if (!f_is_valid(loss_0) || !f_is_valid(loss_1) || !f_is_valid(dw))
 		{
-			cout << "[overflow] loss_0:" << loss_0 << "\tloss_1:" << loss_1 << "\tdw:" << dw << endl;
+			std::cout << "[overflow] loss_0:" << loss_0 << "\tloss_1:" << loss_1 << "\tdw:" << dw << std::endl;
 			return false;
 		}
 
-		Float absError = std::abs(delta_by_bprop - delta_by_numerical);
-		bool correct = absError <= absPrecision;
+		float_t absError = std::abs(delta_by_bprop - delta_by_numerical);
+		bool correct = absError <= precision;
 		if (!correct)
 		{
-			Float relateError = absError / std::abs(delta_by_numerical);
-			if (f_is_valid(relateError) && relateError < relatePrecision)
-			{
-				correct = true;
-			}
-			else
-			{
-				cout << "bprop:" << delta_by_bprop << "\tnumerical:" << delta_by_numerical << endl;
-			}
+			std::cout << "bprop:" << delta_by_bprop << "\tnumerical:" << delta_by_numerical << std::endl;
 		}
-
 		return correct;
-
 	}
 
 };

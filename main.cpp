@@ -5,52 +5,23 @@
 #include <map>
 #include <cassert>
 #include <cmath>
+#include <vector>
 #include <random>
 #include <algorithm>
 #include <thread>
 #include <future>
+#include <array>
 
 #include "mini_cnn.h"
+#include "minist_dataset.h"
 
 using namespace std;
 using namespace mini_cnn;
 
-Network CreateFCN()
-{
-	Network nn;
-	nn.AddLayer(new InputLayer(N_inputCount));
-	nn.AddLayer(new FullyConnectedLayer(100, eActiveFunc::eRelu));
-	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eRelu));
-	nn.AddLayer(new OutputLayer(C_classCount, eLossFunc::eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
-	return nn;
-}
-
-Network CreateCNN()
-{
-	Network nn;
-	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
-	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
-	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), new Pooling(2, 2, 0, 2, 2), eActiveFunc::eRelu));
-	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eRelu));
-	nn.AddLayer(new OutputLayer(C_classCount, eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
-	return nn;
-}
-
-//Network CreateCNN()
-//{
-//	Network nn;
-//	nn.AddLayer(new InputLayer(W_input, H_input, D_input));
-//	nn.AddLayer(new ConvolutionalLayer(4, new FilterDimension(3, 3, 1, 0, 1, 1), nullptr, eActiveFunc::eRelu));
-//	nn.AddLayer(new ConvolutionalLayer(16, new FilterDimension(3, 3, 4, 0, 1, 1), nullptr, eActiveFunc::eRelu));
-//	nn.AddLayer(new FullyConnectedLayer(30, eActiveFunc::eRelu));
-//	nn.AddLayer(new OutputLayer(C_classCount, eSoftMax_LogLikelihood, eActiveFunc::eSoftMax));
-//	return nn;
-//}
-
-std::mt19937_64 CreateRandom()
+std::mt19937_64 create_random()
 {
 	// random init
-	uInt seed = GetNow();
+	uint_t seed = get_now();
 
 	cout << "random seed:" << seed << endl;
 
@@ -59,28 +30,48 @@ std::mt19937_64 CreateRandom()
 	return generator;
 }
 
+network create_fnn()
+{
+	network nn;
+	nn.add_layer(new input_layer(N_inputCount));
+	nn.add_layer(new fully_connected_layer(100, activation_type::eRelu));
+	nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
+	nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+	return nn;
+}
+
+network create_fnn1()
+{
+	network nn;
+	nn.add_layer(new input_layer(N_inputCount));
+//	nn.add_layer(new fully_connected_layer(100, activation_type::eSigmod));
+	nn.add_layer(new fully_connected_layer(30, activation_type::eSigmod));
+	nn.add_layer(new output_layer(C_classCount, lossfunc_type::eMSE, activation_type::eSigmod));
+	return nn;
+}
+
 int main()
 {
-	std::vector<VectorN*> img_vec;
-	std::vector<VectorN*> lab_vec;
-	std::vector<VectorN*> test_img_vec;
-	std::vector<int> test_lab_vec;
-	ReadDataSet(img_vec, lab_vec, test_img_vec, test_lab_vec);
+	varray_vec img_vec;
+	varray_vec lab_vec;
+	varray_vec test_img_vec;
+	index_vec test_lab_vec;
+	read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
 	int img_count = img_vec.size();
 	int test_img_count = test_img_vec.size();
 
-	long long t0 = GetNow();
-	auto generator = CreateRandom();
-	NormalRandom nrand(generator, 0, 0.1, 2);
+	long long t0 = get_now();
+	auto generator = create_random();
+	normal_random nrand(generator, 0, 0.1, 2);
 
 	// define neural network
-	Network nn = CreateFCN();
+	network nn = create_fnn();
 
-	nn.Init(nrand);
+	nn.init_all_weight(nrand);
 
-	Float learning_rate = 0.1;
-	int epoch = 100;
+	double learning_rate = 0.1;
+	int epoch = 20;
 	int batch_size = 10;
 	int batch = img_count / batch_size;
 	std::vector<int> idx_vec(img_count);
@@ -89,17 +80,18 @@ int main()
 		idx_vec[k] = k;
 	}
 
-	float maxCorrectRate = 0;
+	double maxCorrectRate = 0;
 
-	const int nthreads = std::thread::hardware_concurrency();
-	nn.SetTaskCount(nthreads);
+	int nthreads = std::thread::hardware_concurrency();
+	//nthreads = 1;
+	nn.set_task_count(nthreads);
 
 	for (int c = 0; c < epoch; ++c)
 	{
-		Float minCost = cMAX_FLOAT;
+		double minCost = cMAX_FLOAT;
 		std::shuffle(std::begin(idx_vec), std::end(idx_vec), generator);
-		std::vector<VectorN*> batch_img_vec(batch_size);
-		std::vector<VectorN*> batch_label_vec(batch_size);
+		varray_vec batch_img_vec(batch_size);
+		varray_vec batch_label_vec(batch_size);
 		for (int i = 0; i < batch; ++i)
 		{
 			for (int k = 0; k < batch_size; ++k)
@@ -109,43 +101,43 @@ int main()
 				batch_label_vec[k] = lab_vec[j];
 			}
 
-			nn.SGD(batch_img_vec, batch_label_vec, learning_rate, nthreads);
+			nn.train(batch_img_vec, batch_label_vec, learning_rate, nthreads);
 
-			//if (i % (batch / 50) == 0)
-			//{
-			//	Float ca = nn.CalcCost(batch_img_vec, batch_label_vec, nthreads);
+			if (i % (batch / 4) == 0)
+			{
+				double ca = nn.get_cost(batch_img_vec, batch_label_vec, nthreads);
 
-			//	if (ca < minCost)
-			//	{
-			//		minCost = ca;
-			//		uInt correct = nn.Test(test_img_vec, test_lab_vec, nthreads);
-			//		float correct_rate = (1.0f * correct / test_img_count);
-			//		std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << "  correct_rate: " <<
-			//			correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
-			//	}
-			//	else
-			//	{
-			//		std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << endl;
-			//	}
-			//}
+				//if (ca < minCost)
+				//{
+				//	minCost = ca;
+				//	int_t correct = nn.test(test_img_vec, test_lab_vec, nthreads);
+				//	double correct_rate = (1.0 * correct / test_img_count);
+				//	std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << "  correct_rate: " <<
+				//		correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
+				//}
+				//else
+				{
+					std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << endl;
+				}
+			}
+
 		}
 
-		uInt correct = nn.Test(test_img_vec, test_lab_vec, nthreads);
-		float correct_rate = (1.0f * correct / test_img_count);
+		int_t correct = nn.test(test_img_vec, test_lab_vec, nthreads);
+		double correct_rate = (1.0 * correct / test_img_count);
 		if (correct_rate > maxCorrectRate)
 		{
 			maxCorrectRate = correct_rate;
 		}
 
-		Float tot_cost = nn.CalcCost(img_vec, lab_vec, nthreads);
+		double tot_cost = nn.get_cost(img_vec, lab_vec, nthreads);
 		std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "  tot_cost = " << tot_cost << endl;
-		//std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
 
 	}
 
 	cout << "Max CorrectRate: " << maxCorrectRate << endl;
 
-	long long t1 = GetNow();
+	long long t1 = get_now();
 
 	float timeCost = (t1 - t0) * 0.001f;
 	cout << "TimeCost: " << timeCost << "(s)" << endl;
@@ -154,4 +146,5 @@ int main()
 	return 0;
 
 }
+
 

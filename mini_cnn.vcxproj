@@ -10,6 +10,22 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="common_define.h" />
+    <ClInclude Include="convolutional_layer.h" />
+    <ClInclude Include="fully_connected_layer.h" />
+    <ClInclude Include="input_layer.h" />
+    <ClInclude Include="layer.h" />
+    <ClInclude Include="minist_dataset.h" />
+    <ClInclude Include="mini_cnn.h" />
+    <ClInclude Include="network.h" />
+    <ClInclude Include="output_layer.h" />
+    <ClInclude Include="utils.h" />
+    <ClInclude Include="varray.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{11E077A1-FFCA-4174-9376-9BF85220218B}</ProjectGuid>
     <RootNamespace>mini_cnn</RootNamespace>
@@ -69,29 +85,6 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="layer.h" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="network.h" />
-    <ClCompile Include="utils.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="convolutional_layer.h" />
-    <ClInclude Include="fully_connected_layer.h" />
-    <ClInclude Include="input_layer.h" />
-    <ClInclude Include="input_output.h" />
-    <ClInclude Include="math\mathdef.h" />
-    <ClInclude Include="math\matrix3d.h" />
-    <ClInclude Include="math\matrixmxn.h" />
-    <ClInclude Include="math\vectorn.h" />
-    <ClInclude Include="minist_dataset.h" />
-    <ClInclude Include="mini_cnn.h" />
-    <ClInclude Include="output_layer.h" />
-    <ClInclude Include="types.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="math\matrixmxn.inl" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

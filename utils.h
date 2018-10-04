@@ -1,32 +1,28 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
+#include <cassert>
 #include <random>
 #include <chrono>
 
-#include "types.h"
-#include "math/vectorn.h"
-#include "math/matrixmxn.h"
-#include "math/matrix3d.h"
-#include "math/mathdef.h"
 namespace mini_cnn
 {
-class NormalRandom
+class normal_random
 {
 private:
-	Float m_mean;
-	Float m_stdev;
-	Int m_nTruncated;
+	float_t m_mean;
+	float_t m_stdev;
+	int_t m_nTruncated;
 public:
 	std::mt19937_64 m_generator;
-	std::normal_distribution<Float> m_distribution;
+	std::normal_distribution<float_t> m_distribution;
 public:
-	NormalRandom(std::mt19937_64 generator, Float mean = 0, Float stdev = 1.0, Int nTruncated = 0) :
+	normal_random(std::mt19937_64 generator, float_t mean = 0, float_t stdev = 1.0, int_t nTruncated = 0) :
 		m_mean(mean), m_stdev(stdev), m_nTruncated(nTruncated), m_generator(generator), m_distribution(mean, stdev)
 	{
 	}
 
-	Float GetRandom()
+	float_t get_random()
 	{
 		if (m_nTruncated <= 0)
 		{
@@ -34,7 +30,7 @@ public:
 		}
 		else
 		{
-			Float r = m_mean;
+			float_t r = m_mean;
 			do
 			{
 				r = m_distribution(m_generator);
@@ -45,227 +41,94 @@ public:
 	}
 };
 
-class UniformRandom
+class uniform_random
 {
 public:
 	std::mt19937_64 m_generator;
-	std::uniform_real_distribution<Float> m_distribution;
+	std::uniform_real_distribution<float_t> m_distribution;
 public:
-	UniformRandom(std::mt19937_64 generator, Float min, Float max) : m_generator(generator), m_distribution(min, max)
+	uniform_random(std::mt19937_64 generator, float_t min, float_t max) : m_generator(generator), m_distribution(min, max)
 	{
 	}
 
-	Float GetRandom()
+	float_t get_random()
 	{
 		return m_distribution(m_generator);
 	}
 
 };
 
-inline uInt GetNow()
+inline uint_t get_now()
 {
 	auto tp_now = std::chrono::steady_clock::now();
 	auto ms_now = std::chrono::time_point_cast<std::chrono::milliseconds>(tp_now);
 	auto t_now = ms_now.time_since_epoch();
-	return static_cast<uInt>(t_now.count());
+	return static_cast<uint_t>(t_now.count());
 }
 
-inline bool f_is_valid(Float f)
+inline bool f_is_valid(float_t f)
 {
 	return f == f;
 }
 
-typedef void(*ActiveFunc)(const VectorN& vec, VectorN& retV);
-typedef void(*ActiveFuncDerived)(VectorN& vec);
+typedef void (*active_func)(const varray &v, varray &retv);
 
-inline void Sigmoid(const VectorN& vec, VectorN& retV)
+inline void sigmoid(const varray &v, varray &retv)
 {
-	assert(vec.GetSize() == retV.GetSize());
-	for (unsigned int i = 0; i < retV.GetSize(); ++i)
+	int_t len = v.size();
+	for (int_t i = 0; i < len; ++i)
 	{
-		retV[i] = (Float)(1.0) / ((Float)(1.0) + exp(-vec[i]));
+		retv[i] = cOne / (cOne + exp(-v[i]));
 	}
 }
 
-inline void SigmoidPrime(VectorN& vec)
+inline void deriv_sigmoid(const varray &v, varray &retv)
 {
-	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	int_t len = v.size();
+	for (int_t i = 0; i < len; ++i)
 	{
-		Float f = (Float)(1.0) / ((Float)(1.0) + exp(-vec[i]));
-		vec[i] = f * ((Float)(1.0) - f);
+		float_t t = cOne / (cOne + exp(-v[i]));
+		retv[i] = t * (cOne - t);
 	}
 }
 
-inline void Tanh(const VectorN& vec, VectorN& retV)
+inline void relu(const varray &v, varray &retv)
 {
-	assert(vec.GetSize() == retV.GetSize());
-	for (unsigned int i = 0; i < retV.GetSize(); ++i)
+	int_t len = v.size();
+	for (int_t i = 0; i < len; ++i)
 	{
-		const Float ep = std::exp(vec[i]);
-		const Float em = std::exp(-vec[i]);
-		retV[i] = (ep - em) / (ep + em);
+		retv[i] = v[i] > 0 ? v[i] : 0;
 	}
 }
 
-inline void TanhPrime(VectorN& vec)
+inline void deriv_relu(const varray &v, varray &retv)
 {
-	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	int_t len = v.size();
+	for (int_t i = 0; i < len; ++i)
 	{
-		const Float ep = std::exp(vec[i]);
-		const Float em = std::exp(-vec[i]);
-		Float f = (ep - em) / (ep + em);
-		vec[i] = (Float)(1.0) - f * f;
+		retv[i] = v[i] > 0 ? cOne : 0;
 	}
 }
 
-inline void Relu(const VectorN& vec, VectorN& retV)
+inline void softmax(const varray &v, varray &retv)
 {
-	assert(vec.GetSize() == retV.GetSize());
-	for (unsigned int i = 0; i < retV.GetSize(); ++i)
+	int_t len = v.size();
+	nn_assert(len == retv.size());
+	int_t idx = v.arg_max();
+	float_t maxv = v[idx];
+	for (int_t i = 0; i < len; ++i)
 	{
-		retV[i] = vec[i] > 0.0 ? vec[i] : 0.0;
+		retv[i] = v[i] - maxv;
 	}
-}
-
-inline void ReluPrime(VectorN& vec)
-{
-	for (unsigned int i = 0; i < vec.GetSize(); ++i)
+	float_t s = 0;
+	for (int_t i = 0; i < len; ++i)
 	{
-		vec[i] = vec[i] > 0.0 ? 1.0 : 0.0;
+		retv[i] = exp(retv[i]);
+		s += retv[i];
 	}
-}
-
-inline void Softmax(const VectorN& vec, VectorN& retV)
-{
-	assert(vec.GetSize() == retV.GetSize());
-	uInt idx = vec.ArgMax();
-	Float maxv = vec[idx];
-	for (unsigned int i = 0; i < retV.GetSize(); ++i)
+	for (int_t i = 0; i < len; ++i)
 	{
-		retV[i] = vec[i] - maxv;
-	}
-
-	Float sum = 0;
-	for (unsigned int i = 0; i < retV.GetSize(); ++i)
-	{
-		retV[i] = exp(retV[i]);
-		sum += retV[i];
-	}
-
-	for (unsigned int i = 0; i < retV.GetSize(); ++i)
-	{
-		retV[i] /= sum;
-	}
-}
-
-typedef void(*MatActiveFunc)(const Matrix3D& mat, Matrix3D &retMat);
-typedef void(*MatActiveFuncDerived)(Matrix3D& mat);
-
-inline void Sigmoid(const Matrix3D &mat, Matrix3D &retMat)
-{
-	assert(mat.Width() == retMat.Width()
-		&& mat.Height() == retMat.Height()
-		&& mat.Depth() == retMat.Depth());
-
-	for (uInt k = 0; k < mat.Depth(); ++k)
-	{
-		for (uInt i = 0; i < mat.Width(); ++i)
-		{
-			for (uInt j = 0; j < mat.Height(); ++j)
-			{
-				Float v = mat(i, j, k);
-				retMat(i, j, k) = (Float)(1.0) / ((Float)(1.0) + exp(-v));
-			}
-		}
-	}
-}
-
-inline void SigmoidPrime(Matrix3D &mat)
-{
-	for (uInt k = 0; k < mat.Depth(); ++k)
-	{
-		for (uInt i = 0; i < mat.Width(); ++i)
-		{
-			for (uInt j = 0; j < mat.Height(); ++j)
-			{
-				Float v = mat(i, j, k);
-				Float f = (Float)(1.0) / ((Float)(1.0) + exp(-v));
-				mat(i, j, k) = f * ((Float)(1.0) - f);
-			}
-		}
-	}
-}
-
-inline void Tanh(const Matrix3D &mat, Matrix3D &retMat)
-{
-	assert(mat.Width() == retMat.Width()
-		&& mat.Height() == retMat.Height()
-		&& mat.Depth() == retMat.Depth());
-
-	for (uInt k = 0; k < mat.Depth(); ++k)
-	{
-		for (uInt i = 0; i < mat.Width(); ++i)
-		{
-			for (uInt j = 0; j < mat.Height(); ++j)
-			{
-				Float v = mat(i, j, k);
-				const Float ep = std::exp(v);
-				const Float em = std::exp(-v);
-				retMat(i, j, k) = (ep - em) / (ep + em);
-			}
-		}
-	}
-}
-
-inline void TanhPrime(Matrix3D &mat)
-{
-	for (uInt k = 0; k < mat.Depth(); ++k)
-	{
-		for (uInt i = 0; i < mat.Width(); ++i)
-		{
-			for (uInt j = 0; j < mat.Height(); ++j)
-			{
-				Float v = mat(i, j, k);
-				const Float ep = std::exp(v);
-				const Float em = std::exp(-v);
-				Float f = (ep - em) / (ep + em);
-				mat(i, j, k) = (Float)(1.0) - f * f;
-			}
-		}
-	}
-}
-
-inline void Relu(const Matrix3D &mat, Matrix3D &retMat)
-{
-	assert(mat.Width() == retMat.Width()
-		&& mat.Height() == retMat.Height()
-		&& mat.Depth() == retMat.Depth());
-
-	for (uInt k = 0; k < mat.Depth(); ++k)
-	{
-		for (uInt i = 0; i < mat.Width(); ++i)
-		{
-			for (uInt j = 0; j < mat.Height(); ++j)
-			{
-				Float v = mat(i, j, k);
-				retMat(i, j, k) = v > 0.0 ? v : 0.0;
-			}
-		}
-	}
-}
-
-inline void ReluPrime(Matrix3D &mat)
-{
-	for (uInt k = 0; k < mat.Depth(); ++k)
-	{
-		for (uInt i = 0; i < mat.Width(); ++i)
-		{
-			for (uInt j = 0; j < mat.Height(); ++j)
-			{
-				Float v = mat(i, j, k);
-				mat(i, j, k) = v > 0.0 ? 1.0 : 0.0;
-			}
-		}
+		retv[i] /= s;
 	}
 }
 
