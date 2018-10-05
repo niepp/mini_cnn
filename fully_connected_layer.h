@@ -44,15 +44,17 @@ public:
 
 	virtual void set_task_count(int_t task_count)
 	{
+		int_t in_sz = m_w.width();
+		int_t out_sz = m_w.height(); 
 		m_task_storage.resize(task_count);
 		for (auto& ts : m_task_storage)
 		{
-			ts.m_dw.resize(m_w.width(), m_w.height(), m_w.depth());
-			ts.m_db.resize(m_b.size());
-			ts.m_z.resize(m_b.size());
-			ts.m_a.resize(m_b.size());
-			ts.m_delta.resize(m_b.size());
-			ts.m_wd.resize(m_w.width());
+			ts.m_dw.resize(in_sz, out_sz);
+			ts.m_db.resize(out_sz);
+			ts.m_z.resize(out_sz);
+			ts.m_x.resize(out_sz);
+			ts.m_delta.resize(out_sz);
+			ts.m_wd.resize(in_sz);
 		}
 	}
 
@@ -68,7 +70,7 @@ public:
 
 		nn_assert(ts.m_z.width() == height);
 
-		varray &output = m_task_storage[task_idx].m_a;
+		varray &output = m_task_storage[task_idx].m_x;
 		for (int_t i = 0; i < height; ++i)
 		{
 			float_t dot = 0;
@@ -94,7 +96,7 @@ public:
 		nn_assert(m_w.dim() == 2);
 		nn_assert(next_wd.size() == ts.m_z.size());
 
-		const varray &input = m_prev->output(task_idx);
+		const varray &input = m_prev->get_output(task_idx);
 
 		int_t out_sz = next_wd.size();
 		int_t in_sz = input.size();

@@ -28,8 +28,8 @@ public:
 		calc_delta(label, task_idx);
 
 		layer_base::task_storage &ts = m_task_storage[task_idx];
-		const varray &input = m_prev->output(task_idx);
-		int_t out_sz = ts.m_a.size();
+		const varray &input = m_prev->get_output(task_idx);
+		int_t out_sz = get_output(task_idx).size();
 		int_t in_sz = input.size();
 
 		nn_assert(m_w.dim() == 2);
@@ -67,8 +67,7 @@ public:
 
 	float_t calc_cost(bool check_gradient, const varray &label, int_t task_idx) const
 	{
-		const layer_base::task_storage &ts = m_task_storage[task_idx];
-		const varray &output = ts.m_a;
+		const varray &output = get_output(task_idx);
 
 		int_t out_sz = output.size();
 		nn_assert(out_sz == output.size());
@@ -126,7 +125,7 @@ private:
 				m_df(ts.m_z, ts.m_delta);
 				for (int_t i = 0; i < out_sz; ++i)
 				{
-					ts.m_delta(i) *= ts.m_a(i) - label(i); // 均方误差损失函数对输出层的输出值的偏导数
+					ts.m_delta(i) *= ts.m_x(i) - label(i); // 均方误差损失函数对输出层的输出值的偏导数
 				}
 			}
 			break;
@@ -138,7 +137,7 @@ private:
 				// ref： http://neuralnetworksanddeeplearning.com/chap3.html#introducing_the_cross-entropy_cost_function
 				for (int_t i = 0; i < out_sz; ++i)
 				{
-					ts.m_delta(i) = ts.m_a(i) - label(i);
+					ts.m_delta(i) = ts.m_x(i) - label(i);
 				}
 			}
 			break;
@@ -153,9 +152,9 @@ private:
 				int_t idx = label.arg_max();
 				for (int_t i = 0; i < out_sz; ++i)
 				{
-					ts.m_delta(i) = ts.m_a(i);
+					ts.m_delta(i) = ts.m_x(i);
 				}
-				ts.m_delta(idx) = ts.m_a(idx) - cOne;
+				ts.m_delta(idx) = ts.m_x(idx) - cOne;
 			}
 			break;
 		default:

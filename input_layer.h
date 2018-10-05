@@ -21,14 +21,14 @@ public:
 		m_task_storage.resize(task_count);
 		for (auto& ts : m_task_storage)
 		{
-			ts.m_a.resize(out_size());
+			ts.m_x.resize(out_size());
 		}
 	}
 
 	virtual const varray& forw_prop(const varray& input, int_t task_idx)
 	{
 		nn_assert(m_next != nullptr);
-		m_task_storage[task_idx].m_a.copy(input);
+		m_task_storage[task_idx].m_x.copy(input);
 		return m_next->forw_prop(input, task_idx);
 	}
 

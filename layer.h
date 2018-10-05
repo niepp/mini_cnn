@@ -52,8 +52,8 @@ public:
 	}
 };
 
-// z = w * a + b
-// a = f(z)
+// z = w * x + b
+// x = f(z)
 class layer_base
 {
 protected:
@@ -70,9 +70,9 @@ protected:
 		varray m_dw;
 		varray m_db;
 		varray m_z;      // z vector
-		varray m_a;      // output vector
+		varray m_x;      // output vector
 		varray m_delta;
-		varray m_wd;	 // w' X delta
+		varray m_wd;	 // w' * delta
 	};
 
 	std::vector<task_storage> m_task_storage;
@@ -87,9 +87,9 @@ public:
 		return m_out_shape.size();
 	}
 
-	const varray& output(int_t task_idx) const
+	const varray& get_output(int_t task_idx) const
 	{
-		return m_task_storage[task_idx].m_a;
+		return m_task_storage[task_idx].m_x;
 	}
 
 	task_storage& get_task_storage(int_t task_idx)
