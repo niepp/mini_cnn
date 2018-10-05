@@ -18,6 +18,40 @@ enum lossfunc_type
 	eSoftMax_LogLikelihood,
 };
 
+class shape3d
+{
+public:
+	int_t m_w;
+	int_t m_h;
+	int_t m_d;
+	shape3d() : m_w(0), m_h(0), m_d(0)
+	{
+	}
+
+	shape3d(int_t w, int_t h, int_t d) : m_w(w), m_h(h), m_d(d)
+	{
+	}
+
+	void set(int_t w, int_t h, int_t d)
+	{
+		m_w = w;
+		m_h = h;
+		m_d = d;
+	}
+
+	void reshape(int_t w, int_t h, int_t d)
+	{
+		nn_assert(m_w * m_h * m_d == w * h * d);
+		set(w, h, d);
+	}
+
+	int_t size() const
+	{
+		nn_assert(m_w * m_h * m_d > 0);
+		return m_w * m_h * m_d;
+	}
+};
+
 // z = w * a + b
 // a = f(z)
 class layer_base
@@ -26,7 +60,7 @@ protected:
 	layer_base* m_next;
 	layer_base* m_prev;
 public:
-	int_t m_out_size;
+	shape3d m_out_shape;
 	varray m_w;          // weight vector
 	varray m_b;          // bias vector
 
@@ -44,9 +78,13 @@ protected:
 	std::vector<task_storage> m_task_storage;
 
 public:
-	layer_base(int_t out_size)
-		: m_out_size(out_size)
+	layer_base()
 	{
+	}
+
+	int_t out_size() const
+	{
+		return m_out_shape.size();
 	}
 
 	const varray& output(int_t task_idx) const

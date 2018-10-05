@@ -15,7 +15,7 @@ protected:
 	lossfunc_type m_lossfunc_type;
 
 public:
-	output_layer(int_t out_size, lossfunc_type lf_type, activation_type ac_type) : fully_connected_layer(out_size, ac_type)
+	output_layer(int_t neural_count, lossfunc_type lf_type, activation_type ac_type) : fully_connected_layer(neural_count, ac_type)
 	{
 		nn_assert(!(lf_type == lossfunc_type::eSigmod_CrossEntropy && ac_type != activation_type::eSigmod)
 			&& !(lf_type == lossfunc_type::eSoftMax_LogLikelihood && ac_type != activation_type::eSoftMax)

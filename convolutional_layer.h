@@ -4,24 +4,10 @@
 namespace mini_cnn 
 {
 
-class filter_dim
+enum class padding
 {
-public:
-	int_t m_width;
-	int_t m_height;
-	int_t m_channels;
-	int_t m_padding;
-	int_t m_stride_w;
-	int_t m_stride_h;
-	filter_dim(int_t w, int_t h, int_t c, int_t padding, int_t stride_w, int_t stride_h) :
-		m_width(w), m_height(h), m_channels(c), m_padding(padding), m_stride_w(stride_w), m_stride_h(stride_h)
-	{
-	}
-	filter_dim(const filter_dim &filterDim) :
-		m_width(filterDim.m_width), m_height(filterDim.m_height), m_channels(filterDim.m_channels)
-		, m_padding(filterDim.m_padding), m_stride_w(filterDim.m_stride_w), m_stride_h(filterDim.m_stride_h)
-	{
-	}
+	valid, // only use valid pixels of input
+	same   // padding zero around input to keep image size
 };
 
 /*
@@ -33,35 +19,57 @@ for the l-th Conv layer:
 */
 class convolutional_layer : public layer_base
 {
-public:
-	//std::vector<Matrix3D*> m_filters;
-	//VectorN *m_bias;
-
-	//VectorN *m_db;	// dJ/d(bias)
-	//std::vector<Matrix3D*> m_dw;	// dJ/d(w)
-	//Matrix3D *m_delta;		// dJ/d(z)
 
 protected:
-	//Matrix3D *m_middle;	// middle value
-
-	//Matrix3D *m_input_img;
-	//Matrix3D *m_pre_pool_img;
-	//Matrix3D *m_output_img;
-	//std::vector<IndexVector*> m_idx_maps;
-
-	//Matrix3D *m_pre_unpool_delta;
-
-protected:
-	filter_dim m_filter_dim;
+	shape3d m_filter_shape;
+	int_t m_filter_count;
+	int_t m_stride_w;
+	int_t m_stride_h;
+	padding m_padding;
 	active_func m_f;
 	active_func m_df;
-public:
-	convolutional_layer(int_t out_size
-		, filter_dim *ftdim
-		, activation_type act)
-		: layer_base(out_size)
-		, m_filter_dim(*ftdim)
+protected:
+	int_t calc_outsize() const
 	{
+		return 0;
+	}
+public:
+	convolutional_layer(int_t filter_w, int_t filter_h, int_t filter_c, int_t filter_n, int_t stride_w, int_t stride_h, padding padding, activation_type ac_type)
+		: layer_base()
+		, m_filter_shape(filter_w, filter_h, filter_c)
+		, m_stride_w(stride_w), m_stride_h(stride_h), m_padding(padding)
+	{
+		switch (ac_type)
+		{
+		case activation_type::eSigmod:
+			m_f = sigmoid;
+			m_df = deriv_sigmoid;
+			break;
+		case activation_type::eRelu:
+			m_f = relu;
+			m_df = deriv_relu;
+			break;
+		case activation_type::eSoftMax:
+			m_f = softmax;
+			m_df = nullptr;
+			break;
+		default:
+			break;
+		}
+	}
+
+	virtual void connect(layer_base *next)
+	{
+		layer_base::connect(next);
+
+		int_t in_w = m_prev->m_out_shape.m_w;
+		int_t in_h = m_prev->m_out_shape.m_h;
+		int_t out_w = static_cast<int_t>(::floorf(1.0f * (in_w - m_filter_shape.m_w) / m_stride_w)) + 1;
+		int_t out_h = static_cast<int_t>(::floorf(1.0f * (in_h - m_filter_shape.m_h) / m_stride_h)) + 1;
+		m_out_shape.set(out_w, out_h, m_filter_count);
+
+		m_b.resize(m_filter_count);
+		m_w.resize(m_filter_shape.m_w, m_filter_shape.m_h, m_filter_shape.m_d, m_filter_count);
 	}
 
 	virtual void set_task_count(int_t task_count)

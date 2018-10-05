@@ -5,17 +5,16 @@ namespace mini_cnn
 {
 class fully_connected_layer : public layer_base
 {
-public:
-
 protected:
+	int_t m_neural_count;
 	active_func m_f;
 	active_func m_df;
 
 public:
-	fully_connected_layer(int_t out_size, activation_type ac_type)
-		: layer_base(out_size)
+	fully_connected_layer(int_t neural_count, activation_type ac_type)
+		: layer_base()
 	{
-		m_b.resize(out_size);
+		m_neural_count = neural_count;
 		switch (ac_type)
 		{
 		case activation_type::eSigmod:
@@ -38,7 +37,9 @@ public:
 	virtual void connect(layer_base *next)
 	{
 		layer_base::connect(next);
-		m_w.resize(m_prev->m_out_size, this->m_out_size);
+		m_out_shape.set(m_neural_count, 1, 1);
+		m_b.resize(out_size());
+		m_w.resize(m_prev->out_size(), out_size());
 	}
 
 	virtual void set_task_count(int_t task_count)
