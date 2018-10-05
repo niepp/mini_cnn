@@ -58,7 +58,7 @@ public:
 		}
 	}
 
-	virtual const varray& forw_prop(const varray& input, int_t task_idx)
+	virtual const varray& forw_prop(const varray &input, int_t task_idx)
 	{
 		int_t height = m_w.height();
 		int_t width = m_w.width();
@@ -88,7 +88,7 @@ public:
 		return ts.m_x;
 	}
 
-	virtual const varray& back_prop(const varray& next_wd, int_t task_idx)
+	virtual const varray& back_prop(const varray &next_wd, int_t task_idx)
 	{
 		layer_base::task_storage &ts = m_task_storage[task_idx];
 

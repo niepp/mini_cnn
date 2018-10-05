@@ -86,7 +86,7 @@ public:
 		}
 	}
 
-	virtual const varray& forw_prop(const varray& input, int_t task_idx)
+	virtual const varray& forw_prop(const varray &input, int_t task_idx)
 	{
 		varray &out_z = m_task_storage[task_idx].m_z;
 		varray &out_x = m_task_storage[task_idx].m_x;
@@ -100,8 +100,22 @@ public:
 		return out_x;
 	}
 
-	virtual const varray& back_prop(const varray& next_wd, int_t task_idx)
+	virtual const varray& back_prop(const varray &next_wd, int_t task_idx)
 	{
+		layer_base::task_storage &ts = m_task_storage[task_idx];
+		const varray &input = m_prev->get_output(task_idx);
+
+		int_t out_sz = next_wd.size();
+		int_t in_sz = input.size();
+
+		m_df(ts.m_z, ts.m_delta);
+		for (int_t i = 0; i < out_sz; ++i)
+		{
+			ts.m_delta(i) *= next_wd(i);
+		}
+
+		// conv_back();
+
 		return next_wd;
 	}
 
