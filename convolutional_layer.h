@@ -4,7 +4,7 @@
 namespace mini_cnn 
 {
 
-enum class padding
+enum class padding_type
 {
 	valid, // only use valid pixels of input
 	same   // padding zero around input to keep image size
@@ -25,7 +25,7 @@ protected:
 	int_t m_filter_count;
 	int_t m_stride_w;
 	int_t m_stride_h;
-	padding m_padding;
+	padding_type m_padding;
 	active_func m_f;
 	active_func m_df;
 
@@ -40,7 +40,7 @@ protected:
 	}
 
 public:
-	convolutional_layer(int_t filter_w, int_t filter_h, int_t filter_c, int_t filter_n, int_t stride_w, int_t stride_h, padding padding, activation_type ac_type)
+	convolutional_layer(int_t filter_w, int_t filter_h, int_t filter_c, int_t filter_n, int_t stride_w, int_t stride_h, padding_type padding, activation_type ac_type)
 		: layer_base()
 		, m_filter_shape(filter_w, filter_h, filter_c)
 		, m_stride_w(stride_w), m_stride_h(stride_h), m_padding(padding)
@@ -88,13 +88,138 @@ public:
 
 	virtual const varray& forw_prop(const varray& input, int_t task_idx)
 	{
-		return m_next->forw_prop(input, task_idx);
+		varray &out_z = m_task_storage[task_idx].m_z;
+		varray &out_x = m_task_storage[task_idx].m_x;
+		conv(input, m_w, m_stride_w, m_stride_h, out_z);
+		m_f(out_z, out_x);
+
+		if (m_next != nullptr)
+		{
+			return m_next->forw_prop(out_x, task_idx);
+		}
+		return out_x;
 	}
 
 	virtual const varray& back_prop(const varray& next_wd, int_t task_idx)
 	{
 		return next_wd;
 	}
+
+private:
+	static float_t conv_by_local(const varray &img, int_t start_w, int_t start_h, const varray &filters, int_t filter_idx)
+	{
+		int_t img_w = img.width();
+		int_t img_h = img.height();
+		int_t img_d = img.depth();
+		int_t filter_w = filters.width();
+		int_t filter_h = filters.height();
+		int_t filter_d = filters.depth();
+
+		float_t s = 0;
+		for (int_t u = 0; u < filter_w; ++u)
+		{
+			int_t x = start_w + u;
+			if (x < 0 || x >= img_w)
+			{
+				continue;
+			}
+			for (int_t v = 0; v < filter_h; ++v)
+			{
+				int_t y = start_h + v;
+				if (y < 0 || y >= img_h)
+				{
+					continue;
+				}
+				for (int_t c = 0; c < filter_d; ++c)
+				{
+					s += img(x, y, c) * filters(u, v, c, filter_idx);
+				}
+			}
+		}
+		return s;
+	}
+
+	static void conv(const varray &img, const varray &filters, int_t stride_w, int_t stride_h, varray &ret)
+	{
+		int_t filter_count = filters.count();
+		int_t filter_w = filters.width();
+		int_t filter_h = filters.height();
+		int_t filter_d = filters.depth();
+
+		nn_assert(img.width() >= filters.width()
+			&& img.height() >= filters.height()
+			&& img.depth() == filters.depth());
+
+		nn_assert(ret.depth() == filter_count);
+
+		for (int_t i = 0; i < filter_w; ++i)
+		{
+			for (int_t j = 0; j < filter_h; ++j)
+			{
+				int_t start_w = i * stride_w;
+				int_t start_h = j * stride_h;
+				for (int_t k = 0; k < filter_count; ++k)
+				{
+					float_t s = conv_by_local(img, start_w, start_h, filters, k);
+					ret(i, j, k) = s;
+				}
+			}
+		}
+	}
+
+	static void conv_back(const varray &delta_img, const varray &filters, int_t stride_w, int_t stride_h, varray &ret)
+	{
+		int_t img_w = delta_img.width();
+		int_t img_h = delta_img.height();
+		int_t img_d = delta_img.depth();
+
+		int_t filter_count = filters.count();
+		int_t filter_w = filters.width();
+		int_t filter_h = filters.height();
+		int_t filter_d = filters.depth();
+
+		assert(delta_img.width() >= filter_w
+			&& delta_img.height() >= filter_h
+			&& delta_img.depth() == filter_d);
+
+		int_t cnt = ret.size();
+
+		for (int_t k = 0; k < cnt; ++k)
+		{			
+			for (int_t i = 0; i < filter_w; ++i)
+			{
+				for (int_t j = 0; j < filter_h; ++j)
+				{
+					int_t start_w = i * stride_w;
+					int_t start_h = j * stride_h;
+					for (int_t c = 0; c < filter_d; ++c)
+					{
+						float_t s = 0;
+						for (int_t u = 0; u < filter_w; ++u)
+						{
+							int_t x = start_w + u;
+							if (x < 0 || x >= img_w)
+							{
+								continue;
+							}
+							for (int_t v = 0; v < filter_h; ++v)
+							{
+								int_t y = start_h + v;
+								if (y < 0 || y >= img_w)
+								{
+									continue;
+								}
+								s += delta_img(x, y, c) * filters(u, v, k);
+							}
+						}
+						ret(i, j, c, k) = s;
+					}
+				}
+			}
+		}
+	}
+
+
 
 };
 }

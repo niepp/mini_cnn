@@ -70,7 +70,6 @@ public:
 
 		nn_assert(ts.m_z.width() == height);
 
-		varray &output = m_task_storage[task_idx].m_x;
 		for (int_t i = 0; i < height; ++i)
 		{
 			float_t dot = 0;
@@ -80,13 +79,13 @@ public:
 			}
 			ts.m_z(i) = dot + m_b(i);
 		}
-		m_f(ts.m_z, output);
+		m_f(ts.m_z, ts.m_x);
 
 		if (m_next != nullptr)
 		{
-			return m_next->forw_prop(output, task_idx);
+			return m_next->forw_prop(ts.m_x, task_idx);
 		}
-		return output;
+		return ts.m_x;
 	}
 
 	virtual const varray& back_prop(const varray& next_wd, int_t task_idx)
