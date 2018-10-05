@@ -41,7 +41,7 @@ public:
 		m_w.resize(m_prev->m_out_size, this->m_out_size);
 	}
 
-	virtual void set_task_count(int task_count)
+	virtual void set_task_count(int_t task_count)
 	{
 		m_task_storage.resize(task_count);
 		for (auto& ts : m_task_storage)

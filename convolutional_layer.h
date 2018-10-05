@@ -64,7 +64,7 @@ public:
 	{
 	}
 
-	virtual void set_task_count(int task_count)
+	virtual void set_task_count(int_t task_count)
 	{
 	}
 

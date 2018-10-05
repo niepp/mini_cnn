@@ -83,7 +83,7 @@ public:
 		}
 	}
 
-	virtual void set_task_count(int task_count) = 0;
+	virtual void set_task_count(int_t task_count) = 0;
 
 	/*
 		input: input of this layer

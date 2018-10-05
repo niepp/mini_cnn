@@ -133,19 +133,19 @@ public:
 		return correct;
 	}
 
-	float_t get_cost(const varray_vec &img_vec, const varray_vec &lab_vec, const int max_threads)
+	float_t get_cost(const varray_vec &img_vec, const varray_vec &lab_vec, const int_t max_threads)
 	{
 		nn_assert(img_vec.size() == lab_vec.size());
-		int tot_count = img_vec.size();
+		int_t tot_count = img_vec.size();
 
-		int nthreads = max_threads;
-		int nstep = (tot_count + nthreads - 1) / nthreads;
+		int_t nthreads = max_threads;
+		int_t nstep = (tot_count + nthreads - 1) / nthreads;
 
 		std::vector<std::future<float_t>> futures;
-		for (int k = 0; k < nthreads && k * nstep < tot_count; ++k)
+		for (int_t k = 0; k < nthreads && k * nstep < tot_count; ++k)
 		{
-			int begin = k * nstep;
-			int end = std::min(tot_count, begin + nstep);
+			int_t begin = k * nstep;
+			int_t end = std::min(tot_count, begin + nstep);
 			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
 				return cost_task(img_vec, lab_vec, begin, end, k);
 			})));

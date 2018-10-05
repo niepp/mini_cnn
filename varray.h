@@ -239,7 +239,7 @@ inline int_t _varray<T>::arg_max() const
 	int_t sz = this->size();
 	int_t max_idx = 0;
 	T m = m_data[0];
-	for (int i = 1; i < sz; ++i)
+	for (int_t i = 1; i < sz; ++i)
 	{
 		if (m_data[i] > m)
 		{
