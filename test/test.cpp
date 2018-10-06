@@ -40,23 +40,23 @@ std::cout << std::setw(30) << std::setiosflags(std::ios::left) << #model << "\t"
 		}
 		(*label)[3] = 1.0;
 
-		TEST_GRADIENT(create_fcn_sigmod_mse);
+		//TEST_GRADIENT(create_fcn_sigmod_mse);
 
-		TEST_GRADIENT(create_fcn_sigmod_crossentropy);
+		//TEST_GRADIENT(create_fcn_sigmod_crossentropy);
 
-		TEST_GRADIENT(create_fcn_relu);
+		//TEST_GRADIENT(create_fcn_relu);
 
-		TEST_GRADIENT(create_fcn_softmax);
+		//TEST_GRADIENT(create_fcn_softmax);
 
 		TEST_GRADIENT(create_cnn_sigmod);
 
-		TEST_GRADIENT(create_cnn_sigmod_softmax);
+		//TEST_GRADIENT(create_cnn_sigmod_softmax);
 
-		TEST_GRADIENT(create_cnn_sigmod_softmax_pool);
+		//TEST_GRADIENT(create_cnn_sigmod_softmax_pool);
 
-		TEST_GRADIENT(create_cnn_relu_mse);
+		//TEST_GRADIENT(create_cnn_relu_mse);
 
-		TEST_GRADIENT(create_cnn_relu_softmax);
+		//TEST_GRADIENT(create_cnn_relu_softmax);
 
 	}
 
@@ -100,9 +100,9 @@ private:
 	network create_cnn_sigmod()
 	{
 		network nn;
-		nn.add_layer(new input_layer(cInput_w * cInput_h * cInput_d));
-		nn.add_layer(new convolutional_layer(4, new filter_dim(3, 3, 1, 0, 1, 1), activation_type::eSigmod));
-		nn.add_layer(new convolutional_layer(8, new filter_dim(3, 3, 4, 0, 1, 1), activation_type::eSigmod));
+		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::valid, activation_type::eSigmod));
+	//	nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, padding_type::valid, activation_type::eSigmod));
 		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eMSE, activation_type::eSigmod));
 		return nn;
 	}
@@ -110,9 +110,9 @@ private:
 	network create_cnn_sigmod_softmax()
 	{
 		network nn;
-		nn.add_layer(new input_layer(cInput_w * cInput_h * cInput_d));
-		nn.add_layer(new convolutional_layer(4, new filter_dim(3, 3, 1, 0, 1, 1), activation_type::eSigmod));
-		nn.add_layer(new convolutional_layer(16, new filter_dim(3, 3, 4, 0, 1, 1), activation_type::eSigmod));
+		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::valid, activation_type::eSigmod));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, padding_type::valid, activation_type::eSigmod));
 		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 		return nn;
 	}
@@ -120,9 +120,9 @@ private:
 	network create_cnn_sigmod_softmax_pool()
 	{
 		network nn;
-		nn.add_layer(new input_layer(cInput_w * cInput_h * cInput_d));
-		nn.add_layer(new convolutional_layer(4, new filter_dim(3, 3, 1, 0, 1, 1), activation_type::eSigmod));
-		nn.add_layer(new convolutional_layer(16, new filter_dim(3, 3, 4, 0, 1, 1), activation_type::eSigmod));
+		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::valid, activation_type::eSigmod));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, padding_type::valid, activation_type::eSigmod));
 		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 		return nn;
 	}
@@ -130,10 +130,10 @@ private:
 	network create_cnn_relu_mse()
 	{
 		network nn;
-		nn.add_layer(new input_layer(cInput_w * cInput_h * cInput_d));
-		nn.add_layer(new convolutional_layer(4, new filter_dim(3, 3, 1, 0, 1, 1), activation_type::eRelu));
-		nn.add_layer(new convolutional_layer(5, new filter_dim(3, 3, 4, 0, 1, 1), activation_type::eRelu));
-		nn.add_layer(new convolutional_layer(6, new filter_dim(3, 3, 5, 0, 1, 1), activation_type::eRelu));
+		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::valid, activation_type::eRelu));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, padding_type::valid, activation_type::eRelu));
+		nn.add_layer(new convolutional_layer(3, 3, 5, 6, 1, 1, padding_type::valid, activation_type::eRelu));
 		nn.add_layer(new fully_connected_layer(16, activation_type::eRelu));
 		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eMSE, activation_type::eRelu));
 		return nn;
@@ -142,9 +142,9 @@ private:
 	network create_cnn_relu_softmax()
 	{
 		network nn;
-		nn.add_layer(new input_layer(cInput_w * cInput_h * cInput_d));
-		nn.add_layer(new convolutional_layer(4, new filter_dim(3, 3, 1, 0, 1, 1), activation_type::eRelu));
-		nn.add_layer(new convolutional_layer(5, new filter_dim(3, 3, 4, 0, 1, 1), activation_type::eRelu));
+		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::valid, activation_type::eRelu));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, padding_type::valid, activation_type::eRelu));
 		nn.add_layer(new fully_connected_layer(12, activation_type::eRelu));
 		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 		return nn;

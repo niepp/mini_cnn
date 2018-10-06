@@ -104,7 +104,7 @@ int main()
 
 			nn.train(batch_img_vec, batch_label_vec, learning_rate, nthreads);
 
-			if (i % (batch / 40) == 0)
+			if (i % (batch / 4) == 0)
 			{
 				double ca = nn.get_cost(batch_img_vec, batch_label_vec, nthreads);
 
