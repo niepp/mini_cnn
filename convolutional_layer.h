@@ -29,21 +29,11 @@ protected:
 	active_func m_f;
 	active_func m_df;
 
-protected:
-	void calc_outsize(const shape3d &input, const shape3d &filter, int filter_count, shape3d &output)
-	{
-		int_t in_w = input.m_w;
-		int_t in_h = input.m_h;
-		int_t out_w = static_cast<int_t>(::floorf(1.0f * (in_w - filter.m_w) / m_stride_w)) + 1;
-		int_t out_h = static_cast<int_t>(::floorf(1.0f * (in_h - filter.m_h) / m_stride_h)) + 1;
-		output.set(out_w, out_h, filter_count);
-	}
-
 public:
 	convolutional_layer(int_t filter_w, int_t filter_h, int_t filter_c, int_t filter_n, int_t stride_w, int_t stride_h, padding_type padding, activation_type ac_type)
 		: layer_base()
 		, m_filter_shape(filter_w, filter_h, filter_c)
-		, m_stride_w(stride_w), m_stride_h(stride_h), m_padding(padding)
+		, m_filter_count(filter_n), m_stride_w(stride_w), m_stride_h(stride_h), m_padding(padding)
 	{
 		switch (ac_type)
 		{
@@ -67,22 +57,36 @@ public:
 	virtual void connect(layer_base *next)
 	{
 		layer_base::connect(next);
-		calc_outsize(m_prev->m_out_shape, m_filter_shape, m_filter_count, m_out_shape);
+
+		int_t in_w = m_prev->m_out_shape.m_w;
+		int_t in_h = m_prev->m_out_shape.m_h;
+		int_t out_w = static_cast<int_t>(::floorf(1.0f * (in_w - m_filter_shape.m_w) / m_stride_w)) + 1;
+		int_t out_h = static_cast<int_t>(::floorf(1.0f * (in_h - m_filter_shape.m_h) / m_stride_h)) + 1;
+		m_out_shape.set(out_w, out_h, m_filter_count);
+
 		m_b.resize(m_filter_count);
 		m_w.resize(m_filter_shape.m_w, m_filter_shape.m_h, m_filter_shape.m_d, m_filter_count);
 	}
 
 	virtual void set_task_count(int_t task_count)
 	{
+		int_t in_w = m_prev->m_out_shape.m_w;
+		int_t in_h = m_prev->m_out_shape.m_h;
+		int_t in_d = m_prev->m_out_shape.m_d;
+
+		int_t out_w = m_out_shape.m_w;
+		int_t out_h = m_out_shape.m_h;
+		int_t out_d = m_out_shape.m_d;
+
 		m_task_storage.resize(task_count);
 		for (auto& ts : m_task_storage)
 		{
 			ts.m_dw.resize(m_w.width(), m_w.height(), m_w.depth(), m_w.count());
 			ts.m_db.resize(m_filter_count);
-			ts.m_z.resize(m_out_shape.m_w, m_out_shape.m_h, m_out_shape.m_d);
-			ts.m_x.resize(m_out_shape.m_w, m_out_shape.m_h, m_out_shape.m_d);
-			ts.m_delta.resize(m_out_shape.m_w, m_out_shape.m_h, m_out_shape.m_d);
-			ts.m_wd.resize(m_out_shape.m_w, m_out_shape.m_h, m_out_shape.m_d);
+			ts.m_z.resize(out_w, out_h, out_d);
+			ts.m_x.resize(out_w, out_h, out_d);
+			ts.m_delta.resize(out_w, out_h, out_d);
+			ts.m_wd.resize(in_w, in_h, in_d);
 		}
 	}
 
@@ -90,11 +94,16 @@ public:
 	{
 		varray &out_z = m_task_storage[task_idx].m_z;
 		varray &out_x = m_task_storage[task_idx].m_x;
-		conv(input, m_w, m_stride_w, m_stride_h, out_z);
+
+		conv3d(input, m_w, m_stride_w, m_stride_h, out_z);
 		m_f(out_z, out_x);
 
 		if (m_next != nullptr)
 		{
+			if (!m_next->m_out_shape.is_img())
+			{
+				out_x.reshape(out_x.size());
+			}
 			return m_next->forw_prop(out_x, task_idx);
 		}
 		return out_x;
@@ -111,12 +120,33 @@ public:
 		m_df(ts.m_z, ts.m_delta);
 		for (int_t i = 0; i < out_sz; ++i)
 		{
-			ts.m_delta(i) *= next_wd(i);
+			ts.m_delta[i] *= next_wd[i];
 		}
 
-		// conv_back();
+		/*
+			dw_k = conv2d(input_d, delta_k)
+		*/
+		conv2d(input, ts.m_delta, m_stride_w, m_stride_h, ts.m_dw);
 
-		return next_wd;
+		/*
+			db_k = sum(delta_k)
+		*/
+		for (int_t k = 0; k < m_filter_count; ++k)
+		{
+			float_t s = 0;
+			for (int_t i = 0; i < m_out_shape.m_w; ++i)
+			{
+				for (int_t j = 0; j < m_out_shape.m_h; ++j)
+				{
+					s += ts.m_delta(i, j, k);
+				}
+			}
+			ts.m_db(k) += s;
+		}
+
+		conv_back(ts.m_delta, ts.m_dw, m_stride_w, m_stride_h, ts.m_wd);
+
+		return m_prev->back_prop(ts.m_wd, task_idx);
 	}
 
 private:
@@ -153,87 +183,152 @@ private:
 		return s;
 	}
 
-	static void conv(const varray &img, const varray &filters, int_t stride_w, int_t stride_h, varray &ret)
+	static void conv3d(const varray &in_img, const varray &filters, int_t stride_w, int_t stride_h, varray &out_img)
 	{
 		int_t filter_count = filters.count();
 		int_t filter_w = filters.width();
 		int_t filter_h = filters.height();
 		int_t filter_d = filters.depth();
 
-		nn_assert(img.width() >= filters.width()
-			&& img.height() >= filters.height()
-			&& img.depth() == filters.depth());
+		int_t out_w = out_img.width();
+		int_t out_h = out_img.height();
+		int_t out_d = out_img.depth();
 
-		nn_assert(ret.depth() == filter_count);
+		nn_assert(in_img.check_dim(3));
+		nn_assert(filters.check_dim(4));
+		nn_assert(out_img.check_dim(3));
 
-		for (int_t i = 0; i < filter_w; ++i)
+		nn_assert(in_img.depth() == filters.depth());
+
+		nn_assert(out_d == filter_count);
+
+		for (int_t i = 0; i < out_w; ++i)
 		{
-			for (int_t j = 0; j < filter_h; ++j)
+			for (int_t j = 0; j < out_h; ++j)
 			{
 				int_t start_w = i * stride_w;
 				int_t start_h = j * stride_h;
 				for (int_t k = 0; k < filter_count; ++k)
 				{
-					float_t s = conv_by_local(img, start_w, start_h, filters, k);
-					ret(i, j, k) = s;
+					float_t s = conv_by_local(in_img, start_w, start_h, filters, k);
+					out_img(i, j, k) = s;
 				}
 			}
 		}
 	}
 
-	static void conv_back(const varray &delta_img, const varray &filters, int_t stride_w, int_t stride_h, varray &ret)
+	static void conv2d(const varray &in_img, const varray &delta, int_t stride_w, int_t stride_h, varray &dw)
 	{
-		int_t img_w = delta_img.width();
-		int_t img_h = delta_img.height();
-		int_t img_d = delta_img.depth();
+		int_t in_w = in_img.width();
+		int_t in_h = in_img.height();
+		int_t in_d = in_img.depth();
 
-		int_t filter_count = filters.count();
-		int_t filter_w = filters.width();
-		int_t filter_h = filters.height();
-		int_t filter_d = filters.depth();
+		int_t delta_w = delta.width();
+		int_t delta_h = delta.height();
+		int_t delta_d = delta.depth();
 
-		assert(delta_img.width() >= filter_w
-			&& delta_img.height() >= filter_h
-			&& delta_img.depth() == filter_d);
+		int_t w = dw.width();
+		int_t h = dw.height();
+		int_t d = dw.depth();
+		int_t n = dw.count();
 
-		int_t cnt = ret.size();
+		nn_assert(in_img.check_dim(3));
+		nn_assert(dw.check_dim(4));
+		nn_assert(in_d == d);
+		nn_assert(n == delta_d);
 
-		for (int_t k = 0; k < cnt; ++k)
-		{			
-			for (int_t i = 0; i < filter_w; ++i)
+		for (int_t k = 0; k < n; ++k)
+		{
+			for (int_t i = 0; i < w; ++i)
 			{
-				for (int_t j = 0; j < filter_h; ++j)
+				for (int_t j = 0; j < h; ++j)
 				{
 					int_t start_w = i * stride_w;
 					int_t start_h = j * stride_h;
-					for (int_t c = 0; c < filter_d; ++c)
+					for (int_t c = 0; c < d; ++c)
 					{
 						float_t s = 0;
-						for (int_t u = 0; u < filter_w; ++u)
+						for (int_t u = 0; u < delta_w; ++u)
 						{
 							int_t x = start_w + u;
-							if (x < 0 || x >= img_w)
+							if (x < 0 || x >= in_w)
 							{
 								continue;
 							}
-							for (int_t v = 0; v < filter_h; ++v)
+							for (int_t v = 0; v < delta_h; ++v)
 							{
 								int_t y = start_h + v;
-								if (y < 0 || y >= img_w)
+								if (y < 0 || y >= in_h)
 								{
 									continue;
 								}
-								s += delta_img(x, y, c) * filters(u, v, k);
+								s += in_img(x, y, c) * delta(u, v, k);
 							}
 						}
-						ret(i, j, c, k) = s;
+						dw(i, j, c, k) += s;
 					}
 				}
 			}
 		}
 	}
 
+	static void conv_back(const varray &delta, const varray &filters, int_t stride_w, int_t stride_h, varray &ret)
+	{
+		int_t delta_w = delta.width();
+		int_t delta_h = delta.height();
+		int_t delta_d = delta.depth();
 
+		int_t filter_count = filters.count();
+		int_t filter_w = filters.width();
+		int_t filter_h = filters.height();
+		int_t filter_d = filters.depth();
+
+		int_t w = ret.width();
+		int_t h = ret.height();
+		int_t d = ret.depth();
+
+		nn_assert(delta.check_dim(3));
+		nn_assert(filters.check_dim(4));
+		nn_assert(ret.check_dim(3));
+
+		nn_assert(delta_d == filter_count);
+
+		nn_assert(d == filter_d);
+
+		for (int_t c = 0; c < d; ++c)
+		{
+			for (int_t i = 0; i < w; ++i)
+			{
+				for (int_t j = 0; j < h; ++j)
+				{
+					int_t start_w = i * stride_w;
+					int_t start_h = j * stride_h;
+					float_t s = 0;
+					for (int_t k = 0; k < filter_count; ++k)
+					{
+						for (int_t u = 0; u < filter_w; ++u)
+						{
+							int_t x = start_w - u;
+							if (x < 0 || x >= delta_w)
+							{
+								continue;
+							}
+							for (int_t v = 0; v < filter_h; ++v)
+							{
+								int_t y = start_h - v;
+								if (y < 0 || y >= delta_h)
+								{
+									continue;
+								}
+								s += delta(x, y, k) * filters(u, v, c, k);
+							}
+						}
+					}
+					ret(i, j, c) = s;
+				}
+			}
+		}
+	}
 
 };
 }

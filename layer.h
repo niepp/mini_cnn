@@ -50,6 +50,11 @@ public:
 		nn_assert(m_w * m_h * m_d > 0);
 		return m_w * m_h * m_d;
 	}
+
+	bool is_img() const
+	{
+		return m_h > 1 || m_d > 1;
+	}
 };
 
 // z = w * x + b

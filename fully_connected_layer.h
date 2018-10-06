@@ -63,8 +63,7 @@ public:
 		int_t height = m_w.height();
 		int_t width = m_w.width();
 
-		nn_assert(input.dim() == 1);
-		nn_assert(width == input.width());
+		nn_assert(width == input.size());
 
 		layer_base::task_storage &ts = m_task_storage[task_idx];
 

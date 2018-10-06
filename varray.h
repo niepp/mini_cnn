@@ -54,6 +54,8 @@ public:
 	T& operator[](int_t idx);
 	const T& operator[](int_t idx) const;
 
+	bool check_dim(int_t ndim) const;
+
 private:
 	void _create(int_t w, int_t h, int_t d, int_t n);
 	void _release();
@@ -69,6 +71,7 @@ private:
 template <class T>
 inline void _varray<T>::_create(int_t w, int_t h, int_t d, int_t n)
 {
+	nn_assert(w >= 0 && h >= 0 && d >= 0 && n >= 0);
 	m_w = w;
 	m_h = h;
 	m_d = d;
@@ -162,17 +165,15 @@ inline _varray<T>& _varray<T>::operator=(const _varray<T> &other)
 template <class T>
 inline void _varray<T>::copy(const _varray<T> &other)
 {
-	nn_assert(m_w == other.m_w);
-	nn_assert(m_h == other.m_h);
-	nn_assert(m_d == other.m_d);
-	nn_assert(m_n == other.m_n);
 	int_t len = m_w * m_h * m_d * m_n;
+	nn_assert(len == other.m_w * other.m_h * other.m_d * other.m_n);
 	::memcpy(m_data, other.m_data, len * sizeof(T));
 }
 
 template <class T>
 inline void _varray<T>::reshape(int_t w, int_t h, int_t d, int_t n)
 {
+	nn_assert(w >= 0 && h >= 0 && d >= 0 && n >= 0);
 	nn_assert(m_w * m_h * m_d * m_n == w * h * d * n);
 	m_w = w;
 	m_h = h;
@@ -183,6 +184,7 @@ inline void _varray<T>::reshape(int_t w, int_t h, int_t d, int_t n)
 template <class T>
 inline void _varray<T>::reshape(int_t w, int_t h, int_t d)
 {
+	nn_assert(w >= 0 && h >= 0 && d >= 0);
 	nn_assert(m_w * m_h * m_d * m_n == w * h * d);
 	m_w = w;
 	m_h = h;
@@ -193,6 +195,7 @@ inline void _varray<T>::reshape(int_t w, int_t h, int_t d)
 template <class T>
 inline void _varray<T>::reshape(int_t w, int_t h)
 {
+	nn_assert(w >= 0 && h >= 0);
 	nn_assert(m_w * m_h * m_d * m_n == w * h);
 	m_w = w;
 	m_h = h;
@@ -203,6 +206,7 @@ inline void _varray<T>::reshape(int_t w, int_t h)
 template <class T>
 inline void _varray<T>::reshape(int_t w)
 {
+	nn_assert(w >= 0);
 	nn_assert(m_w * m_h * m_d * m_n == w);
 	m_w = w;
 	m_h = 1;
@@ -302,6 +306,8 @@ template <class T>
 inline T& _varray<T>::operator()(int_t w, int_t h, int_t d, int_t n)
 {
 	nn_assert((n == 0 && dim() == 3) || dim() == 4);
+	nn_assert(w >= 0 && h >= 0 && d >= 0 && n >= 0);
+	nn_assert(w < m_w && h < m_h && d < m_d && n < m_n);
 	int_t maplen = m_w * m_h * m_d;
 	return m_data[n * maplen + m_w * m_h * d + m_w * h + w];
 }
@@ -310,6 +316,8 @@ template <class T>
 inline T& _varray<T>::operator()(int_t w, int_t h, int_t d)
 {
 	nn_assert((d == 0 && dim() == 2) || dim() == 3);
+	nn_assert(w >= 0 && h >= 0 && d >= 0);
+	nn_assert(w < m_w && h < m_h && d < m_d);
 	return m_data[m_w * m_h * d + m_w * h + w];
 }
 
@@ -317,6 +325,8 @@ template <class T>
 inline T& _varray<T>::operator()(int_t w, int_t h)
 {
 	nn_assert((h == 0 && dim() == 1) || dim() == 2);
+	nn_assert(w >= 0 && h >= 0);
+	nn_assert(w < m_w && h < m_h);
 	return m_data[m_w * h + w];
 }
 
@@ -324,6 +334,8 @@ template <class T>
 inline T& _varray<T>::operator()(int_t w)
 {
 	nn_assert(dim() == 1);
+	nn_assert(w >= 0);
+	nn_assert(w < m_w);
 	return m_data[w];
 }
 
@@ -331,6 +343,8 @@ template <class T>
 inline const T& _varray<T>::operator()(int_t w, int_t h, int_t d, int_t n) const
 {
 	nn_assert((n == 0 && dim() == 3) || dim() == 4);
+	nn_assert(w >= 0 && h >= 0 && d >= 0 && n >= 0);
+	nn_assert(w < m_w && h < m_h && d < m_d && n < m_n);
 	int_t maplen = m_w * m_h * m_d;
 	return m_data[n * maplen + m_w * m_h * d + m_w * h + w];
 }
@@ -339,6 +353,8 @@ template <class T>
 inline const T& _varray<T>::operator()(int_t w, int_t h, int_t d) const
 {
 	nn_assert((d == 0 && dim() == 2) || dim() == 3);
+	nn_assert(w >= 0 && h >= 0 && d >= 0);
+	nn_assert(w < m_w && h < m_h && d < m_d);
 	return m_data[m_w * m_h * d + m_w * h + w];
 }
 
@@ -346,6 +362,8 @@ template <class T>
 inline const T& _varray<T>::operator()(int_t w, int_t h) const
 {
 	nn_assert((h == 0 && dim() == 1) || dim() == 2);
+	nn_assert(w >= 0 && h >= 0);
+	nn_assert(w < m_w && h < m_h);
 	return m_data[m_w * h + w];
 }
 
@@ -353,6 +371,7 @@ template <class T>
 inline const T& _varray<T>::operator()(int_t w) const
 {
 	nn_assert(dim() == 1);
+	nn_assert(w < m_w);
 	return m_data[w];
 }
 
@@ -360,6 +379,7 @@ template <class T>
 inline T& _varray<T>::operator[](int_t idx)
 {
 	nn_assert(dim() > 0);
+	nn_assert(idx >= 0 && idx < size());
 	return m_data[idx];
 }
 
@@ -367,7 +387,29 @@ template <class T>
 inline const T& _varray<T>::operator[](int_t idx) const
 {
 	nn_assert(dim() > 0);
+	nn_assert(idx >= 0 && idx < size());
 	return m_data[idx];
+}
+
+template <class T>
+inline bool _varray<T>::check_dim(int_t ndim) const
+{
+	int_t _d = dim();
+	if (ndim == 1){
+		return _d == 1;
+	}
+	else if (ndim == 2){
+		return _d == 1 || _d == 2;
+	}
+	else if (ndim == 3){
+		return _d == 1 || _d == 2 || _d == 3;
+	}
+	else if (ndim == 4){
+		return _d == 1 || _d == 2 || _d == 3 || _d == 4;
+	}
+	else{
+		return false;
+	}
 }
 
 typedef _varray<float_t> varray;

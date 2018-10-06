@@ -40,13 +40,14 @@ network create_fnn()
 	return nn;
 }
 
-network create_fnn1()
+network create_cnn()
 {
 	network nn;
-	nn.add_layer(new input_layer(N_inputCount));
-//	nn.add_layer(new fully_connected_layer(100, activation_type::eSigmod));
-	nn.add_layer(new fully_connected_layer(30, activation_type::eSigmod));
-	nn.add_layer(new output_layer(C_classCount, lossfunc_type::eMSE, activation_type::eSigmod));
+	nn.add_layer(new input_layer(W_input, H_input, D_input));
+	nn.add_layer(new convolutional_layer(3, 3, 1, 2, 1, 1, padding_type::valid, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 2, 4, 1, 1, padding_type::valid, activation_type::eRelu));
+	nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
+	nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 	return nn;
 }
 
@@ -66,7 +67,7 @@ int main()
 	normal_random nrand(generator, 0, 0.1, 2);
 
 	// define neural network
-	network nn = create_fnn();
+	network nn = create_cnn();
 
 	nn.init_all_weight(nrand);
 
@@ -103,7 +104,7 @@ int main()
 
 			nn.train(batch_img_vec, batch_label_vec, learning_rate, nthreads);
 
-			if (i % (batch / 4) == 0)
+			if (i % (batch / 40) == 0)
 			{
 				double ca = nn.get_cost(batch_img_vec, batch_label_vec, nthreads);
 
