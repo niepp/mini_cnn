@@ -16,6 +16,7 @@ namespace mini_cnn
 	const float_t cPI = 3.141592653589793;
 #endif
 
+	const float_t cZero = (float_t)0.0;
 	const float_t cOne = (float_t)1.0;
 
 	const float_t cMIN_FLOAT = std::numeric_limits<float_t>::min();

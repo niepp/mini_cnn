@@ -16,6 +16,7 @@
     <ClInclude Include="fully_connected_layer.h" />
     <ClInclude Include="input_layer.h" />
     <ClInclude Include="layer.h" />
+    <ClInclude Include="max_pooling_layer.h" />
     <ClInclude Include="minist_dataset.h" />
     <ClInclude Include="mini_cnn.h" />
     <ClInclude Include="network.h" />
