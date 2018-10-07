@@ -131,12 +131,12 @@ public:
 	/*
 		input: input of this layer
 	*/
-	virtual const varray& forw_prop(const varray &input, int_t task_idx) = 0;
+	virtual void forw_prop(const varray &input, int_t task_idx) = 0;
 
 	/*
 		next_wd: next layer's transpose(weight) * delta
 	*/
-	virtual const varray& back_prop(const varray &next_wd, int_t task_idx) = 0;
+	virtual void back_prop(const varray &next_wd, int_t task_idx) = 0;
 
 	virtual void pre_train()
 	{

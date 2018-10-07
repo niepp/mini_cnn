@@ -92,12 +92,24 @@ public:
 		}
 	}
 
-	virtual const varray& forw_prop(const varray &input, int_t task_idx)
+	virtual void forw_prop(const varray &input, int_t task_idx)
 	{
 		varray &out_z = m_task_storage[task_idx].m_z;
 		varray &out_x = m_task_storage[task_idx].m_x;
 
 		conv3d(input, m_w, m_stride_w, m_stride_h, out_z);
+
+		for (int_t k = 0; k < m_out_shape.m_d; ++k)
+		{
+			for (int_t i = 0; i < m_out_shape.m_w; ++i)
+			{
+				for (int_t j = 0; j < m_out_shape.m_h; ++j)
+				{
+					out_z(i, j, k) += m_b(k);
+				}
+			}
+		}
+
 		m_f(out_z, out_x);
 
 		if (m_next != nullptr)
@@ -106,12 +118,11 @@ public:
 			{
 				out_x.reshape(out_x.size());
 			}
-			return m_next->forw_prop(out_x, task_idx);
+			m_next->forw_prop(out_x, task_idx);
 		}
-		return out_x;
 	}
 
-	virtual const varray& back_prop(const varray &next_wd, int_t task_idx)
+	virtual void back_prop(const varray &next_wd, int_t task_idx)
 	{
 		layer_base::task_storage &ts = m_task_storage[task_idx];
 		const varray &input = m_prev->get_output(task_idx);
@@ -148,7 +159,8 @@ public:
 
 		conv_back(ts.m_delta, ts.m_dw, m_stride_w, m_stride_h, ts.m_wd);
 
-		return m_prev->back_prop(ts.m_wd, task_idx);
+		m_prev->back_prop(ts.m_wd, task_idx);
+
 	}
 
 private:

@@ -172,8 +172,10 @@ public:
 
 		bool check_ok = true;
 		int_t len = static_cast<int_t>(m_layers.size());
-		for (auto &layer : m_layers)
+		//for (auto &layer : m_layers)
+		for (int l = m_layers.size() - 1; l >= 0; --l)
 		{
+			auto layer = m_layers[l];
 			auto &ts = layer->get_task_storage(0);
 			varray &w = layer->m_w;
 			varray &dw = ts.m_dw;
@@ -212,9 +214,9 @@ private:
 		}
 	}
 
-	const varray& forward(const varray& input, int_t task_idx)
+	void forward(const varray& input, int_t task_idx)
 	{
-		return m_input_layer->forw_prop(input, task_idx);
+		m_input_layer->forw_prop(input, task_idx);
 	}
 
 	void backward(const varray &label, int_t task_idx)
@@ -244,8 +246,8 @@ private:
 		int_t c_count = 0;
 		for (int_t i = begin; i < end; ++i)
 		{
-			const varray&out = forward(*test_img_vec[i], task_idx);
-			int_t lab = out.arg_max();
+			forward(*test_img_vec[i], task_idx);
+			int_t lab = m_output_layer->get_output(task_idx).arg_max();
 			if (lab == test_lab_vec[i])
 			{
 				++c_count;
@@ -259,7 +261,7 @@ private:
 		float_t cost = 0;
 		for (int_t i = begin; i < end; ++i)
 		{
-			const varray&out = m_input_layer->forw_prop(*img_vec[i], task_idx);
+			m_input_layer->forw_prop(*img_vec[i], task_idx);
 			cost += m_output_layer->calc_cost(false, *label_vec[i], task_idx);
 		}
 		return cost;

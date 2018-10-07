@@ -27,7 +27,7 @@ std::cout << std::setw(30) << std::setiosflags(std::ios::left) << #model << "\t"
 	gradient_checker()
 	{
 		int_t seed = get_now();
-		//seed = 2572007265;
+		seed = 2572007265;
 		std::mt19937_64 generator(seed);
 		normal_random nRand(generator, 0, 1.0);
 		uniform_random uRand(generator, 0, 1.0);
@@ -101,8 +101,10 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::valid, activation_type::eSigmod));
-	//	nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, padding_type::valid, activation_type::eSigmod));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 2, 1, 1, padding_type::valid, activation_type::eSigmod));
+		nn.add_layer(new convolutional_layer(3, 3, 2, 3, 1, 1, padding_type::valid, activation_type::eSigmod));
+		nn.add_layer(new convolutional_layer(3, 3, 3, 4, 1, 1, padding_type::valid, activation_type::eSigmod));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, padding_type::valid, activation_type::eSigmod));
 		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eMSE, activation_type::eSigmod));
 		return nn;
 	}

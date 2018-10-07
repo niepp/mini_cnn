@@ -25,7 +25,7 @@ public:
 		}
 	}
 
-	virtual const varray& forw_prop(const varray &input, int_t task_idx)
+	virtual void forw_prop(const varray &input, int_t task_idx)
 	{
 		nn_assert(m_next != nullptr);
 
@@ -35,12 +35,11 @@ public:
 		{
 			in.reshape(m_out_shape.m_w, m_out_shape.m_h, m_out_shape.m_d);
 		}
-		return m_next->forw_prop(in, task_idx);
+		m_next->forw_prop(in, task_idx);
 	}
 
-	virtual const varray& back_prop(const varray &next_wd, int_t task_idx)
+	virtual void back_prop(const varray &next_wd, int_t task_idx)
 	{
-		return next_wd;
 	}
 
 };

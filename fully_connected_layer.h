@@ -58,7 +58,7 @@ public:
 		}
 	}
 
-	virtual const varray& forw_prop(const varray &input, int_t task_idx)
+	virtual void forw_prop(const varray &input, int_t task_idx)
 	{
 		int_t height = m_w.height();
 		int_t width = m_w.width();
@@ -82,12 +82,11 @@ public:
 
 		if (m_next != nullptr)
 		{
-			return m_next->forw_prop(ts.m_x, task_idx);
+			m_next->forw_prop(ts.m_x, task_idx);
 		}
-		return ts.m_x;
 	}
 
-	virtual const varray& back_prop(const varray &next_wd, int_t task_idx)
+	virtual void back_prop(const varray &next_wd, int_t task_idx)
 	{
 		layer_base::task_storage &ts = m_task_storage[task_idx];
 
@@ -133,7 +132,7 @@ public:
 			ts.m_wd(i) = dot;
 		}
 
-		return m_prev->back_prop(ts.m_wd, task_idx);
+		m_prev->back_prop(ts.m_wd, task_idx);
 
 	}
 

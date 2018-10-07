@@ -32,7 +32,7 @@ public:
 		int_t out_sz = get_output(task_idx).size();
 		int_t in_sz = input.size();
 
-		nn_assert(m_w.dim() == 2);
+		nn_assert(m_w.check_dim(2));
 		nn_assert(in_sz == m_w.width());
 		nn_assert(out_sz == m_w.height());
 
