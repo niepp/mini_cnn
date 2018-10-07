@@ -157,7 +157,7 @@ public:
 			ts.m_db(k) += s;
 		}
 
-		conv_back(ts.m_delta, ts.m_dw, m_stride_w, m_stride_h, ts.m_wd);
+		conv_back(ts.m_delta, m_w, m_stride_w, m_stride_h, ts.m_wd);
 
 		m_prev->back_prop(ts.m_wd, task_idx);
 

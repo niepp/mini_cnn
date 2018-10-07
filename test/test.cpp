@@ -40,23 +40,23 @@ std::cout << std::setw(30) << std::setiosflags(std::ios::left) << #model << "\t"
 		}
 		(*label)[3] = 1.0;
 
-		//TEST_GRADIENT(create_fcn_sigmod_mse);
+		TEST_GRADIENT(create_fcn_sigmod_mse);
 
-		//TEST_GRADIENT(create_fcn_sigmod_crossentropy);
+		TEST_GRADIENT(create_fcn_sigmod_crossentropy);
 
-		//TEST_GRADIENT(create_fcn_relu);
+		TEST_GRADIENT(create_fcn_relu);
 
-		//TEST_GRADIENT(create_fcn_softmax);
+		TEST_GRADIENT(create_fcn_softmax);
 
 		TEST_GRADIENT(create_cnn_sigmod);
 
-		//TEST_GRADIENT(create_cnn_sigmod_softmax);
+		TEST_GRADIENT(create_cnn_sigmod_softmax);
 
-		//TEST_GRADIENT(create_cnn_sigmod_softmax_pool);
+		TEST_GRADIENT(create_cnn_sigmod_softmax_pool);
 
-		//TEST_GRADIENT(create_cnn_relu_mse);
+		TEST_GRADIENT(create_cnn_relu_mse);
 
-		//TEST_GRADIENT(create_cnn_relu_softmax);
+		TEST_GRADIENT(create_cnn_relu_softmax);
 
 	}
 
@@ -103,8 +103,6 @@ private:
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
 		nn.add_layer(new convolutional_layer(3, 3, 1, 2, 1, 1, padding_type::valid, activation_type::eSigmod));
 		nn.add_layer(new convolutional_layer(3, 3, 2, 3, 1, 1, padding_type::valid, activation_type::eSigmod));
-		nn.add_layer(new convolutional_layer(3, 3, 3, 4, 1, 1, padding_type::valid, activation_type::eSigmod));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, padding_type::valid, activation_type::eSigmod));
 		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eMSE, activation_type::eSigmod));
 		return nn;
 	}
