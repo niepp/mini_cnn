@@ -44,7 +44,7 @@ public:
 			ts.m_db(i) += ts.m_delta(i);
 			for (int_t j = 0; j < in_sz; ++j)
 			{
-				ts.m_dw(j, i) += ts.m_delta(i) * input(j);
+				ts.m_dw(j, i) += ts.m_delta(i) * input[j];
 			}
 		}
 
@@ -58,7 +58,7 @@ public:
 			{
 				dot += m_w(i, j) * ts.m_delta(j);
 			}
-			ts.m_wd(i) = dot;
+			ts.m_wd[i] = dot;
 		}
 
 		m_prev->back_prop(ts.m_wd, task_idx);

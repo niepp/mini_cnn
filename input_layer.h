@@ -21,7 +21,14 @@ public:
 		m_task_storage.resize(task_count);
 		for (auto& ts : m_task_storage)
 		{
-			ts.m_x.resize(out_size());
+			if (m_out_shape.is_img())
+			{
+				ts.m_x.resize(m_out_shape.m_w, m_out_shape.m_h, m_out_shape.m_d);
+			}
+			else
+			{
+				ts.m_x.resize(m_out_shape.size());
+			}
 		}
 	}
 
@@ -31,10 +38,6 @@ public:
 
 		varray &in = m_task_storage[task_idx].m_x;
 		in.copy(input);
-		if (m_out_shape.is_img())
-		{
-			in.reshape(m_out_shape.m_w, m_out_shape.m_h, m_out_shape.m_d);
-		}
 		m_next->forw_prop(in, task_idx);
 	}
 

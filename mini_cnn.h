@@ -10,6 +10,7 @@
 #include "output_layer.h"
 #include "convolutional_layer.h"
 #include "max_pooling_layer.h"
+#include "avg_pooling_layer.h"
 #include "network.h"
 
 #include "minist_dataset.h"

@@ -3,6 +3,13 @@
 
 namespace mini_cnn
 {
+
+enum class padding_type
+{
+	valid, // only use valid pixels of input
+	same   // padding zero around input to keep image size
+};
+
 enum activation_type
 {
 	eSigmod,

@@ -44,6 +44,10 @@ public:
 
 	virtual void set_task_count(int_t task_count)
 	{
+		int_t in_w = m_prev->m_out_shape.m_w;
+		int_t in_h = m_prev->m_out_shape.m_h;
+		int_t in_d = m_prev->m_out_shape.m_d;
+
 		int_t in_sz = m_w.width();
 		int_t out_sz = m_w.height(); 
 		m_task_storage.resize(task_count);
@@ -54,7 +58,14 @@ public:
 			ts.m_z.resize(out_sz);
 			ts.m_x.resize(out_sz);
 			ts.m_delta.resize(out_sz);
-			ts.m_wd.resize(in_sz);
+			if (m_prev->m_out_shape.is_img())
+			{
+				ts.m_wd.resize(in_w, in_h, in_d);
+			}
+			else
+			{
+				ts.m_wd.resize(in_sz);
+			}
 		}
 	}
 
@@ -74,7 +85,7 @@ public:
 			float_t dot = 0;
 			for (int_t j = 0; j < width; ++j)
 			{
-				dot += m_w(j, i) * input(j);
+				dot += m_w(j, i) * input[j];
 			}
 			ts.m_z(i) = dot + m_b(i);
 		}
@@ -115,7 +126,7 @@ public:
 			ts.m_db(i) += ts.m_delta(i);
 			for (int_t j = 0; j < in_sz; ++j)
 			{
-				ts.m_dw(j, i) += ts.m_delta(i) * input(j);
+				ts.m_dw(j, i) += ts.m_delta(i) * input[j];
 			}
 		}
 
@@ -129,7 +140,7 @@ public:
 			{
 				dot += m_w(i, j) * ts.m_delta(j);
 			}
-			ts.m_wd(i) = dot;
+			ts.m_wd[i] = dot;
 		}
 
 		m_prev->back_prop(ts.m_wd, task_idx);

@@ -172,10 +172,8 @@ public:
 
 		bool check_ok = true;
 		int_t len = static_cast<int_t>(m_layers.size());
-		//for (auto &layer : m_layers)
-		for (int l = m_layers.size() - 1; l >= 0; --l)
+		for (auto &layer : m_layers)
 		{
-			auto layer = m_layers[l];
 			auto &ts = layer->get_task_storage(0);
 			varray &w = layer->m_w;
 			varray &dw = ts.m_dw;

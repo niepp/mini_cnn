@@ -4,12 +4,6 @@
 namespace mini_cnn 
 {
 
-enum class padding_type
-{
-	valid, // only use valid pixels of input
-	same   // padding zero around input to keep image size
-};
-
 /*
 for the l-th Conv layer:
 	(l)     (l-1)      (l)    (l)
@@ -86,7 +80,14 @@ public:
 			ts.m_dw.resize(m_w.width(), m_w.height(), m_w.depth(), m_w.count());
 			ts.m_db.resize(m_filter_count);
 			ts.m_z.resize(out_w, out_h, out_d);
-			ts.m_x.resize(out_w, out_h, out_d);
+			if (!m_out_shape.is_img())
+			{
+				ts.m_x.resize(out_w * out_h * out_d);
+			}
+			else
+			{
+				ts.m_x.resize(out_w, out_h, out_d);
+			}
 			ts.m_delta.resize(out_w, out_h, out_d);
 			ts.m_wd.resize(in_w, in_h, in_d);
 		}
@@ -114,10 +115,6 @@ public:
 
 		if (m_next != nullptr)
 		{
-			if (!m_next->m_out_shape.is_img())
-			{
-				out_x.reshape(out_x.size());
-			}
 			m_next->forw_prop(out_x, task_idx);
 		}
 	}
@@ -164,11 +161,11 @@ public:
 	}
 
 private:
-	static float_t conv_by_local(const varray &img, int_t start_w, int_t start_h, const varray &filters, int_t filter_idx)
+	static float_t conv_by_local(const varray &in_img, int_t start_w, int_t start_h, const varray &filters, int_t filter_idx)
 	{
-		int_t img_w = img.width();
-		int_t img_h = img.height();
-		int_t img_d = img.depth();
+		int_t in_w = in_img.width();
+		int_t in_h = in_img.height();
+		int_t in_d = in_img.depth();
 		int_t filter_w = filters.width();
 		int_t filter_h = filters.height();
 		int_t filter_d = filters.depth();
@@ -177,20 +174,20 @@ private:
 		for (int_t u = 0; u < filter_w; ++u)
 		{
 			int_t x = start_w + u;
-			if (x < 0 || x >= img_w)
+			if (x < 0 || x >= in_w)
 			{
 				continue;
 			}
 			for (int_t v = 0; v < filter_h; ++v)
 			{
 				int_t y = start_h + v;
-				if (y < 0 || y >= img_h)
+				if (y < 0 || y >= in_h)
 				{
 					continue;
 				}
 				for (int_t c = 0; c < filter_d; ++c)
 				{
-					s += img(x, y, c) * filters(u, v, c, filter_idx);
+					s += in_img(x, y, c) * filters(u, v, c, filter_idx);
 				}
 			}
 		}

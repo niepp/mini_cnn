@@ -14,6 +14,7 @@ namespace mini_cnn
 
 class gradient_checker
 {
+private:
 	const float_t cPrecision = 1e-4;
 	const int_t cInput_w = 12;
 	const int_t cInput_h = 12;
@@ -22,7 +23,7 @@ class gradient_checker
 	const int_t cOutput_n = 10;
 public:
 #define TEST_GRADIENT(model)\
-std::cout << std::setw(30) << std::setiosflags(std::ios::left) << #model << "\t" << std::boolalpha << test_nn_gradient_check(model(), nRand, input, label, cPrecision) << std::endl;
+	std::cout << std::setw(30) << std::setiosflags(std::ios::left) << #model << "\t" << std::boolalpha << test_nn_gradient_check(model(), nRand, input, label, cPrecision) << std::endl;
 
 	gradient_checker()
 	{
@@ -40,23 +41,25 @@ std::cout << std::setw(30) << std::setiosflags(std::ios::left) << #model << "\t"
 		}
 		(*label)[3] = 1.0;
 
-		TEST_GRADIENT(create_fcn_sigmod_mse);
+		//TEST_GRADIENT(create_fcn_sigmod_mse);
 
-		TEST_GRADIENT(create_fcn_sigmod_crossentropy);
+		//TEST_GRADIENT(create_fcn_sigmod_crossentropy);
 
-		TEST_GRADIENT(create_fcn_relu);
+		//TEST_GRADIENT(create_fcn_relu);
 
-		TEST_GRADIENT(create_fcn_softmax);
+		//TEST_GRADIENT(create_fcn_softmax);
 
-		TEST_GRADIENT(create_cnn_sigmod);
+		//TEST_GRADIENT(create_cnn_sigmod);
 
-		TEST_GRADIENT(create_cnn_sigmod_softmax);
+		//TEST_GRADIENT(create_cnn_sigmod_softmax);
 
-		TEST_GRADIENT(create_cnn_sigmod_softmax_pool);
+		TEST_GRADIENT(create_cnn_sigmod_softmax_max_pool);
 
-		TEST_GRADIENT(create_cnn_relu_mse);
+		//TEST_GRADIENT(create_cnn_sigmod_softmax_avg_pool);
 
-		TEST_GRADIENT(create_cnn_relu_softmax);
+		//TEST_GRADIENT(create_cnn_relu_mse);
+
+		//TEST_GRADIENT(create_cnn_relu_softmax);
 
 	}
 
@@ -117,12 +120,26 @@ private:
 		return nn;
 	}
 
-	network create_cnn_sigmod_softmax_pool()
+	network create_cnn_sigmod_softmax_max_pool()
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
 		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::valid, activation_type::eSigmod));
+		nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+		//nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, padding_type::valid, activation_type::eSigmod));
+		//nn.add_layer(new max_pooling_layer(2, 2, 1, 1));
+		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+		return nn;
+	}
+
+	network create_cnn_sigmod_softmax_avg_pool()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::valid, activation_type::eSigmod));
+		nn.add_layer(new avg_pooling_layer(2, 2, 1, 1));
 		nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, padding_type::valid, activation_type::eSigmod));
+		nn.add_layer(new avg_pooling_layer(2, 2, 1, 1));
 		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 		return nn;
 	}

@@ -76,6 +76,7 @@ typedef void (*active_func)(const varray &v, varray &retv);
 inline void sigmoid(const varray &v, varray &retv)
 {
 	int_t len = v.size();
+	nn_assert(len == retv.size());
 	for (int_t i = 0; i < len; ++i)
 	{
 		retv[i] = cOne / (cOne + exp(-v[i]));
@@ -85,6 +86,7 @@ inline void sigmoid(const varray &v, varray &retv)
 inline void deriv_sigmoid(const varray &v, varray &retv)
 {
 	int_t len = v.size();
+	nn_assert(len == retv.size());
 	for (int_t i = 0; i < len; ++i)
 	{
 		float_t t = cOne / (cOne + exp(-v[i]));
@@ -95,6 +97,7 @@ inline void deriv_sigmoid(const varray &v, varray &retv)
 inline void relu(const varray &v, varray &retv)
 {
 	int_t len = v.size();
+	nn_assert(len == retv.size());
 	for (int_t i = 0; i < len; ++i)
 	{
 		retv[i] = v[i] > 0 ? v[i] : 0;
@@ -104,6 +107,7 @@ inline void relu(const varray &v, varray &retv)
 inline void deriv_relu(const varray &v, varray &retv)
 {
 	int_t len = v.size();
+	nn_assert(len == retv.size());
 	for (int_t i = 0; i < len; ++i)
 	{
 		retv[i] = v[i] > 0 ? cOne : 0;

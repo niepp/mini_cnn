@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="avg_pooling_layer.h" />
     <ClInclude Include="common_define.h" />
     <ClInclude Include="convolutional_layer.h" />
     <ClInclude Include="fully_connected_layer.h" />

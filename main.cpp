@@ -18,18 +18,6 @@
 using namespace std;
 using namespace mini_cnn;
 
-std::mt19937_64 create_random()
-{
-	// random init
-	uint_t seed = get_now();
-
-	cout << "random seed:" << seed << endl;
-
-	std::mt19937_64 generator(seed);
-
-	return generator;
-}
-
 network create_fnn()
 {
 	network nn;
@@ -44,9 +32,11 @@ network create_cnn()
 {
 	network nn;
 	nn.add_layer(new input_layer(W_input, H_input, D_input));
-	nn.add_layer(new convolutional_layer(3, 3, 1, 2, 1, 1, padding_type::valid, activation_type::eRelu));
-	nn.add_layer(new convolutional_layer(3, 3, 2, 4, 1, 1, padding_type::valid, activation_type::eRelu));
-	nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::valid, activation_type::eRelu));
+	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::valid, activation_type::eRelu));
+	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+	nn.add_layer(new fully_connected_layer(1024, activation_type::eRelu));
 	nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 	return nn;
 }
@@ -62,8 +52,13 @@ int main()
 	int img_count = img_vec.size();
 	int test_img_count = test_img_vec.size();
 
-	long long t0 = get_now();
-	auto generator = create_random();
+	uint_t t0 = get_now();
+
+	// random init
+	uint_t seed = t0;
+	seed = 2572007265;
+	cout << "random seed:" << seed << endl;
+	std::mt19937_64 generator(seed);
 	normal_random nrand(generator, 0, 0.1, 2);
 
 	// define neural network
@@ -108,15 +103,15 @@ int main()
 			{
 				double ca = nn.get_cost(batch_img_vec, batch_label_vec, nthreads);
 
-				//if (ca < minCost)
-				//{
-				//	minCost = ca;
-				//	int_t correct = nn.test(test_img_vec, test_lab_vec, nthreads);
-				//	double correct_rate = (1.0 * correct / test_img_count);
-				//	std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << "  correct_rate: " <<
-				//		correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
-				//}
-				//else
+				if (ca < minCost)
+				{
+					minCost = ca;
+					int_t correct = nn.test(test_img_vec, test_lab_vec, nthreads);
+					double correct_rate = (1.0 * correct / test_img_count);
+					std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << "  correct_rate: " <<
+						correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
+				}
+				else
 				{
 					std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << endl;
 				}
@@ -138,7 +133,7 @@ int main()
 
 	cout << "Max CorrectRate: " << maxCorrectRate << endl;
 
-	long long t1 = get_now();
+	uint_t t1 = get_now();
 
 	float timeCost = (t1 - t0) * 0.001f;
 	cout << "TimeCost: " << timeCost << "(s)" << endl;
