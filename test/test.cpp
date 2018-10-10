@@ -16,8 +16,8 @@ class gradient_checker
 {
 private:
 	const float_t cPrecision = 1e-4;
-	const int_t cInput_w = 12;
-	const int_t cInput_h = 12;
+	const int_t cInput_w = 18;
+	const int_t cInput_h = 18;
 	const int_t cInput_d = 1;
 	const int_t cInput_n = cInput_w * cInput_h * cInput_d;
 	const int_t cOutput_n = 10;
@@ -125,9 +125,9 @@ private:
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
 		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::valid, activation_type::eSigmod));
-		nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-		//nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, padding_type::valid, activation_type::eSigmod));
-		//nn.add_layer(new max_pooling_layer(2, 2, 1, 1));
+		nn.add_layer(new max_pooling_layer(2, 2, 1, 1));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, padding_type::valid, activation_type::eSigmod));
+		nn.add_layer(new max_pooling_layer(2, 2, 1, 1));
 		nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 		return nn;
 	}

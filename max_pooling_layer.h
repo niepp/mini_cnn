@@ -14,6 +14,11 @@ protected:
 
 	struct max_pooling_task_storage
 	{
+		/*
+			https://software.intel.com/sites/products/documentation/doclib/daal/daal-user-and-reference-guides/daal_prog_guide/GUID-2C3AA967-AE6A-4162-84EB-93BE438E3A05.htm
+			m_idx_maps[d]: index map of channel d
+			m_idx_maps[d][i]: the i-th element of downsample output is choosed from the m_idx_maps[d][i] (index of pool window)
+		*/ 
 		std::vector<index_vec> m_idx_maps;
 	};
 
@@ -71,7 +76,7 @@ public:
 			pooling_ts.m_idx_maps.resize(in_d);
 			for (auto &mp : pooling_ts.m_idx_maps)
 			{
-				mp.resize(in_w * in_h);
+				mp.resize(out_w * out_h);
 			}
 		}
 	}
@@ -102,8 +107,7 @@ public:
 	}
 
 private:
-
-	// https://software.intel.com/sites/products/documentation/doclib/daal/daal-user-and-reference-guides/daal_prog_guide/GUID-2C3AA967-AE6A-4162-84EB-93BE438E3A05.htm
+	
 	static void down_sample(const varray &in_img, varray &out, std::vector<index_vec> &idx_map,
 		int_t pool_w, int_t pool_h,
 		int_t pool_stride_w, int_t pool_stride_h)
@@ -123,7 +127,7 @@ private:
 
 		int_t map_sz = static_cast<int_t>(idx_map[0].size());
 
-		nn_assert(map_sz == in_w * in_h);
+		nn_assert(map_sz == w * h);
 
 		for (auto &mp : idx_map)
 		{
@@ -142,7 +146,7 @@ private:
 					int_t start_w = i * pool_stride_w;
 					int_t start_h = j * pool_stride_h;
 					float_t maxv = cMIN_FLOAT;
-					int_t in_idx = -1;
+					int_t pool_idx = -1;
 					for (int_t u = 0; u < pool_w; ++u)
 					{
 						int_t x = start_w + u;
@@ -161,15 +165,15 @@ private:
 							if (t > maxv)
 							{
 								maxv = t;
-								in_idx = x + y * in_w;
+								pool_idx = u + v * pool_w;
 							}
 						}
 					}
 					out(i, j, c) = maxv;
-					if (in_idx >= 0)
+					if (pool_idx >= 0)
 					{
 						int_t out_idx = i + j * w;
-						idx_map[c][in_idx] = out_idx;
+						idx_map[c][out_idx] = pool_idx;
 					}
 				}
 			}
@@ -195,7 +199,7 @@ private:
 
 		int_t map_sz = static_cast<int_t>(idx_map[0].size());
 
-		nn_assert(map_sz == w * h);
+		nn_assert(map_sz == in_w * in_h);
 
 		out.make_zero();
 
@@ -207,34 +211,16 @@ private:
 				{
 					int_t start_w = i * pool_stride_w;
 					int_t start_h = j * pool_stride_h;
-					float_t maxv = cMIN_FLOAT;
-					int_t in_idx = -1;
-					for (int_t u = 0; u < pool_w; ++u)
-					{
-						int_t x = start_w + u;
-						if (x < 0 || x >= w)
-						{
-							continue;
-						}
-						for (int_t v = 0; v < pool_h; ++v)
-						{
-							int_t y = start_h + v;
-							if (y < 0 || y >= h)
-							{
-								continue;
-							}
-							
-							int_t idx = x + y * w;
-							if (idx_map[c][idx] >= 0)
-							{
-								out(x, y, c) += in_img(i, j, c);
-							}
-						/*	else
-							{
-								out(x, y, c) = cZero;
-							}*/
-						}
-					}
+
+					int_t out_idx = i + j * in_w;
+					int_t pool_idx = idx_map[c][out_idx];
+
+					int_t v = pool_idx / pool_w;
+					int_t u = pool_idx - v * pool_w;
+					int_t x = start_w + u;
+					int_t y = start_h + v;
+					nn_assert((x >= 0 && x < w) && (y >= 0 && y < h));
+					out(x, y, c) += in_img(i, j, c);
 				}
 			}
 		}
