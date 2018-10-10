@@ -8,7 +8,8 @@ class max_pooling_layer : public layer_base
 {
 
 protected:
-	shape3d m_pool_shape;
+	int_t m_pool_w;
+	int_t m_pool_h;
 	int_t m_stride_w;
 	int_t m_stride_h;
 
@@ -27,9 +28,11 @@ protected:
 public:
 	max_pooling_layer(int_t pool_w, int_t pool_h, int_t stride_w, int_t stride_h)
 		: layer_base()
-		, m_pool_shape(pool_w, pool_h, 1)
+		, m_pool_w(pool_w), m_pool_h(pool_h)
 		, m_stride_w(stride_w), m_stride_h(stride_h)
 	{
+		nn_assert(stride_w > 0 && stride_w <= pool_w);
+		nn_assert(stride_h > 0 && stride_h <= pool_h);
 	}
 
 	virtual void connect(layer_base *next)
@@ -41,8 +44,8 @@ public:
 		int_t in_w = m_prev->m_out_shape.m_w;
 		int_t in_h = m_prev->m_out_shape.m_h;
 		int_t in_d = m_prev->m_out_shape.m_d;
-		int_t out_w = static_cast<int_t>(::floorf(1.0f * (in_w - m_pool_shape.m_w) / m_stride_w)) + 1;
-		int_t out_h = static_cast<int_t>(::floorf(1.0f * (in_h - m_pool_shape.m_h) / m_stride_h)) + 1;
+		int_t out_w = static_cast<int_t>(::floorf(1.0f * (in_w - m_pool_w) / m_stride_w)) + 1;
+		int_t out_h = static_cast<int_t>(::floorf(1.0f * (in_h - m_pool_h) / m_stride_h)) + 1;
 		m_out_shape.set(out_w, out_h, in_d);
 	}
 
@@ -87,7 +90,7 @@ public:
 
 		std::vector<index_vec> &idx_maps = m_max_pooling_task_storage[task_idx].m_idx_maps;
 
-		down_sample(input, out_x, idx_maps, m_pool_shape.m_w, m_pool_shape.m_h, m_stride_w, m_stride_h);
+		down_sample(input, out_x, idx_maps, m_pool_w, m_pool_h, m_stride_w, m_stride_h);
 
 		if (m_next != nullptr)
 		{
@@ -100,7 +103,7 @@ public:
 		layer_base::task_storage &ts = m_task_storage[task_idx];
 		std::vector<index_vec> &idx_maps = m_max_pooling_task_storage[task_idx].m_idx_maps;
 
-		up_sample(next_wd, ts.m_wd, idx_maps, m_pool_shape.m_w, m_pool_shape.m_h, m_stride_w, m_stride_h);
+		up_sample(next_wd, ts.m_wd, idx_maps, m_pool_w, m_pool_h, m_stride_w, m_stride_h);
 
 		m_prev->back_prop(ts.m_wd, task_idx);
 
