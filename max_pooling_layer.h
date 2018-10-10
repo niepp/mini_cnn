@@ -19,6 +19,15 @@ protected:
 			https://software.intel.com/sites/products/documentation/doclib/daal/daal-user-and-reference-guides/daal_prog_guide/GUID-2C3AA967-AE6A-4162-84EB-93BE438E3A05.htm
 			m_idx_maps[d]: index map of channel d
 			m_idx_maps[d][i]: the i-th element of downsample output is choosed from the m_idx_maps[d][i] (index of pool window)
+
+			for example
+		
+			input: 2X3		    pool: size 2X2,		    output: 1X2
+									  stride 1X1						idx_map: 1X2      
+			| 0  2  1 |         forward                                                backward      | 0  0  0 |  
+			| 3  5  4 |            =>					| 5  5 |        | 3  2 |          =>         | 0  5+5  0 | 
+														    
+
 		*/ 
 		std::vector<index_vec> m_idx_maps;
 	};
