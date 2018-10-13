@@ -1,5 +1,5 @@
 
-**mini_cnn** is a light-weighted convolutional neural network implementation based on c++11, mutli threading and head only
+#**mini_cnn** is a light-weighted convolutional neural network implementation based on c++11, mutli threading and head only
 
 
 ## Features</br>
