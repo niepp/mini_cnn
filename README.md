@@ -3,7 +3,6 @@
 
 
 ## Features</br>
-### done</br>
 - mutli threading
 - gradient checking
 - weight initializer
