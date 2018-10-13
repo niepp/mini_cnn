@@ -52,9 +52,6 @@ int main()
 								, "data/fashion/t10k-images-idx3-ubyte", "data/fashion/t10k-labels-idx1-ubyte");
 	fashion.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
-	int img_count = img_vec.size();
-	int test_img_count = test_img_vec.size();
-
 	uint_t t0 = get_now();
 
 	// random init
@@ -74,67 +71,12 @@ int main()
 	double learning_rate = 0.1;
 	int epoch = 20;
 	int batch_size = 10;
-	int batch = img_count / batch_size;
-	std::vector<int> idx_vec(img_count);
-	for (int k = 0; k < img_count; ++k)
-	{
-		idx_vec[k] = k;
-	}
-
-	double maxCorrectRate = 0;
 
 	int nthreads = std::thread::hardware_concurrency();
 	//nthreads = 2;
 	nn.set_task_count(nthreads);
 
-	for (int c = 0; c < epoch; ++c)
-	{
-		double minCost = cMAX_FLOAT;
-		std::shuffle(idx_vec.begin(), idx_vec.end(), generator);
-		varray_vec batch_img_vec(batch_size);
-		varray_vec batch_label_vec(batch_size);
-		for (int i = 0; i < batch; ++i)
-		{
-			for (int k = 0; k < batch_size; ++k)
-			{
-				int j = idx_vec[(i * batch_size + k) % img_count];
-				batch_img_vec[k] = img_vec[j];
-				batch_label_vec[k] = lab_vec[j];
-			}
-
-			nn.train(batch_img_vec, batch_label_vec, learning_rate, nthreads);
-
-			if (i % (batch / 4) == 0)
-			{
-				double ca = nn.get_cost(batch_img_vec, batch_label_vec, nthreads);
-
-				//if (ca < minCost)
-				//{
-				//	minCost = ca;
-				//	int_t correct = nn.test(test_img_vec, test_lab_vec, nthreads);
-				//	double correct_rate = (1.0 * correct / test_img_count);
-				//	std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << "  correct_rate: " <<
-				//		correct_rate << " (" << correct << " / " << test_img_count << ")" << endl;
-				//}
-				//else
-				{
-					std::cout << "batch: " << i << "/" << batch << "  learning_rate:" << learning_rate << "  cost: " << ca << endl;
-				}
-			}
-
-		}
-
-		int_t correct = nn.test(test_img_vec, test_lab_vec, nthreads);
-		double correct_rate = (1.0 * correct / test_img_count);
-		if (correct_rate > maxCorrectRate)
-		{
-			maxCorrectRate = correct_rate;
-		}
-
-		double tot_cost = nn.get_cost(img_vec, lab_vec, nthreads);
-		std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "  tot_cost = " << tot_cost << endl;
-
-	}
+	auto maxCorrectRate = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, nthreads, generator, epoch, batch_size, learning_rate);
 
 	cout << "Max CorrectRate: " << maxCorrectRate << endl;
 

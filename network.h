@@ -67,7 +67,48 @@ public:
 		}
 	}
 
-	void train(const varray_vec &batch_img_vec, const varray_vec &batch_label_vec, float_t eta, const int_t max_threads)
+	float_t SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const index_vec &test_lab_vec
+		, int_t nthreads, std::mt19937_64 generator, int epoch, int batch_size, double learning_rate)
+	{
+		float_t maxCorrectRate = 0;
+		int img_count = img_vec.size();
+		int test_img_count = test_img_vec.size();
+		int batch = img_count / batch_size;
+		std::vector<int> idx_vec(img_count);
+		for (int k = 0; k < img_count; ++k)
+		{
+			idx_vec[k] = k;
+		}
+
+		for (int c = 0; c < epoch; ++c)
+		{
+			double minCost = cMAX_FLOAT;
+			std::shuffle(idx_vec.begin(), idx_vec.end(), generator);
+			varray_vec batch_img_vec(batch_size);
+			varray_vec batch_label_vec(batch_size);
+			for (int i = 0; i < batch; ++i)
+			{
+				for (int k = 0; k < batch_size; ++k)
+				{
+					int j = idx_vec[(i * batch_size + k) % img_count];
+					batch_img_vec[k] = img_vec[j];
+					batch_label_vec[k] = lab_vec[j];
+				}
+				train_one_batch(batch_img_vec, batch_label_vec, learning_rate, nthreads);
+			}
+			int_t correct = test(test_img_vec, test_lab_vec, nthreads);
+			double correct_rate = (1.0 * correct / test_img_count);
+			if (correct_rate > maxCorrectRate)
+			{
+				maxCorrectRate = correct;
+			}
+			double tot_cost = get_cost(img_vec, lab_vec, nthreads);
+			std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "  tot_cost = " << tot_cost << std::endl;
+		}
+		return maxCorrectRate;
+	}
+
+	void train_one_batch(const varray_vec &batch_img_vec, const varray_vec &batch_label_vec, float_t eta, const int_t max_threads)
 	{
 		nn_assert(batch_img_vec.size() == batch_label_vec.size());
 		int_t batch_size = batch_img_vec.size();
