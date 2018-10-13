@@ -12,19 +12,19 @@ class normal_random
 private:
 	float_t m_mean;
 	float_t m_stdev;
-	int_t m_nTruncated;
+	int_t m_truncated;
 public:
 	std::mt19937_64 m_generator;
 	std::normal_distribution<float_t> m_distribution;
 public:
-	normal_random(std::mt19937_64 generator, float_t mean = 0, float_t stdev = 1.0, int_t nTruncated = 0) :
-		m_mean(mean), m_stdev(stdev), m_nTruncated(nTruncated), m_generator(generator), m_distribution(mean, stdev)
+	normal_random(std::mt19937_64 generator, float_t mean = 0, float_t stdev = 1.0, int_t truncated = 0) :
+		m_mean(mean), m_stdev(stdev), m_truncated(truncated), m_generator(generator), m_distribution(mean, stdev)
 	{
 	}
 
 	float_t get_random()
 	{
-		if (m_nTruncated <= 0)
+		if (m_truncated <= 0)
 		{
 			return m_distribution(m_generator);
 		}
@@ -35,7 +35,7 @@ public:
 			{
 				r = m_distribution(m_generator);
 			}
-			while (abs(r - m_mean) >= m_nTruncated * m_stdev);
+			while (abs(r - m_mean) >= m_truncated * m_stdev);
 			return r;
 		}
 	}

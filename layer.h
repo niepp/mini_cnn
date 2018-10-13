@@ -6,8 +6,8 @@ namespace mini_cnn
 
 enum class padding_type
 {
-	valid, // only use valid pixels of input
-	same   // padding zero around input to keep image size
+	eValid, // only use valid pixels of input
+	eSame   // padding zero around input to keep image size
 };
 
 enum activation_type
@@ -109,21 +109,6 @@ public:
 		return m_task_storage[task_idx];
 	}
 
-	virtual void init_weight(normal_random nrand)
-	{
-		int_t w_sz = m_w.size();
-		for (int_t i = 0; i < w_sz; ++i)
-		{
-			m_w[i] = nrand.get_random();
-		}
-
-		int_t b_sz = m_b.size();
-		for (int_t i = 0; i < b_sz; ++i)
-		{
-			m_b[i] = nrand.get_random();
-		}
-	}
-
 	virtual void connect(layer_base *next)
 	{
 		if (next != nullptr)
@@ -131,6 +116,16 @@ public:
 			next->m_prev = this;
 			m_next = next;
 		}
+	}
+
+	virtual int_t fan_in_size() const
+	{
+		return out_size();
+	}
+
+	virtual int_t fan_out_size() const
+	{
+		return out_size();
 	}
 
 	virtual void set_task_count(int_t task_count) = 0;
@@ -161,28 +156,28 @@ public:
 
 		// merge weights from all task
 		int_t task_count = (int_t)m_task_storage.size();
-		auto& ts_base = m_task_storage[0];
+		auto& ts_sum = m_task_storage[0];
 		for (int_t k = 1; k < task_count; ++k)
 		{
 			auto& ts = m_task_storage[k];
 			for (int_t i = 0; i < b_sz; ++i)
 			{
-				ts_base.m_db[i] += ts.m_db[i];
+				ts_sum.m_db[i] += ts.m_db[i];
 			}
 			for (int_t i = 0; i < w_sz; ++i)
 			{
-				ts_base.m_dw[i] += ts.m_dw[i];
+				ts_sum.m_dw[i] += ts.m_dw[i];
 			}
 		}
 
 		// update weights
 		for (int_t i = 0; i < b_sz; ++i)
 		{
-			m_b[i] -= ts_base.m_db[i] * eff;
+			m_b[i] -= ts_sum.m_db[i] * eff;
 		}
 		for (int_t i = 0; i < w_sz; ++i)
 		{
-			m_w[i] -= ts_base.m_dw[i] * eff;
+			m_w[i] -= ts_sum.m_dw[i] * eff;
 		}
 
 	}

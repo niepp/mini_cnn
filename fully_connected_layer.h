@@ -34,6 +34,16 @@ public:
 		}
 	}
 
+	virtual int_t fan_in_size() const
+	{
+		return m_prev->out_size();
+	}
+
+	virtual int_t fan_out_size() const
+	{
+		return out_size();
+	}
+
 	virtual void connect(layer_base *next)
 	{
 		layer_base::connect(next);

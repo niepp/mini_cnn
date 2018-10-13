@@ -64,6 +64,16 @@ public:
 		m_w.resize(m_filter_shape.m_w, m_filter_shape.m_h, m_filter_shape.m_d, m_filter_count);
 	}
 
+	virtual int_t fan_in_size() const
+	{
+		return m_filter_shape.size();
+	}
+
+	virtual int_t fan_out_size() const
+	{
+		return (m_filter_shape.m_w / m_stride_w) * (m_filter_shape.m_h / m_stride_h) * m_filter_count;
+	}
+
 	virtual void set_task_count(int_t task_count)
 	{
 		int_t in_w = m_prev->m_out_shape.m_w;

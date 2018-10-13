@@ -102,6 +102,8 @@ private:
 
 		nn_assert(in_d == d);
 
+		float_t inv_Size = cOne / (pool_w * pool_h);
+
 		for (int_t c = 0; c < d; ++c)
 		{
 			for (int_t i = 0; i < w; ++i)
@@ -111,7 +113,6 @@ private:
 					int_t start_w = i * pool_stride_w;
 					int_t start_h = j * pool_stride_h;
 					float_t s = 0;
-					int_t cnt = 0;
 					for (int_t u = 0; u < pool_w; ++u)
 					{
 						int_t x = start_w + u;
@@ -127,10 +128,9 @@ private:
 								continue;
 							}
 							s += in_img(x, y, c);
-							++cnt;
 						}
 					}
-					out(i, j, c) = s / cnt;
+					out(i, j, c) = s * inv_Size;
 				}
 			}
 		}
@@ -149,27 +149,41 @@ private:
 
 		nn_assert(in_d == d);
 
-		for (int_t c = 0; c < d; ++c)
+		float_t inv_Size = cOne / (pool_w * pool_h);
+
+		out.make_zero();
+
+		for (int_t c = 0; c < in_d; ++c)
 		{
-			for (int_t i = 0; i < w; ++i)
+			for (int_t i = 0; i < in_w; ++i)
 			{
-				for (int_t j = 0; j < h; ++j)
+				for (int_t j = 0; j < in_h; ++j)
 				{
-					int_t x = static_cast<int_t>(::floorf(1.0f * i / pool_stride_w));
-					int_t y = static_cast<int_t>(::floorf(1.0f * j / pool_stride_h));
-					if (x < in_w && y < in_h)
+					int_t start_w = i * pool_stride_w;
+					int_t start_h = j * pool_stride_h;
+					for (int_t u = 0; u < pool_w; ++u)
 					{
-						out(i, j, c) = in_img(x, y, c) / (cOne * pool_w * pool_h);
-					}
-					else
-					{
-						out(i, j, c) = cZero;
+						int_t x = start_w + u;
+						if (x < 0 || x >= w)
+						{
+							continue;
+						}
+						for (int_t v = 0; v < pool_h; ++v)
+						{
+							int_t y = start_h + v;
+							if (y < 0 || y >= h)
+							{
+								continue;
+							}
+							out(x, y, c) += in_img(i, j, c) * inv_Size;
+						}
 					}
 				}
 			}
 		}
 
 	}
+
 };
 }
 #endif //__AVG_POOLING_LAYER_H__

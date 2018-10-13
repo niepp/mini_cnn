@@ -12,7 +12,7 @@ namespace mini_cnn
 {
 class network
 {
-public:
+private:
 	input_layer *m_input_layer;
 	output_layer *m_output_layer;
 	std::vector<layer_base*> m_layers;
@@ -54,30 +54,15 @@ public:
 		}
 	}
 
-	void init_all_weight(normal_random nrand)
+	void init_all_weight(weight_initializer &initializer)
 	{
-		//1. Gaussian initialize
-		//	Weights are randomly drawn from Gaussian distributions with fixed mean(e.g., 0) and fixed standard deviation(e.g., 0.01).
-		//	This is the most common initialization method in deep learning.
-		//2. Xavier initialize
-
-		//3. He initialize
-		//  Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.Delving Deep into Rectifiers : Surpassing Human - Level Performance on ImageNet Classification, Technical report, arXiv, Feb. 2015
-
-		int_t len = static_cast<int_t>(m_layers.size());
-		for (int_t i = 0; i < len; ++i)
-		{
-			layer_base *layer = m_layers[i];
-			layer->init_weight(nrand);
-		}
+		initializer(m_layers);
 	}
 
 	void set_task_count(int_t task_count)
 	{
-		int_t len = static_cast<int_t>(m_layers.size());
-		for (int_t i = 0; i < len; ++i)
+		for (auto &layer : m_layers)
 		{
-			layer_base *layer = m_layers[i];
 			layer->set_task_count(task_count);
 		}
 	}
@@ -171,7 +156,6 @@ public:
 		pre_train();
 
 		bool check_ok = true;
-		int_t len = static_cast<int_t>(m_layers.size());
 		for (auto &layer : m_layers)
 		{
 			auto &ts = layer->get_task_storage(0);
@@ -204,10 +188,8 @@ public:
 private:
 	void pre_train()
 	{
-		int_t len = static_cast<int_t>(m_layers.size());
-		for (int_t i = 0; i < len; ++i)
+		for (auto &layer : m_layers)
 		{
-			layer_base *layer = m_layers[i];
 			layer->pre_train();
 		}
 	}

@@ -14,16 +14,17 @@
     <ClInclude Include="avg_pooling_layer.h" />
     <ClInclude Include="common_define.h" />
     <ClInclude Include="convolutional_layer.h" />
+    <ClInclude Include="dataset_minist.h" />
     <ClInclude Include="fully_connected_layer.h" />
     <ClInclude Include="input_layer.h" />
     <ClInclude Include="layer.h" />
     <ClInclude Include="max_pooling_layer.h" />
-    <ClInclude Include="minist_dataset.h" />
     <ClInclude Include="mini_cnn.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="output_layer.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="varray.h" />
+    <ClInclude Include="weight_initializer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

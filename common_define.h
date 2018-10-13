@@ -22,9 +22,7 @@ namespace mini_cnn
 	const float_t cMIN_FLOAT = std::numeric_limits<float_t>::min();
 	const float_t cMAX_FLOAT = std::numeric_limits<float_t>::max();
 
-#ifdef NDEBUG
-	#define nn_assert(cond) ((void)0)
-#else
+#ifdef _DEBUG
 	#define nn_assert(cond) (void)(assert_break(cond))
 	void assert_break(bool cond)
 	{
@@ -34,7 +32,8 @@ namespace mini_cnn
 		}
 		assert(cond);
 	}
-
+#else
+	#define nn_assert(cond) ((void)0)
 #endif
 
 }
