@@ -1,64 +1,140 @@
-# 用C++11实现的基于反向传播的随机梯度下降神经网络
 
-## 简单全连接神经网络
- 
-![image](https://github.com/niepp/mini_nn/blob/master/doc/backprop.jpg)</br>
+**mini_cnn** is a light-weighted convolutional neural network implementation based on c++11, head only and nothing dependencies
 
 
-【实验1】 3层神经网络训练mnist数据集</br>
-|---- 输入层(784 个神经元) </br>
-|           </br>
-|---- 隐含层(30 个神经元)</br>
-|           </br>
-|---- 输出层(10 个神经元)</br>
-</br>
-30 epoch, 10 batch size, 3.0 learning rate, the result on mnist dataset</br>
+## Features</br>
+### done</br>
+- mutli threading
+- gradient checking
+- weight initializer
+	- xavier initialize
+	- he initializer
+- layer-types
+	- fully connected layer
+	- convolutional layer
+	- softmax loglikelihood output layer
+	- sigmod cross entropy output layer
+	- average pooling layer
+	- max pooling layer
+- activation functions
+	- sigmoid
+	- softmax
+	- rectified linear(relu)
+- loss functions
+	- cross-entropy
+	- mean squared error
+- optimization algorithms
+	- stochastic gradient descent
+###todo list
+	- batch normalization
+	- dropout layer
+	- more optimization algorithms such as adagrad，momentum etc
+	- train on gpu
+	- serilize/deserilize
+## Examples</br>
+train fashion mnist dataset</br>
+```cpp
+#include "mini_cnn.h"
+#include "mnist_dataset_parser.h"
 
-</br>
-epoch 0: 0.9168 (9168 / 10000)</br>
-epoch 1: 0.9297 (9297 / 10000)</br>
-epoch 2: 0.9379 (9379 / 10000)</br>
-epoch 3: 0.9386 (9386 / 10000)</br>
-epoch 4: 0.942 (9420 / 10000)</br>
-epoch 5: 0.9426 (9426 / 10000)</br>
-epoch 6: 0.9438 (9438 / 10000)</br>
-epoch 7: 0.9451 (9451 / 10000)</br>
-epoch 8: 0.9458 (9458 / 10000)</br>
-epoch 9: 0.9469 (9469 / 10000)</br>
-epoch 10: 0.9487 (9487 / 10000)</br>
-epoch 11: 0.9516 (9516 / 10000)</br>
-epoch 12: 0.9493 (9493 / 10000)</br>
-epoch 13: 0.9471 (9471 / 10000)</br>
-epoch 14: 0.9486 (9486 / 10000)</br>
-epoch 15: 0.9482 (9482 / 10000)</br>
-epoch 16: 0.9501 (9501 / 10000)</br>
-epoch 17: 0.9509 (9509 / 10000)</br>
-epoch 18: 0.9515 (9515 / 10000)</br>
-epoch 19: 0.9491 (9491 / 10000)</br>
-epoch 20: 0.9516 (9516 / 10000)</br>
-epoch 21: 0.9516 (9516 / 10000)</br>
-epoch 22: 0.9494 (9494 / 10000)</br>
-epoch 23: 0.9517 (9517 / 10000)</br>
-epoch 24: 0.9515 (9515 / 10000)</br>
-epoch 25: 0.9513 (9513 / 10000)</br>
-epoch 26: 0.954 (9540 / 10000)</br>
-epoch 27: 0.9502 (9502 / 10000)</br>
-epoch 28: 0.955 (9550 / 10000)</br>
-epoch 29: 0.9554 (9554 / 10000)</br>
-maxCorrectRate: 0.9554</br>
+using namespace std;
+using namespace mini_cnn;
 
-## 卷积神经网络
-  卷积层的误差反向传播 【参考3)4)5)6)】</br>
-  ![image](https://github.com/niepp/mini_nn/blob/master/doc/convbackprop_delta.jpg)</br>
-  ![image](https://github.com/niepp/mini_nn/blob/master/doc/convbackprop_dw_db.jpg)</br>
-与全连接层类似：由式子（1）从输出层开始反向递推计算各层的误差项，然后由式子（2）（3）分别计算各层的梯度（损失函数对卷积核和偏置的导数）
+network create_cnn()
+{
+	network nn;
+	nn.add_layer(new input_layer(W_input, H_input, D_input));
+	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+	nn.add_layer(new fully_connected_layer(1024, activation_type::eRelu));
+	nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+	return nn;
+}
 
-[参考文献]</br>
-1) [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
-2) [Deep Learning](http://www.deeplearningbook.org/), book by Ian Goodfellow, Yoshua Bengio, and Aaron Courville</br>
-3) http://cs231n.github.io/convolutional-networks </br>
-4) http://cs231n.stanford.edu/slides/2018/cs231n_2018_lecture05.pdf
-5) http://ufldl.stanford.edu/tutorial/supervised/ConvolutionalNeuralNetwork/
-6) http://deeplearning.net/software/theano_versions/dev/tutorial/conv_arithmetic.html#transposed-convolution-arithmetic
-7) http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization
+int main()
+{
+	varray_vec img_vec;
+	varray_vec lab_vec;
+	varray_vec test_img_vec;
+	index_vec test_lab_vec;
+
+	mnist_dataset_parser fashion("data/fashion/train-images-idx3-ubyte", "data/fashion/train-labels-idx1-ubyte"
+								, "data/fashion/t10k-images-idx3-ubyte", "data/fashion/t10k-labels-idx1-ubyte");
+	fashion.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
+
+	int img_count = img_vec.size();
+	int test_img_count = test_img_vec.size();
+
+	// random init
+	std::mt19937_64 generator(get_now());
+
+	// define neural network
+	network nn = create_cnn();
+
+	he_normal_initializer initializer(generator);
+
+	nn.init_all_weight(initializer);
+
+	double learning_rate = 0.1;
+	int epoch = 20;
+	int batch_size = 10;
+	int batch = img_count / batch_size;
+	std::vector<int> idx_vec(img_count);
+	for (int k = 0; k < img_count; ++k)
+	{
+		idx_vec[k] = k;
+	}
+
+	double maxCorrectRate = 0;
+
+	int nthreads = std::thread::hardware_concurrency();
+	nn.set_task_count(nthreads);
+
+	for (int c = 0; c < epoch; ++c)
+	{
+		double minCost = cMAX_FLOAT;
+		std::shuffle(idx_vec.begin(), idx_vec.end(), generator);
+		varray_vec batch_img_vec(batch_size);
+		varray_vec batch_label_vec(batch_size);
+		for (int i = 0; i < batch; ++i)
+		{
+			for (int k = 0; k < batch_size; ++k)
+			{
+				int j = idx_vec[(i * batch_size + k) % img_count];
+				batch_img_vec[k] = img_vec[j];
+				batch_label_vec[k] = lab_vec[j];
+			}
+			nn.train(batch_img_vec, batch_label_vec, learning_rate, nthreads);
+		}
+
+		int_t correct = nn.test(test_img_vec, test_lab_vec, nthreads);
+		double correct_rate = (1.0 * correct / test_img_count);
+		if (correct_rate > maxCorrectRate)
+		{
+			maxCorrectRate = correct_rate;
+		}
+
+		double tot_cost = nn.get_cost(img_vec, lab_vec, nthreads);
+		std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "  tot_cost = " << tot_cost << endl;
+
+	}
+
+	cout << "Max CorrectRate: " << maxCorrectRate << endl;
+
+	return 0;
+
+}
+```
+
+## References</br>
+[1]  [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
+[2]  [Deep Learning](http://www.deeplearningbook.org/), book by Ian Goodfellow, Yoshua Bengio, and Aaron Courville</br>
+[3]  http://cs231n.github.io/convolutional-networks </br>
+[4] http://cs231n.stanford.edu/slides/2018/cs231n_2018_lecture05.pdf</br>
+[5] http://ufldl.stanford.edu/tutorial/supervised/ConvolutionalNeuralNetwork/</br>
+[6] http://deeplearning.net/software/theano_versions/dev/tutorial/conv_arithmetic.html#transposed-convolution-arithmetic</br>
+[7] [Gradient checking](http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization)</br>
+[8] [2D Max Pooling Backward Layer](https://software.intel.com/sites/products/documentation/doclib/daal/daal-user-and-reference-guides/daal_prog_guide/GUID-2C3AA967-AE6A-4162-84EB-93BE438E3A05.htm)
 
