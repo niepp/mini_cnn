@@ -25,7 +25,7 @@
 	- mean squared error
 - optimization algorithms
 	- stochastic gradient descent
-###todo list
+### todo list
 	- batch normalization
 	- dropout layer
 	- more optimization algorithms such as adagrad，momentum etc
