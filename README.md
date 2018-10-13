@@ -142,7 +142,7 @@ int main()
 	   |
 	log-likelihood softmax 10
 ```
-abuout 98.8 correct rate
+about 98.8 correct rate
 
 ## References</br>
 [1]  [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
