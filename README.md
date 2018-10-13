@@ -1,5 +1,5 @@
 
-**mini_cnn** is a light-weighted convolutional neural network implementation based on c++11, head only and nothing dependencies
+**mini_cnn** is a light-weighted convolutional neural network implementation based on c++11, mutli threading and head only
 
 
 ## Features</br>
@@ -32,7 +32,7 @@
 	- train on gpu
 	- serilize/deserilize
 ## Examples</br>
-train fashion mnist dataset</br>
+train **fashion mnist** dataset</br>
 ```cpp
 #include "mini_cnn.h"
 #include "mnist_dataset_parser.h"
