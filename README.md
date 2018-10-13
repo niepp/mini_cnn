@@ -4,7 +4,7 @@
 
 ## Features</br>
 - mutli threading
-- gradient checking
+- gradient checking for all layer weights/bias
 - weight initializer
 	- xavier initialize
 	- he initializer
@@ -126,6 +126,20 @@ int main()
 
 }
 ```
+## Result</br>
+2-layer conv on mnist dataset
+	conv 3x3x32 relu
+	   |
+	maxpool 2x2
+	   |
+	conv 3x3x64 relu
+	   |
+	maxpool 2x2
+	   |
+	fc 1024
+	   |
+	log-likelihood softmax 10
+abuout 98.8 correct rate
 
 ## References</br>
 [1]  [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
