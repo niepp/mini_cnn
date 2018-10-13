@@ -127,18 +127,18 @@ int main()
 }
 ```
 ## Result</br>
-2-layer conv on mnist dataset
-	conv 3x3x32 relu
-	   |
-	maxpool 2x2
-	   |
-	conv 3x3x64 relu
-	   |
-	maxpool 2x2
-	   |
-	fc 1024
-	   |
-	log-likelihood softmax 10
+2-layer conv on mnist dataset</br>
+	conv 3x3x32 relu</br>
+	   |</br>
+	maxpool 2x2</br>
+	   |</br>
+	conv 3x3x64 relu</br>
+	   |</br>
+	maxpool 2x2</br>
+	   |</br>
+	fc 1024</br>
+	   |</br>
+	log-likelihood softmax 10</br>
 abuout 98.8 correct rate
 
 ## References</br>
