@@ -140,15 +140,6 @@ public:
 	*/
 	virtual void back_prop(const varray &next_wd, int_t task_idx) = 0;
 
-	virtual void pre_train()
-	{
-		for (auto& ts : m_task_storage)
-		{
-			ts.m_dw.make_zero();
-			ts.m_db.make_zero();
-		}
-	}
-
 	virtual void update_weights(float_t eff)
 	{
 		int_t b_sz = m_b.size();
@@ -178,6 +169,13 @@ public:
 		for (int_t i = 0; i < w_sz; ++i)
 		{
 			m_w[i] -= ts_sum.m_dw[i] * eff;
+		}
+
+		// clear task storage
+		for (auto& ts : m_task_storage)
+		{
+			ts.m_dw.make_zero();
+			ts.m_db.make_zero();
 		}
 
 	}

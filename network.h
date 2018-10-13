@@ -74,8 +74,6 @@ public:
 		int_t nthreads = std::min(max_threads, batch_size);
 		int_t nstep = (batch_size + nthreads - 1) / nthreads;
 
-		pre_train();
-
 		std::vector<std::future<void>> futures;
 		for (int_t k = 0; k < nthreads && k * nstep < batch_size; ++k)
 		{
@@ -153,8 +151,6 @@ public:
 
 		set_task_count(1);
 
-		pre_train();
-
 		bool check_ok = true;
 		for (auto &layer : m_layers)
 		{
@@ -186,14 +182,6 @@ public:
 	}
 
 private:
-	void pre_train()
-	{
-		for (auto &layer : m_layers)
-		{
-			layer->pre_train();
-		}
-	}
-
 	void forward(const varray& input, int_t task_idx)
 	{
 		m_input_layer->forw_prop(input, task_idx);
@@ -262,7 +250,6 @@ private:
 		float_t delta_by_numerical = (loss_0 - loss_1) / (float_t(2.0) * EPSILON);
 
 		w = prev_w;
-		this->pre_train();
 		m_input_layer->forw_prop(test_img, 0);
 		m_output_layer->backward(test_lab, 0);
 

@@ -13,7 +13,7 @@
 #include <array>
 
 #include "mini_cnn.h"
-#include "dataset_minist.h"
+#include "mnist_dataset_parser.h"
 
 using namespace std;
 using namespace mini_cnn;
@@ -47,7 +47,10 @@ int main()
 	varray_vec lab_vec;
 	varray_vec test_img_vec;
 	index_vec test_lab_vec;
-	read_dataset("data/mnist/", img_vec, lab_vec, test_img_vec, test_lab_vec);
+
+	mnist_dataset_parser fashion("data/fashion/train-images-idx3-ubyte", "data/fashion/train-labels-idx1-ubyte"
+								, "data/fashion/t10k-images-idx3-ubyte", "data/fashion/t10k-labels-idx1-ubyte");
+	fashion.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
 	int img_count = img_vec.size();
 	int test_img_count = test_img_vec.size();
@@ -56,12 +59,12 @@ int main()
 
 	// random init
 	uint_t seed = t0;
-	seed = 2572007265;
+	seed = 2572007265;	// fixed seed to repeat test
 	cout << "random seed:" << seed << endl;
 	std::mt19937_64 generator(seed);
 
 	// define neural network
-	network nn = create_fnn();
+	network nn = create_cnn();
 
 	//truncated_normal_initializer initializer(generator, 0, 0.1, 2);
 	he_normal_initializer initializer(generator);
