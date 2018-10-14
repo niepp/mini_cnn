@@ -1,19 +1,7 @@
 #include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <string>
-#include <map>
-#include <cassert>
-#include <cmath>
-#include <vector>
-#include <random>
-#include <algorithm>
-#include <thread>
-#include <future>
-#include <array>
 
-#include "mini_cnn.h"
-#include "mnist_dataset_parser.h"
+#include "source/mini_cnn.h"
+#include "source/mnist_dataset_parser.h"
 
 using namespace std;
 using namespace mini_cnn;

@@ -1,6 +1,9 @@
 #ifndef __COMMON_DEF_H__
 #define __COMMON_DEF_H__
 
+#include <vector>
+#include <cassert>
+
 namespace mini_cnn
 {
 	typedef int					int_t;

@@ -1,6 +1,7 @@
 #ifndef __MNIST_DATASET_PARSER_H__
 #define __MNIST_DATASET_PARSER_H__
 
+#include <string>
 #include <fstream>
 
 using namespace mini_cnn;

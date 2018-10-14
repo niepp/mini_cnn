@@ -1,13 +1,7 @@
 #include <iostream>
-#include <fstream>
 #include <iomanip>
-#include <string>
-#include <map>
-#include <cassert>
-#include <random>
-#include <algorithm>
 
-#include "../mini_cnn.h"
+#include "../source/mini_cnn.h"
 
 namespace mini_cnn
 {
