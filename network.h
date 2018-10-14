@@ -54,6 +54,16 @@ public:
 		}
 	}
 
+	int_t paramters_count() const
+	{
+		int_t cnt = 0;
+		for (auto &layer : m_layers)
+		{
+			cnt += layer->paramters_count();
+		}
+		return cnt;
+	}
+
 	void init_all_weight(weight_initializer &initializer)
 	{
 		initializer(m_layers);
@@ -68,12 +78,17 @@ public:
 	}
 
 	float_t SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const index_vec &test_lab_vec
-		, int_t nthreads, std::mt19937_64 generator, int epoch, int batch_size, double learning_rate)
+		, std::mt19937_64 generator, int epoch, int batch_size, double learning_rate
+		, std::function<void(int_t, float_t, float_t)> epoch_callback)
 	{
+		int nthreads = std::thread::hardware_concurrency();
+		set_task_count(nthreads);
+
 		float_t maxCorrectRate = 0;
 		int img_count = img_vec.size();
 		int test_img_count = test_img_vec.size();
 		int batch = img_count / batch_size;
+
 		std::vector<int> idx_vec(img_count);
 		for (int k = 0; k < img_count; ++k)
 		{
@@ -98,12 +113,9 @@ public:
 			}
 			int_t correct = test(test_img_vec, test_lab_vec, nthreads);
 			double correct_rate = (1.0 * correct / test_img_count);
-			if (correct_rate > maxCorrectRate)
-			{
-				maxCorrectRate = correct;
-			}
+			maxCorrectRate = std::max(maxCorrectRate, correct_rate);
 			double tot_cost = get_cost(img_vec, lab_vec, nthreads);
-			std::cout << "epoch " << c << ": " << correct_rate << " (" << correct << " / " << test_img_count << ")" << "  tot_cost = " << tot_cost << std::endl;
+			epoch_callback(c, correct_rate, tot_cost);
 		}
 		return maxCorrectRate;
 	}

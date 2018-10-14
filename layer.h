@@ -99,6 +99,11 @@ public:
 		return m_out_shape.size();
 	}
 
+	int_t paramters_count() const
+	{
+		return m_w.size() + m_b.size();
+	}
+
 	const varray& get_output(int_t task_idx) const
 	{
 		return m_task_storage[task_idx].m_x;

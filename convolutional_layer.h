@@ -51,8 +51,10 @@ public:
 	virtual void connect(layer_base *next)
 	{
 		layer_base::connect(next);
-		
+
 		nn_assert(m_prev->m_out_shape.is_img());
+
+		nn_assert(m_prev->m_out_shape.m_d == m_filter_shape.m_d);
 
 		int_t in_w = m_prev->m_out_shape.m_w;
 		int_t in_h = m_prev->m_out_shape.m_h;
