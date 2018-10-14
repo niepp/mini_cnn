@@ -73,6 +73,8 @@ int main()
 	// define neural network
 	network nn = create_cnn();
 
+	cout << "total paramters count:" << nn.paramters_count() << endl;
+
 	he_normal_initializer initializer(generator);
 
 	nn.init_all_weight(initializer);
@@ -81,10 +83,11 @@ int main()
 	int epoch = 20;
 	int batch_size = 10;
 
-	int nthreads = std::thread::hardware_concurrency();
-	nn.set_task_count(nthreads);
+	auto epoch_callback = [](int_t c, mini_cnn::float_t correct_rate, mini_cnn::float_t tot_cost) {
+		std::cout << "epoch " << c << ": " << correct_rate << "  tot_cost = " << tot_cost << std::endl;
+	};
 
-	auto maxCorrectRate = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, nthreads, generator, epoch, batch_size, learning_rate);
+	auto maxCorrectRate = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, generator, epoch, batch_size, learning_rate, epoch_callback);
 
 	cout << "Max CorrectRate: " << maxCorrectRate << endl;
 
