@@ -14,7 +14,6 @@
     <ClInclude Include="..\source\avg_pooling_layer.h" />
     <ClInclude Include="..\source\common_define.h" />
     <ClInclude Include="..\source\convolutional_layer.h" />
-    <ClInclude Include="..\source\dataset_minist.h" />
     <ClInclude Include="..\source\fully_connected_layer.h" />
     <ClInclude Include="..\source\input_layer.h" />
     <ClInclude Include="..\source\layer.h" />

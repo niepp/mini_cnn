@@ -39,6 +39,8 @@ public:
 
 		TEST_GRADIENT(create_fcn_sigmod_crossentropy);
 
+		TEST_GRADIENT(create_fcn_softmax_loglikelihood);
+
 		TEST_GRADIENT(create_fcn_relu);
 
 		TEST_GRADIENT(create_fcn_softmax);
@@ -81,6 +83,15 @@ private:
 		nn.add_layer(new input_layer(cInput_n));
 		nn.add_layer(new fully_connected_layer(30, activation_type::eSigmod));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSigmod_CrossEntropy, activation_type::eSigmod));
+		return nn;
+	}
+
+	network create_fcn_softmax_loglikelihood()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_n));
+		nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
+		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 		return nn;
 	}
 

@@ -146,15 +146,12 @@ private:
 				// J = -t * ln(y)     : t is the label; y is network output
 				// LogLikelihood损失函数和Softmax激活函数的组合下：
 				// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
-				// delta(i) = output(k) - 1    (i==k时， k是one-hot标签对应的index)
-				//          = 0                (i!=k时)
+				// delta = output - label
 				// ref： https://www.cnblogs.com/ZJUT-jiangnan/p/5489047.html
-				int_t idx = label.arg_max();
 				for (int_t i = 0; i < out_sz; ++i)
 				{
-					ts.m_delta(i) = ts.m_x(i);
+					ts.m_delta(i) = ts.m_x(i) - label(i);
 				}
-				ts.m_delta(idx) = ts.m_x(idx) - cOne;
 			}
 			break;
 		default:

@@ -139,6 +139,9 @@ public:
 		int_t out_sz = next_wd.size();
 		int_t in_sz = input.size();
 
+		/*
+			delta = next_wd element-wise multiplication df(z)
+		*/
 		m_df(ts.m_z, ts.m_delta);
 		for (int_t i = 0; i < out_sz; ++i)
 		{
@@ -148,7 +151,7 @@ public:
 		/*
 			dw_k = conv2d(input_d, delta_k)
 		*/
-		conv2d(input, ts.m_delta, m_stride_w, m_stride_h, ts.m_dw);
+		conv_input_delta(input, ts.m_delta, m_stride_w, m_stride_h, ts.m_dw);
 
 		/*
 			db_k = sum(delta_k)
@@ -165,8 +168,11 @@ public:
 			}
 			ts.m_db(k) += s;
 		}
-
-		conv_back(ts.m_delta, m_w, m_stride_w, m_stride_h, ts.m_wd);
+		
+		/*
+			wd = conv(w, delta)
+		*/
+		conv_delta_w(ts.m_delta, m_w, m_stride_w, m_stride_h, ts.m_wd);
 
 		m_prev->back_prop(ts.m_wd, task_idx);
 
@@ -240,7 +246,7 @@ private:
 		}
 	}
 
-	static void conv2d(const varray &in_img, const varray &delta, int_t stride_w, int_t stride_h, varray &dw)
+	static void conv_input_delta(const varray &in_img, const varray &delta, int_t stride_w, int_t stride_h, varray &dw)
 	{
 		int_t in_w = in_img.width();
 		int_t in_h = in_img.height();
@@ -260,42 +266,21 @@ private:
 		nn_assert(in_d == d);
 		nn_assert(n == delta_d);
 
+		dw.make_zero();
+
 		for (int_t k = 0; k < n; ++k)
 		{
-			for (int_t i = 0; i < w; ++i)
+			for (int_t c = 0; c < d; ++c)
 			{
-				for (int_t j = 0; j < h; ++j)
-				{
-					int_t start_w = i * stride_w;
-					int_t start_h = j * stride_h;
-					for (int_t c = 0; c < d; ++c)
-					{
-						float_t s = 0;
-						for (int_t u = 0; u < delta_w; ++u)
-						{
-							int_t x = start_w + u;
-							if (x < 0 || x >= in_w)
-							{
-								continue;
-							}
-							for (int_t v = 0; v < delta_h; ++v)
-							{
-								int_t y = start_h + v;
-								if (y < 0 || y >= in_h)
-								{
-									continue;
-								}
-								s += in_img(x, y, c) * delta(u, v, k);
-							}
-						}
-						dw(i, j, c, k) += s;
-					}
-				}
+				conv_2d(&in_img(0, 0, c), in_w, in_h
+					, &delta(0, 0, k), delta_w, delta_h, false
+					, stride_w, stride_h
+					, &dw(0, 0, c, k), w, h, true);
 			}
 		}
 	}
 
-	static void conv_back(const varray &delta, const varray &filters, int_t stride_w, int_t stride_h, varray &ret)
+	static void conv_delta_w(const varray &delta, const varray &filters, int_t stride_w, int_t stride_h, varray &ret)
 	{
 		int_t delta_w = delta.width();
 		int_t delta_h = delta.height();
@@ -318,37 +303,51 @@ private:
 
 		nn_assert(d == filter_d);
 
+		ret.make_zero();
+
 		for (int_t c = 0; c < d; ++c)
 		{
-			for (int_t i = 0; i < w; ++i)
+			float_t *out = &ret(0, 0, c);
+			for (int_t k = 0; k < filter_count; ++k)
 			{
-				for (int_t j = 0; j < h; ++j)
+				conv_2d(&delta(0, 0, k), delta_w, delta_h
+					, &filters(0, 0, c, k), filter_w, filter_h, true
+					, stride_w, stride_h
+					, out, w, h, true);
+			}
+		}
+	}
+
+	static void conv_2d(const float_t *img, int_t iw, int_t ih
+		, const float_t *filter, int_t fw, int_t fh, bool filter_flip
+		, int_t stride_w, int_t stride_h
+		, float_t *out, int_t ow, int_t oh, bool accumulate)
+	{
+		for (int_t i = 0; i < ow; ++i)
+		{
+			for (int_t j = 0; j < oh; ++j)
+			{
+				int_t start_w = i * stride_w;
+				int_t start_h = j * stride_h;
+				float_t s = accumulate ? out[i + j * ow] : 0;
+				for (int_t u = 0; u < fw; ++u)
 				{
-					int_t start_w = i * stride_w;
-					int_t start_h = j * stride_h;
-					float_t s = 0;
-					for (int_t k = 0; k < filter_count; ++k)
+					int_t x = filter_flip ? start_w - u : start_w + u;
+					if (x < 0 || x >= iw)
 					{
-						for (int_t u = 0; u < filter_w; ++u)
-						{
-							int_t x = start_w - u;
-							if (x < 0 || x >= delta_w)
-							{
-								continue;
-							}
-							for (int_t v = 0; v < filter_h; ++v)
-							{
-								int_t y = start_h - v;
-								if (y < 0 || y >= delta_h)
-								{
-									continue;
-								}
-								s += delta(x, y, k) * filters(u, v, c, k);
-							}
-						}
+						continue;
 					}
-					ret(i, j, c) = s;
+					for (int_t v = 0; v < fh; ++v)
+					{
+						int_t y = filter_flip ? start_h - v : start_h + v;
+						if (y < 0 || y >= ih)
+						{
+							continue;
+						}
+						s += img[x + y * iw] * filter[u + v * fw];
+					}
 				}
+				out[i + j * ow] = s;
 			}
 		}
 	}

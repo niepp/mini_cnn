@@ -235,6 +235,14 @@ public:
 	}
 
 private:
+	void clear_all_grident()
+	{
+		for (auto &layer : m_layers)
+		{
+			layer->clear_grident();
+		}
+	}
+
 	void forward(const varray& input, int_t task_idx)
 	{
 		m_input_layer->forw_prop(input, task_idx);
@@ -291,6 +299,8 @@ private:
 	bool calc_gradient(const varray &test_img, const varray &test_lab, float_t &w, float_t &dw, float_t precision)
 	{
 		static const float_t EPSILON = 1e-6;
+
+		clear_all_grident();
 
 		float_t prev_w = w;
 		w = prev_w + EPSILON;

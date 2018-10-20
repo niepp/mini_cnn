@@ -142,6 +142,7 @@ public:
 
 		/*
 			m_w : out_sz X in_sz
+			wd = w * delta
 		*/
 		for (int_t i = 0; i < in_sz; ++i)
 		{

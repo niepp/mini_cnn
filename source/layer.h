@@ -114,6 +114,15 @@ public:
 		return m_task_storage[task_idx];
 	}
 
+	void clear_grident()
+	{
+		for (auto &ts : m_task_storage)
+		{
+			ts.m_dw.make_zero();
+			ts.m_db.make_zero();
+		}
+	}
+
 	virtual void connect(layer_base *next)
 	{
 		if (next != nullptr)
