@@ -1,5 +1,5 @@
 
-# **mini_cnn** is a light-weighted convolutional neural network implementation based on c++11, mutli threading and head only
+# **mini_cnn** is a light-weight convolutional neural network implementation based on c++11, mutli threading and head only
 
 
 ## Features</br>
@@ -25,13 +25,14 @@
 - optimization algorithms
 	- stochastic gradient descent
 ### todo list
+	- fast convolution(gemm, winograd)
+	- train on gpu
 	- batch normalization
 	- dropout layer
-	- more optimization algorithms such as adagrad，momentum etc
-	- train on gpu
+	- more optimization algorithms such as adagrad，momentum etc	
 	- serilize/deserilize
 ## Examples</br>
-train **fashion mnist** dataset</br>
+train **mnist** dataset</br>
 ```cpp
 #include "mini_cnn.h"
 #include "mnist_dataset_parser.h"
@@ -59,14 +60,16 @@ int main()
 	varray_vec test_img_vec;
 	index_vec test_lab_vec;
 
-	mnist_dataset_parser fashion("data/fashion/train-images-idx3-ubyte", "data/fashion/train-labels-idx1-ubyte"
-								, "data/fashion/t10k-images-idx3-ubyte", "data/fashion/t10k-labels-idx1-ubyte");
-	fashion.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
+	std::string relate_data_path = "../../dataset/mnist/";
+	mnist_dataset_parser mnist(relate_data_path, "train-images-idx3-ubyte", "train-labels-idx1-ubyte"
+								, "t10k-images-idx3-ubyte", "t10k-labels-idx1-ubyte");
+	mnist.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
 	uint_t t0 = get_now();
 
 	// random init
 	uint_t seed = t0;
+	seed = 2572007265;	// fixed seed to repeat test
 	cout << "random seed:" << seed << endl;
 	std::mt19937_64 generator(seed);
 
@@ -75,6 +78,7 @@ int main()
 
 	cout << "total paramters count:" << nn.paramters_count() << endl;
 
+	//truncated_normal_initializer initializer(generator, 0, 0.1, 2);
 	he_normal_initializer initializer(generator);
 
 	nn.init_all_weight(initializer);
@@ -83,13 +87,13 @@ int main()
 	int epoch = 20;
 	int batch_size = 10;
 
-	auto epoch_callback = [](int_t c, mini_cnn::float_t correct_rate, mini_cnn::float_t tot_cost) {
-		std::cout << "epoch " << c << ": " << correct_rate << "  tot_cost = " << tot_cost << std::endl;
+	auto epoch_callback = [](int_t c, mini_cnn::float_t cur_accuracy, mini_cnn::float_t tot_cost) {
+		std::cout << "epoch " << c << ": " << cur_accuracy << "  tot_cost = " << tot_cost << std::endl;
 	};
 
-	auto maxCorrectRate = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, generator, epoch, batch_size, learning_rate, epoch_callback);
+	auto max_accuracy = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, generator, epoch, batch_size, learning_rate, epoch_callback);
 
-	cout << "Max CorrectRate: " << maxCorrectRate << endl;
+	cout << "max_accuracy: " << max_accuracy << endl;
 
 	uint_t t1 = get_now();
 
@@ -128,4 +132,5 @@ about 98.8 correct rate
 [6] http://deeplearning.net/software/theano_versions/dev/tutorial/conv_arithmetic.html#transposed-convolution-arithmetic</br>
 [7] [Gradient checking](http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization)</br>
 [8] [2D Max Pooling Backward Layer](https://software.intel.com/sites/products/documentation/doclib/daal/daal-user-and-reference-guides/daal_prog_guide/GUID-2C3AA967-AE6A-4162-84EB-93BE438E3A05.htm)
+[9] ["Fast Algorithms for Convolutional Neural Networks" Lavin and Gray, CVPR 2016](http://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/Lavin_Fast_Algorithms_for_CVPR_2016_paper.pdf)
 
