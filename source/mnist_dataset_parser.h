@@ -21,9 +21,10 @@ private:
 	std::string m_test_label_file;
 
 public:
-	mnist_dataset_parser(std::string train_img_file, std::string train_label_file, std::string test_img_file, std::string test_label_file)
-		: m_train_img_file(train_img_file), m_train_label_file(train_label_file),
-		m_test_img_file(test_img_file), m_test_label_file(test_label_file)
+	mnist_dataset_parser(std::string relate_data_path, std::string train_img_file, std::string train_label_file
+		, std::string test_img_file, std::string test_label_file)
+		: m_train_img_file(relate_data_path + train_img_file), m_train_label_file(relate_data_path + train_label_file),
+		m_test_img_file(relate_data_path + test_img_file), m_test_label_file(relate_data_path + test_label_file)
 	{
 	}
 

@@ -78,46 +78,46 @@ public:
 	}
 
 	float_t SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const index_vec &test_lab_vec
-		, std::mt19937_64 generator, int epoch, int batch_size, double learning_rate
+		, std::mt19937_64 generator, int_t epoch, int_t batch_size, float_t learning_rate
 		, std::function<void(int_t, float_t, float_t)> epoch_callback)
 	{
-		int nthreads = std::thread::hardware_concurrency();
+		int_t nthreads = std::thread::hardware_concurrency();
 		set_task_count(nthreads);
 
-		float_t maxCorrectRate = 0;
-		int img_count = img_vec.size();
-		int test_img_count = test_img_vec.size();
-		int batch = img_count / batch_size;
+		float_t max_accuracy = 0;
+		int_t img_count = img_vec.size();
+		int_t test_img_count = test_img_vec.size();
+		int_t batch = img_count / batch_size;
 
-		std::vector<int> idx_vec(img_count);
-		for (int k = 0; k < img_count; ++k)
+		std::vector<int_t> idx_vec(img_count);
+		for (int_t k = 0; k < img_count; ++k)
 		{
 			idx_vec[k] = k;
 		}
 
-		for (int c = 0; c < epoch; ++c)
+		for (int_t c = 0; c < epoch; ++c)
 		{
-			double minCost = cMAX_FLOAT;
+			float_t minCost = cMAX_FLOAT;
 			std::shuffle(idx_vec.begin(), idx_vec.end(), generator);
 			varray_vec batch_img_vec(batch_size);
 			varray_vec batch_label_vec(batch_size);
-			for (int i = 0; i < batch; ++i)
+			for (int_t i = 0; i < batch; ++i)
 			{
-				for (int k = 0; k < batch_size; ++k)
+				for (int_t k = 0; k < batch_size; ++k)
 				{
-					int j = idx_vec[(i * batch_size + k) % img_count];
+					int_t j = idx_vec[(i * batch_size + k) % img_count];
 					batch_img_vec[k] = img_vec[j];
 					batch_label_vec[k] = lab_vec[j];
 				}
 				train_one_batch(batch_img_vec, batch_label_vec, learning_rate, nthreads);
 			}
 			int_t correct = test(test_img_vec, test_lab_vec, nthreads);
-			double correct_rate = (1.0 * correct / test_img_count);
-			maxCorrectRate = std::max(maxCorrectRate, correct_rate);
-			double tot_cost = get_cost(img_vec, lab_vec, nthreads);
-			epoch_callback(c, correct_rate, tot_cost);
+			float_t cur_accuracy = (1.0 * correct / test_img_count);
+			max_accuracy = std::max(max_accuracy, cur_accuracy);
+			float_t tot_cost = get_cost(img_vec, lab_vec, nthreads);
+			epoch_callback(c, cur_accuracy, tot_cost);
 		}
-		return maxCorrectRate;
+		return max_accuracy;
 	}
 
 	void train_one_batch(const varray_vec &batch_img_vec, const varray_vec &batch_label_vec, float_t eta, const int_t max_threads)

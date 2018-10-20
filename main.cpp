@@ -36,8 +36,9 @@ int main()
 	varray_vec test_img_vec;
 	index_vec test_lab_vec;
 
-	mnist_dataset_parser fashion("data/fashion/train-images-idx3-ubyte", "data/fashion/train-labels-idx1-ubyte"
-								, "data/fashion/t10k-images-idx3-ubyte", "data/fashion/t10k-labels-idx1-ubyte");
+	std::string relate_data_path = "../../dataset/fashion/";
+	mnist_dataset_parser fashion(relate_data_path, "train-images-idx3-ubyte", "train-labels-idx1-ubyte"
+								, "t10k-images-idx3-ubyte", "t10k-labels-idx1-ubyte");
 	fashion.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
 	uint_t t0 = get_now();
@@ -62,13 +63,13 @@ int main()
 	int epoch = 20;
 	int batch_size = 10;
 
-	auto epoch_callback = [](int_t c, mini_cnn::float_t correct_rate, mini_cnn::float_t tot_cost) {
-		std::cout << "epoch " << c << ": " << correct_rate << "  tot_cost = " << tot_cost << std::endl;
+	auto epoch_callback = [](int_t c, mini_cnn::float_t cur_accuracy, mini_cnn::float_t tot_cost) {
+		std::cout << "epoch " << c << ": " << cur_accuracy << "  tot_cost = " << tot_cost << std::endl;
 	};
 
-	auto maxCorrectRate = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, generator, epoch, batch_size, learning_rate, epoch_callback);
+	auto max_accuracy = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, generator, epoch, batch_size, learning_rate, epoch_callback);
 
-	cout << "Max CorrectRate: " << maxCorrectRate << endl;
+	cout << "max_accuracy: " << max_accuracy << endl;
 
 	uint_t t1 = get_now();
 
