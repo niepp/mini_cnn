@@ -276,17 +276,19 @@ private:
 
 		for (int_t c = 0; c < d; ++c)
 		{
-			float_t *out = &ret(0, 0, c);
 			for (int_t k = 0; k < filter_count; ++k)
 			{
 				conv_2d(&delta(0, 0, k), delta_w, delta_h
 					, &filters(0, 0, c, k), filter_w, filter_h, true
 					, stride_w, stride_h
-					, out, w, h, true);
+					, &ret(0, 0, c), w, h, true);
 			}
 		}
 	}
 
+	/*
+		common 2d convolution
+	*/
 	static void conv_2d(const float_t *img, int_t iw, int_t ih
 		, const float_t *filter, int_t fw, int_t fh, bool filter_flip
 		, int_t stride_w, int_t stride_h
