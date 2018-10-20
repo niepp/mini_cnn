@@ -110,7 +110,7 @@ public:
 		varray &out_z = m_task_storage[task_idx].m_z;
 		varray &out_x = m_task_storage[task_idx].m_x;
 
-		conv3d(input, m_w, m_stride_w, m_stride_h, out_z);
+		conv_input_w(input, m_w, m_stride_w, m_stride_h, out_z);
 
 		for (int_t k = 0; k < m_out_shape.m_d; ++k)
 		{
@@ -179,69 +179,38 @@ public:
 	}
 
 private:
-	static float_t conv_by_local(const varray &in_img, int_t start_w, int_t start_h, const varray &filters, int_t filter_idx)
+	static void conv_input_w(const varray &in_img, const varray &filters, int_t stride_w, int_t stride_h, varray &out_img)
 	{
 		int_t in_w = in_img.width();
 		int_t in_h = in_img.height();
 		int_t in_d = in_img.depth();
-		int_t filter_w = filters.width();
-		int_t filter_h = filters.height();
-		int_t filter_d = filters.depth();
 
-		float_t s = 0;
-		for (int_t u = 0; u < filter_w; ++u)
-		{
-			int_t x = start_w + u;
-			if (x < 0 || x >= in_w)
-			{
-				continue;
-			}
-			for (int_t v = 0; v < filter_h; ++v)
-			{
-				int_t y = start_h + v;
-				if (y < 0 || y >= in_h)
-				{
-					continue;
-				}
-				for (int_t c = 0; c < filter_d; ++c)
-				{
-					s += in_img(x, y, c) * filters(u, v, c, filter_idx);
-				}
-			}
-		}
-		return s;
-	}
-
-	static void conv3d(const varray &in_img, const varray &filters, int_t stride_w, int_t stride_h, varray &out_img)
-	{
 		int_t filter_count = filters.count();
 		int_t filter_w = filters.width();
 		int_t filter_h = filters.height();
 		int_t filter_d = filters.depth();
 
-		int_t out_w = out_img.width();
-		int_t out_h = out_img.height();
-		int_t out_d = out_img.depth();
+		int_t w = out_img.width();
+		int_t h = out_img.height();
+		int_t d = out_img.depth();
 
 		nn_assert(in_img.check_dim(3));
 		nn_assert(filters.check_dim(4));
 		nn_assert(out_img.check_dim(3));
 
-		nn_assert(in_img.depth() == filters.depth());
+		nn_assert(in_d == filter_d);
+		nn_assert(d == filter_count);
 
-		nn_assert(out_d == filter_count);
+		out_img.make_zero();
 
-		for (int_t i = 0; i < out_w; ++i)
+		for (int_t k = 0; k < filter_count; ++k)
 		{
-			for (int_t j = 0; j < out_h; ++j)
+			for (int_t c = 0; c < filter_d; ++c)
 			{
-				int_t start_w = i * stride_w;
-				int_t start_h = j * stride_h;
-				for (int_t k = 0; k < filter_count; ++k)
-				{
-					float_t s = conv_by_local(in_img, start_w, start_h, filters, k);
-					out_img(i, j, k) = s;
-				}
+				conv_2d(&in_img(0, 0, c), in_w, in_h
+					, &filters(0, 0, c, k), filter_w, filter_h, false
+					, stride_w, stride_h
+					, &out_img(0, 0, k), w, h, true);
 			}
 		}
 	}
