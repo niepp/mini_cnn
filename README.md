@@ -61,8 +61,8 @@ int main()
 	index_vec test_lab_vec;
 
 	std::string relate_data_path = "../../dataset/mnist/";
-	mnist_dataset_parser mnist(relate_data_path, "train-images-idx3-ubyte", "train-labels-idx1-ubyte"
-								, "t10k-images-idx3-ubyte", "t10k-labels-idx1-ubyte");
+	mnist_dataset_parser mnist(relate_data_path, "train-images.idx3-ubyte", "train-labels.idx1-ubyte"
+								, "t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte");
 	mnist.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
 	uint_t t0 = get_now();
@@ -121,7 +121,7 @@ int main()
 	   |
 	log-likelihood softmax 10
 ```
-about 98.8 correct rate
+accuracy is about 98.8 
 
 ## References</br>
 [1]  [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
