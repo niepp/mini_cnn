@@ -77,7 +77,7 @@ public:
 			varray &w = layer->m_w;
 			varray &b = layer->m_b;
 
-			float_t stdev = sqrt(2.0 / (layer->fan_in_size() + layer->fan_out_size()));
+			float_t stdev = sqrt(2.0f / (layer->fan_in_size() + layer->fan_out_size()));
 			normal_random nrand(m_generator, 0, stdev, m_truncated);
 
 			int_t w_sz = w.size();
@@ -112,7 +112,7 @@ public:
 			varray &w = layer->m_w;
 			varray &b = layer->m_b;
 
-			float_t range = std::sqrt(6.0 / (layer->fan_in_size() + layer->fan_out_size()));
+			float_t range = std::sqrt(6.0f / (layer->fan_in_size() + layer->fan_out_size()));
 			uniform_random urand(m_generator, -range, range);
 
 			int_t w_sz = w.size();
@@ -153,7 +153,7 @@ public:
 			varray &w = layer->m_w;
 			varray &b = layer->m_b;
 
-			float_t stdev = sqrt(2.0 / (layer->fan_in_size()));
+			float_t stdev = sqrt(2.0f / (layer->fan_in_size()));
 			normal_random nrand(m_generator, 0, stdev, m_truncated);
 
 			int_t w_sz = w.size();
@@ -188,7 +188,7 @@ public:
 			varray &w = layer->m_w;
 			varray &b = layer->m_b;
 
-			float_t range = std::sqrt(6.0 / (layer->fan_in_size()));
+			float_t range = std::sqrt(6.0f / (layer->fan_in_size()));
 			uniform_random urand(m_generator, -range, range);
 
 			int_t w_sz = w.size();

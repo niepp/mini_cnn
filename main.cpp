@@ -36,10 +36,10 @@ int main()
 	varray_vec test_img_vec;
 	index_vec test_lab_vec;
 
-	std::string relate_data_path = "../../dataset/fashion/";
-	mnist_dataset_parser fashion(relate_data_path, "train-images-idx3-ubyte", "train-labels-idx1-ubyte"
-								, "t10k-images-idx3-ubyte", "t10k-labels-idx1-ubyte");
-	fashion.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
+	std::string relate_data_path = "../../dataset/mnist/";
+	mnist_dataset_parser mnist(relate_data_path, "train-images.idx3-ubyte", "train-labels.idx1-ubyte"
+		, "t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte");
+	mnist.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
 	uint_t t0 = get_now();
 
@@ -59,8 +59,8 @@ int main()
 
 	nn.init_all_weight(initializer);
 
-	double learning_rate = 0.1;
-	int epoch = 20;
+	float learning_rate = 0.1f;
+	int epoch = 10;
 	int batch_size = 10;
 
 	auto epoch_callback = [](int_t c, mini_cnn::float_t cur_accuracy, mini_cnn::float_t tot_cost) {

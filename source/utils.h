@@ -71,6 +71,33 @@ inline bool f_is_valid(float_t f)
 	return f == f;
 }
 
+inline unsigned char* align_address(size_t address, int align_size)
+{
+	return (unsigned char*)((address + align_size - 1) & (-align_size));
+}
+
+inline void* align_malloc(int_t size)
+{
+	unsigned char* mptr = (unsigned char*)::malloc(size + sizeof(void*) + ALIGN_SIZE);
+	if (!mptr)
+	{
+		return nullptr;
+	}
+	unsigned char* aptr = align_address((size_t)mptr + sizeof(void*), ALIGN_SIZE);
+	unsigned char**p = (unsigned char**)((size_t)aptr - sizeof(void*));
+	*p = mptr;
+	return aptr;
+}
+
+inline void align_free(void *aptr)
+{
+	if (aptr != nullptr)
+	{
+		unsigned char**p = (unsigned char**)((size_t)aptr - sizeof(void*));
+		::free(*p);
+	}
+}
+
 typedef void (*active_func)(const varray &v, varray &retv);
 
 inline void sigmoid(const varray &v, varray &retv)

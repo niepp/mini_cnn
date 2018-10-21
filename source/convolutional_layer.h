@@ -203,9 +203,11 @@ private:
 
 		out_img.make_zero();
 
+		#pragma omp parallel for
 		for (int_t k = 0; k < filter_count; ++k)
 		{
-			for (int_t c = 0; c < filter_d; ++c)
+			#pragma omp parallel for
+			for (int_t c = 0; c < in_d; ++c)
 			{
 				conv_2d(&in_img(0, 0, c), in_w, in_h
 					, &filters(0, 0, c, k), filter_w, filter_h, false
@@ -237,8 +239,10 @@ private:
 
 		dw.make_zero();
 
+		#pragma omp parallel for
 		for (int_t k = 0; k < n; ++k)
 		{
+			#pragma omp parallel for
 			for (int_t c = 0; c < d; ++c)
 			{
 				conv_2d(&in_img(0, 0, c), in_w, in_h
@@ -274,8 +278,10 @@ private:
 
 		ret.make_zero();
 
+		#pragma omp parallel for
 		for (int_t c = 0; c < d; ++c)
 		{
+			#pragma omp parallel for
 			for (int_t k = 0; k < filter_count; ++k)
 			{
 				conv_2d(&delta(0, 0, k), delta_w, delta_h
@@ -289,6 +295,7 @@ private:
 	/*
 		common 2d convolution
 	*/
+#ifdef USE_AVX
 	static void conv_2d(const float_t *img, int_t iw, int_t ih
 		, const float_t *filter, int_t fw, int_t fh, bool filter_flip
 		, int_t stride_w, int_t stride_h
@@ -322,6 +329,41 @@ private:
 			}
 		}
 	}
+#else
+	static void conv_2d(const float_t *img, int_t iw, int_t ih
+		, const float_t *filter, int_t fw, int_t fh, bool filter_flip
+		, int_t stride_w, int_t stride_h
+		, float_t *out, int_t ow, int_t oh, bool accumulate)
+	{
+		for (int_t i = 0; i < ow; ++i)
+		{
+			for (int_t j = 0; j < oh; ++j)
+			{
+				int_t start_w = i * stride_w;
+				int_t start_h = j * stride_h;
+				float_t s = accumulate ? out[i + j * ow] : 0;
+				for (int_t u = 0; u < fw; ++u)
+				{
+					int_t x = filter_flip ? start_w - u : start_w + u;
+					if (x < 0 || x >= iw)
+					{
+						continue;
+					}
+					for (int_t v = 0; v < fh; ++v)
+					{
+						int_t y = filter_flip ? start_h - v : start_h + v;
+						if (y < 0 || y >= ih)
+						{
+							continue;
+						}
+						s += img[x + y * iw] * filter[u + v * fw];
+					}
+				}
+				out[i + j * ow] = s;
+			}
+		}
+	}
+#endif
 
 };
 }

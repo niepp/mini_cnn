@@ -112,7 +112,7 @@ public:
 				train_one_batch(batch_img_vec, batch_label_vec, learning_rate, nthreads);
 			}
 			int_t correct = test(test_img_vec, test_lab_vec, nthreads);
-			float_t cur_accuracy = (1.0 * correct / test_img_count);
+			float_t cur_accuracy = (1.0f * correct / test_img_count);
 			max_accuracy = std::max(max_accuracy, cur_accuracy);
 			float_t tot_cost = get_cost(img_vec, lab_vec, nthreads);
 			epoch_callback(c, cur_accuracy, tot_cost);
@@ -298,7 +298,7 @@ private:
 
 	bool calc_gradient(const varray &test_img, const varray &test_lab, float_t &w, float_t &dw, float_t precision)
 	{
-		static const float_t EPSILON = 1e-6;
+		static const float_t EPSILON = 1e-6f;
 
 		clear_all_grident();
 

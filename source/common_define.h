@@ -9,14 +9,14 @@ namespace mini_cnn
 	typedef int					int_t;
 	typedef unsigned int		uint_t;
 
-	typedef double				float_t;
+	typedef float				float_t;
 
 	typedef std::vector<int_t>	index_vec;
 
-	const float_t cEPSILON = 1e-4;
+	const float_t cEPSILON = 1e-4f;
 
 #ifndef PI
-	const float_t cPI = 3.141592653589793;
+	const float_t cPI = 3.141592653589793f;
 #endif
 
 	const float_t cZero = (float_t)0.0;
@@ -39,5 +39,17 @@ namespace mini_cnn
 	#define nn_assert(cond) ((void)0)
 #endif
 
+// memory alignment
+#ifndef ALIGN
+#if defined(__GNUC__)    // GCC
+#    define ALIGN(n)    __attribute__((aligned(n)))
+#elif defined( _MSC_VER ) // VC
+#    define ALIGN(n)    __declspec(align(n))
+#  endif
+#endif // ALIGN
+
+#define ALIGN_SIZE 32
+
+#define USE_AVX
 }
 #endif // __COMMON_DEF_H__

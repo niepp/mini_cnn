@@ -1,6 +1,8 @@
 #ifndef __VARRAY_H__
 #define __VARRAY_H__
 
+#pragma warning(disable:4316)
+
 namespace mini_cnn
 {
 
@@ -48,9 +50,12 @@ namespace mini_cnn
 */
 
 template<class T>
+#ifdef USE_AVX
+class ALIGN(ALIGN_SIZE) _varray
+#else
 class _varray
+#endif
 {
-
 public:
 	_varray();
 	_varray(int_t w, int_t h, int_t d, int_t n);
@@ -119,7 +124,7 @@ inline void _varray<T>::_create(int_t w, int_t h, int_t d, int_t n)
 	m_h = h;
 	m_d = d;
 	m_n = n;
-	m_data = new T[w * h * d * n];
+	m_data = (T*)align_malloc(w * h * d * n * sizeof(T));
 	this->make_zero();
 }
 
@@ -132,7 +137,7 @@ inline void _varray<T>::_release()
 	m_n = 0;
 	if (m_data != nullptr)
 	{
-		delete[]m_data;
+		align_free(m_data);
 		m_data = nullptr;
 	}
 }
@@ -177,7 +182,7 @@ template <class T>
 inline _varray<T>::_varray(const _varray<T> &other) : m_w(other.m_w), m_h(other.m_h), m_d(other.m_d), m_n(other.m_n)
 {
 	int_t len = other.m_w * other.m_h * other.m_d * other.m_n;
-	m_data = new T[len];
+	m_data = (T*)align_malloc(len * sizeof(T));
 	::memcpy(m_data, other.m_data, len * sizeof(T));
 }
 
@@ -191,7 +196,7 @@ inline _varray<T>& _varray<T>::operator=(const _varray<T> &other)
 
 	if (m_data != nullptr)
 	{
-		delete[] m_data;
+		align_free(m_data);
 		m_data = nullptr;
 	}
 
@@ -200,7 +205,7 @@ inline _varray<T>& _varray<T>::operator=(const _varray<T> &other)
 	m_d = other.m_d;
 	m_n = other.m_n;
 	int_t len = m_w * m_h * m_d * m_n;
-	m_data = new T[len];
+	m_data = (T*)align_malloc(len * sizeof(T));
 	::memcpy(m_data, other.m_data, len * sizeof(T));
 	return *this;
 }
