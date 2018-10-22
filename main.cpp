@@ -24,7 +24,7 @@ network create_cnn()
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
 	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new fully_connected_layer(1024, activation_type::eRelu));
+	nn.add_layer(new fully_connected_layer(32, activation_type::eRelu));
 	nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 	return nn;
 }
