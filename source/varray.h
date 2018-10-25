@@ -50,74 +50,70 @@ namespace mini_cnn
 */
 
 template<class T>
-#ifdef USE_AVX
 class ALIGN(ALIGN_SIZE) _varray
-#else
-class _varray
-#endif
 {
 public:
 	_varray();
-	_varray(int_t w, int_t h, int_t d, int_t n);
-	_varray(int_t w, int_t h, int_t d);
-	_varray(int_t w, int_t h);
-	_varray(int_t w);
+	_varray(nn_int w, nn_int h, nn_int d, nn_int n);
+	_varray(nn_int w, nn_int h, nn_int d);
+	_varray(nn_int w, nn_int h);
+	_varray(nn_int w);
 	~_varray();
 	_varray(const _varray<T>&);
 	_varray<T>& operator=(const _varray<T>&);
 
 	void copy(const _varray<T>&);
 
-	void reshape(int_t w, int_t h, int_t d, int_t n);
-	void reshape(int_t w, int_t h, int_t d);
-	void reshape(int_t w, int_t h);
-	void reshape(int_t w);
+	void reshape(nn_int w, nn_int h, nn_int d, nn_int n);
+	void reshape(nn_int w, nn_int h, nn_int d);
+	void reshape(nn_int w, nn_int h);
+	void reshape(nn_int w);
 
-	void resize(int_t w, int_t h, int_t d, int_t n);
-	void resize(int_t w, int_t h, int_t d);
-	void resize(int_t w, int_t h);
-	void resize(int_t w);
+	void resize(nn_int w, nn_int h, nn_int d, nn_int n);
+	void resize(nn_int w, nn_int h, nn_int d);
+	void resize(nn_int w, nn_int h);
+	void resize(nn_int w);
 
 	void make_zero();
 
-	int_t dim() const;
-	int_t size() const;
-	int_t width() const;
-	int_t height() const;
-	int_t depth() const;
-	int_t count() const;
+	nn_int dim() const;
+	nn_int size() const;
+	nn_int width() const;
+	nn_int height() const;
+	nn_int depth() const;
+	nn_int count() const;
 
-	int_t arg_max() const;
+	nn_int arg_max() const;
 
-	T& operator()(int_t w, int_t h, int_t d, int_t n);
-	T& operator()(int_t w, int_t h, int_t d);
-	T& operator()(int_t w, int_t h);
-	T& operator()(int_t w);
+	T& operator()(nn_int w, nn_int h, nn_int d, nn_int n);
+	T& operator()(nn_int w, nn_int h, nn_int d);
+	T& operator()(nn_int w, nn_int h);
+	T& operator()(nn_int w);
 
-	const T& operator()(int_t w, int_t h, int_t d, int_t n) const;
-	const T& operator()(int_t w, int_t h, int_t d) const;
-	const T& operator()(int_t w, int_t h) const;
-	const T& operator()(int_t w) const;
+	const T& operator()(nn_int w, nn_int h, nn_int d, nn_int n) const;
+	const T& operator()(nn_int w, nn_int h, nn_int d) const;
+	const T& operator()(nn_int w, nn_int h) const;
+	const T& operator()(nn_int w) const;
 
-	T& operator[](int_t idx);
-	const T& operator[](int_t idx) const;
+	T& operator[](nn_int idx);
+	const T& operator[](nn_int idx) const;
 
-	bool check_dim(int_t ndim) const;
+	bool check_dim(nn_int ndim) const;
 
 private:
-	void _create(int_t w, int_t h, int_t d, int_t n);
+	void _create(nn_int w, nn_int h, nn_int d, nn_int n);
 	void _release();
 
 private:
-	int_t m_w;  // width
-	int_t m_h;  // height
-	int_t m_d;  // depth or channel
-	int_t m_n;  // count
+	nn_int m_w;  // width
+	nn_int m_h;  // height
+	nn_int m_d;  // depth or channel
+	nn_int m_n;  // count
 	T* m_data;
 };
 
 template <class T>
-inline void _varray<T>::_create(int_t w, int_t h, int_t d, int_t n)
+inline void _varray<T>::_create(nn_int w, nn_int h, nn_int d, nn_int n)
 {
 	nn_assert(w >= 0 && h >= 0 && d >= 0 && n >= 0);
 	m_w = w;
@@ -149,25 +145,25 @@ inline _varray<T>::_varray() : m_w(0), m_h(0), m_d(0), m_n(0)
 }
 
 template <class T>
-inline _varray<T>::_varray(int_t w, int_t h, int_t d, int_t n)
+inline _varray<T>::_varray(nn_int w, nn_int h, nn_int d, nn_int n)
 {
 	_create(w, h, d, n);
 }
 
 template <class T>
-inline _varray<T>::_varray(int_t w, int_t h, int_t d)
+inline _varray<T>::_varray(nn_int w, nn_int h, nn_int d)
 {
 	_create(w, h, d, 1);
 }
 
 template <class T>
-inline _varray<T>::_varray(int_t w, int_t h)
+inline _varray<T>::_varray(nn_int w, nn_int h)
 {
 	_create(w, h, 1, 1);
 }
 
 template <class T>
-inline _varray<T>::_varray(int_t w)
+inline _varray<T>::_varray(nn_int w)
 {
 	_create(w, 1, 1, 1);
 }
@@ -181,7 +177,7 @@ inline _varray<T>::~_varray()
 template <class T>
 inline _varray<T>::_varray(const _varray<T> &other) : m_w(other.m_w), m_h(other.m_h), m_d(other.m_d), m_n(other.m_n)
 {
-	int_t len = other.m_w * other.m_h * other.m_d * other.m_n;
+	nn_int len = other.m_w * other.m_h * other.m_d * other.m_n;
 	m_data = (T*)align_malloc(len * sizeof(T));
 	::memcpy(m_data, other.m_data, len * sizeof(T));
 }
@@ -204,7 +200,7 @@ inline _varray<T>& _varray<T>::operator=(const _varray<T> &other)
 	m_h = other.m_h;
 	m_d = other.m_d;
 	m_n = other.m_n;
-	int_t len = m_w * m_h * m_d * m_n;
+	nn_int len = m_w * m_h * m_d * m_n;
 	m_data = (T*)align_malloc(len * sizeof(T));
 	::memcpy(m_data, other.m_data, len * sizeof(T));
 	return *this;
@@ -213,13 +209,13 @@ inline _varray<T>& _varray<T>::operator=(const _varray<T> &other)
 template <class T>
 inline void _varray<T>::copy(const _varray<T> &other)
 {
-	int_t len = m_w * m_h * m_d * m_n;
+	nn_int len = m_w * m_h * m_d * m_n;
 	nn_assert(len == other.m_w * other.m_h * other.m_d * other.m_n);
 	::memcpy(m_data, other.m_data, len * sizeof(T));
 }
 
 template <class T>
-inline void _varray<T>::reshape(int_t w, int_t h, int_t d, int_t n)
+inline void _varray<T>::reshape(nn_int w, nn_int h, nn_int d, nn_int n)
 {
 	nn_assert(w >= 0 && h >= 0 && d >= 0 && n >= 0);
 	nn_assert(m_w * m_h * m_d * m_n == w * h * d * n);
@@ -230,7 +226,7 @@ inline void _varray<T>::reshape(int_t w, int_t h, int_t d, int_t n)
 }
 
 template <class T>
-inline void _varray<T>::reshape(int_t w, int_t h, int_t d)
+inline void _varray<T>::reshape(nn_int w, nn_int h, nn_int d)
 {
 	nn_assert(w >= 0 && h >= 0 && d >= 0);
 	nn_assert(m_w * m_h * m_d * m_n == w * h * d);
@@ -241,7 +237,7 @@ inline void _varray<T>::reshape(int_t w, int_t h, int_t d)
 }
 
 template <class T>
-inline void _varray<T>::reshape(int_t w, int_t h)
+inline void _varray<T>::reshape(nn_int w, nn_int h)
 {
 	nn_assert(w >= 0 && h >= 0);
 	nn_assert(m_w * m_h * m_d * m_n == w * h);
@@ -252,7 +248,7 @@ inline void _varray<T>::reshape(int_t w, int_t h)
 }
 
 template <class T>
-inline void _varray<T>::reshape(int_t w)
+inline void _varray<T>::reshape(nn_int w)
 {
 	nn_assert(w >= 0);
 	nn_assert(m_w * m_h * m_d * m_n == w);
@@ -269,77 +265,77 @@ inline void _varray<T>::make_zero()
 }
 
 template <class T>
-inline void _varray<T>::resize(int_t w, int_t h, int_t d, int_t n)
+inline void _varray<T>::resize(nn_int w, nn_int h, nn_int d, nn_int n)
 {
 	_release();
 	_create(w, h, d, n);
 }
 
 template <class T>
-inline void _varray<T>::resize(int_t w, int_t h, int_t d)
+inline void _varray<T>::resize(nn_int w, nn_int h, nn_int d)
 {
 	_release();
 	_create(w, h, d, 1);
 }
 
 template <class T>
-inline void _varray<T>::resize(int_t w, int_t h)
+inline void _varray<T>::resize(nn_int w, nn_int h)
 {
 	_release();
 	_create(w, h, 1, 1);
 }
 
 template <class T>
-inline void _varray<T>::resize(int_t w)
+inline void _varray<T>::resize(nn_int w)
 {
 	_release();
 	_create(w, 1, 1, 1);
 }
 
 template <class T>
-inline int_t _varray<T>::dim() const
+inline nn_int _varray<T>::dim() const
 {
 	return m_n > 1 ? 4 :
 		(m_d > 1 ? 3 : (m_h > 1 ? 2 : (m_w > 0 ? 1 : 0)));
 }
 
 template <class T>
-inline int_t _varray<T>::size() const
+inline nn_int _varray<T>::size() const
 {
 	return m_n * m_d * m_h * m_w;
 }
 
 template <class T>
-inline int_t _varray<T>::width() const
+inline nn_int _varray<T>::width() const
 {
 	return m_w;
 }
 
 template <class T>
-inline int_t _varray<T>::height() const
+inline nn_int _varray<T>::height() const
 {
 	return m_h;
 }
 
 template <class T>
-inline int_t _varray<T>::depth() const
+inline nn_int _varray<T>::depth() const
 {
 	return m_d;
 }
 
 template <class T>
-inline int_t _varray<T>::count() const
+inline nn_int _varray<T>::count() const
 {
 	return m_n;
 }
 
 template <class T>
-inline int_t _varray<T>::arg_max() const
+inline nn_int _varray<T>::arg_max() const
 {
-	int_t sz = this->size();
-	int_t max_idx = 0;
+	nn_int sz = this->size();
+	nn_int max_idx = 0;
 	T m = m_data[0];
-	for (int_t i = 1; i < sz; ++i)
+	for (nn_int i = 1; i < sz; ++i)
 	{
 		if (m_data[i] > m)
 		{
@@ -351,17 +347,17 @@ inline int_t _varray<T>::arg_max() const
 }
 
 template <class T>
-inline T& _varray<T>::operator()(int_t w, int_t h, int_t d, int_t n)
+inline T& _varray<T>::operator()(nn_int w, nn_int h, nn_int d, nn_int n)
 {
 	nn_assert(check_dim(4));
 	nn_assert(w >= 0 && h >= 0 && d >= 0 && n >= 0);
 	nn_assert(w < m_w && h < m_h && d < m_d && n < m_n);
-	int_t maplen = m_w * m_h * m_d;
+	nn_int maplen = m_w * m_h * m_d;
 	return m_data[n * maplen + m_w * m_h * d + m_w * h + w];
 }
 
 template <class T>
-inline T& _varray<T>::operator()(int_t w, int_t h, int_t d)
+inline T& _varray<T>::operator()(nn_int w, nn_int h, nn_int d)
 {
 	nn_assert(check_dim(3));
 	nn_assert(w >= 0 && h >= 0 && d >= 0);
@@ -370,7 +366,7 @@ inline T& _varray<T>::operator()(int_t w, int_t h, int_t d)
 }
 
 template <class T>
-inline T& _varray<T>::operator()(int_t w, int_t h)
+inline T& _varray<T>::operator()(nn_int w, nn_int h)
 {
 	nn_assert(check_dim(2));
 	nn_assert(w >= 0 && h >= 0);
@@ -379,7 +375,7 @@ inline T& _varray<T>::operator()(int_t w, int_t h)
 }
 
 template <class T>
-inline T& _varray<T>::operator()(int_t w)
+inline T& _varray<T>::operator()(nn_int w)
 {
 	nn_assert(check_dim(1));
 	nn_assert(w >= 0);
@@ -388,17 +384,17 @@ inline T& _varray<T>::operator()(int_t w)
 }
 
 template <class T>
-inline const T& _varray<T>::operator()(int_t w, int_t h, int_t d, int_t n) const
+inline const T& _varray<T>::operator()(nn_int w, nn_int h, nn_int d, nn_int n) const
 {
 	nn_assert(check_dim(4));
 	nn_assert(w >= 0 && h >= 0 && d >= 0 && n >= 0);
 	nn_assert(w < m_w && h < m_h && d < m_d && n < m_n);
-	int_t maplen = m_w * m_h * m_d;
+	nn_int maplen = m_w * m_h * m_d;
 	return m_data[n * maplen + m_w * m_h * d + m_w * h + w];
 }
 
 template <class T>
-inline const T& _varray<T>::operator()(int_t w, int_t h, int_t d) const
+inline const T& _varray<T>::operator()(nn_int w, nn_int h, nn_int d) const
 {
 	nn_assert(check_dim(3));
 	nn_assert(w >= 0 && h >= 0 && d >= 0);
@@ -407,7 +403,7 @@ inline const T& _varray<T>::operator()(int_t w, int_t h, int_t d) const
 }
 
 template <class T>
-inline const T& _varray<T>::operator()(int_t w, int_t h) const
+inline const T& _varray<T>::operator()(nn_int w, nn_int h) const
 {
 	nn_assert(check_dim(2));
 	nn_assert(w >= 0 && h >= 0);
@@ -416,7 +412,7 @@ inline const T& _varray<T>::operator()(int_t w, int_t h) const
 }
 
 template <class T>
-inline const T& _varray<T>::operator()(int_t w) const
+inline const T& _varray<T>::operator()(nn_int w) const
 {
 	nn_assert(check_dim(1));
 	nn_assert(w < m_w);
@@ -424,7 +420,7 @@ inline const T& _varray<T>::operator()(int_t w) const
 }
 
 template <class T>
-inline T& _varray<T>::operator[](int_t idx)
+inline T& _varray<T>::operator[](nn_int idx)
 {
 	nn_assert(dim() > 0);
 	nn_assert(idx >= 0 && idx < size());
@@ -432,7 +428,7 @@ inline T& _varray<T>::operator[](int_t idx)
 }
 
 template <class T>
-inline const T& _varray<T>::operator[](int_t idx) const
+inline const T& _varray<T>::operator[](nn_int idx) const
 {
 	nn_assert(dim() > 0);
 	nn_assert(idx >= 0 && idx < size());
@@ -440,9 +436,9 @@ inline const T& _varray<T>::operator[](int_t idx) const
 }
 
 template <class T>
-inline bool _varray<T>::check_dim(int_t ndim) const
+inline bool _varray<T>::check_dim(nn_int ndim) const
 {
-	int_t _d = dim();
+	nn_int _d = dim();
 	if (ndim == 1){
 		return _d == 1;
 	}
@@ -460,7 +456,7 @@ inline bool _varray<T>::check_dim(int_t ndim) const
 	}
 }
 
-typedef _varray<float_t> varray;
+typedef _varray<nn_float> varray;
 typedef std::vector<varray*> varray_vec;
 
 }

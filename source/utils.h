@@ -7,22 +7,23 @@
 
 namespace mini_cnn
 {
+
 class normal_random
 {
 private:
-	float_t m_mean;
-	float_t m_stdev;
-	int_t m_truncated;
+	nn_float m_mean;
+	nn_float m_stdev;
+	nn_int m_truncated;
 public:
 	std::mt19937_64 m_generator;
-	std::normal_distribution<float_t> m_distribution;
+	std::normal_distribution<nn_float> m_distribution;
 public:
-	normal_random(std::mt19937_64 generator, float_t mean = 0, float_t stdev = 1.0, int_t truncated = 0) :
+	normal_random(std::mt19937_64 generator, nn_float mean = 0, nn_float stdev = 1.0, nn_int truncated = 0) :
 		m_mean(mean), m_stdev(stdev), m_truncated(truncated), m_generator(generator), m_distribution(mean, stdev)
 	{
 	}
 
-	float_t get_random()
+	nn_float get_random()
 	{
 		if (m_truncated <= 0)
 		{
@@ -30,7 +31,7 @@ public:
 		}
 		else
 		{
-			float_t r = m_mean;
+			nn_float r = m_mean;
 			do
 			{
 				r = m_distribution(m_generator);
@@ -45,28 +46,28 @@ class uniform_random
 {
 public:
 	std::mt19937_64 m_generator;
-	std::uniform_real_distribution<float_t> m_distribution;
+	std::uniform_real_distribution<nn_float> m_distribution;
 public:
-	uniform_random(std::mt19937_64 generator, float_t min, float_t max) : m_generator(generator), m_distribution(min, max)
+	uniform_random(std::mt19937_64 generator, nn_float min, nn_float max) : m_generator(generator), m_distribution(min, max)
 	{
 	}
 
-	float_t get_random()
+	nn_float get_random()
 	{
 		return m_distribution(m_generator);
 	}
 
 };
 
-inline uint_t get_now()
+inline nn_float get_now_ms()
 {
-	auto tp_now = std::chrono::steady_clock::now();
+	auto tp_now = std::chrono::high_resolution_clock::now();
 	auto ms_now = std::chrono::time_point_cast<std::chrono::milliseconds>(tp_now);
 	auto t_now = ms_now.time_since_epoch();
-	return static_cast<uint_t>(t_now.count());
+	return static_cast<nn_float>(t_now.count());
 }
 
-inline bool f_is_valid(float_t f)
+inline bool f_is_valid(nn_float f)
 {
 	return f == f;
 }
@@ -76,7 +77,7 @@ inline unsigned char* align_address(size_t address, int align_size)
 	return (unsigned char*)((address + align_size - 1) & (-align_size));
 }
 
-inline void* align_malloc(int_t size)
+inline void* align_malloc(nn_int size)
 {
 	unsigned char* mptr = (unsigned char*)::malloc(size + sizeof(void*) + ALIGN_SIZE);
 	if (!mptr)
@@ -102,9 +103,9 @@ typedef void (*active_func)(const varray &v, varray &retv);
 
 inline void sigmoid(const varray &v, varray &retv)
 {
-	int_t len = v.size();
+	nn_int len = v.size();
 	nn_assert(len == retv.size());
-	for (int_t i = 0; i < len; ++i)
+	for (nn_int i = 0; i < len; ++i)
 	{
 		retv[i] = cOne / (cOne + exp(-v[i]));
 	}
@@ -112,20 +113,20 @@ inline void sigmoid(const varray &v, varray &retv)
 
 inline void deriv_sigmoid(const varray &v, varray &retv)
 {
-	int_t len = v.size();
+	nn_int len = v.size();
 	nn_assert(len == retv.size());
-	for (int_t i = 0; i < len; ++i)
+	for (nn_int i = 0; i < len; ++i)
 	{
-		float_t t = cOne / (cOne + exp(-v[i]));
+		nn_float t = cOne / (cOne + exp(-v[i]));
 		retv[i] = t * (cOne - t);
 	}
 }
 
 inline void relu(const varray &v, varray &retv)
 {
-	int_t len = v.size();
+	nn_int len = v.size();
 	nn_assert(len == retv.size());
-	for (int_t i = 0; i < len; ++i)
+	for (nn_int i = 0; i < len; ++i)
 	{
 		retv[i] = v[i] > 0 ? v[i] : 0;
 	}
@@ -133,9 +134,9 @@ inline void relu(const varray &v, varray &retv)
 
 inline void deriv_relu(const varray &v, varray &retv)
 {
-	int_t len = v.size();
+	nn_int len = v.size();
 	nn_assert(len == retv.size());
-	for (int_t i = 0; i < len; ++i)
+	for (nn_int i = 0; i < len; ++i)
 	{
 		retv[i] = v[i] > 0 ? cOne : 0;
 	}
@@ -143,21 +144,21 @@ inline void deriv_relu(const varray &v, varray &retv)
 
 inline void softmax(const varray &v, varray &retv)
 {
-	int_t len = v.size();
+	nn_int len = v.size();
 	nn_assert(len == retv.size());
-	int_t idx = v.arg_max();
-	float_t maxv = v[idx];
-	for (int_t i = 0; i < len; ++i)
+	nn_int idx = v.arg_max();
+	nn_float maxv = v[idx];
+	for (nn_int i = 0; i < len; ++i)
 	{
 		retv[i] = v[i] - maxv;
 	}
-	float_t s = 0;
-	for (int_t i = 0; i < len; ++i)
+	nn_float s = 0;
+	for (nn_int i = 0; i < len; ++i)
 	{
 		retv[i] = exp(retv[i]);
 		s += retv[i];
 	}
-	for (int_t i = 0; i < len; ++i)
+	for (nn_int i = 0; i < len; ++i)
 	{
 		retv[i] /= s;
 	}

@@ -6,12 +6,12 @@ namespace mini_cnn
 class fully_connected_layer : public layer_base
 {
 protected:
-	int_t m_neural_count;
+	nn_int m_neural_count;
 	active_func m_f;
 	active_func m_df;
 
 public:
-	fully_connected_layer(int_t neural_count, activation_type ac_type)
+	fully_connected_layer(nn_int neural_count, activation_type ac_type)
 		: layer_base()
 	{
 		m_neural_count = neural_count;
@@ -34,12 +34,12 @@ public:
 		}
 	}
 
-	virtual int_t fan_in_size() const
+	virtual nn_int fan_in_size() const
 	{
 		return m_prev->out_size();
 	}
 
-	virtual int_t fan_out_size() const
+	virtual nn_int fan_out_size() const
 	{
 		return out_size();
 	}
@@ -52,14 +52,14 @@ public:
 		m_w.resize(m_prev->out_size(), out_size());
 	}
 
-	virtual void set_task_count(int_t task_count)
+	virtual void set_task_count(nn_int task_count)
 	{
-		int_t in_w = m_prev->m_out_shape.m_w;
-		int_t in_h = m_prev->m_out_shape.m_h;
-		int_t in_d = m_prev->m_out_shape.m_d;
+		nn_int in_w = m_prev->m_out_shape.m_w;
+		nn_int in_h = m_prev->m_out_shape.m_h;
+		nn_int in_d = m_prev->m_out_shape.m_d;
 
-		int_t in_sz = m_w.width();
-		int_t out_sz = m_w.height(); 
+		nn_int in_sz = m_w.width();
+		nn_int out_sz = m_w.height(); 
 		m_task_storage.resize(task_count);
 		for (auto& ts : m_task_storage)
 		{
@@ -79,10 +79,10 @@ public:
 		}
 	}
 
-	virtual void forw_prop(const varray &input, int_t task_idx)
+	virtual void forw_prop(const varray &input, nn_int task_idx)
 	{
-		int_t height = m_w.height();
-		int_t width = m_w.width();
+		nn_int height = m_w.height();
+		nn_int width = m_w.width();
 
 		nn_assert(width == input.size());
 
@@ -90,10 +90,10 @@ public:
 
 		nn_assert(ts.m_z.width() == height);
 
-		for (int_t i = 0; i < height; ++i)
+		for (nn_int i = 0; i < height; ++i)
 		{
-			float_t dot = 0;
-			for (int_t j = 0; j < width; ++j)
+			nn_float dot = 0;
+			for (nn_int j = 0; j < width; ++j)
 			{
 				dot += m_w(j, i) * input[j];
 			}
@@ -107,7 +107,7 @@ public:
 		}
 	}
 
-	virtual void back_prop(const varray &next_wd, int_t task_idx)
+	virtual void back_prop(const varray &next_wd, nn_int task_idx)
 	{
 		layer_base::task_storage &ts = m_task_storage[task_idx];
 
@@ -116,14 +116,14 @@ public:
 
 		const varray &input = m_prev->get_output(task_idx);
 
-		int_t out_sz = next_wd.size();
-		int_t in_sz = input.size();
+		nn_int out_sz = next_wd.size();
+		nn_int in_sz = input.size();
 
 		nn_assert(in_sz == m_w.width());
 		nn_assert(out_sz == m_w.height());
 
 		m_df(ts.m_z, ts.m_delta);
-		for (int_t i = 0; i < out_sz; ++i)
+		for (nn_int i = 0; i < out_sz; ++i)
 		{
 			ts.m_delta(i) *= next_wd(i);
 		}
@@ -131,10 +131,10 @@ public:
 		/*
 			dw = db * input
 		*/
-		for (int_t i = 0; i < out_sz; ++i)
+		for (nn_int i = 0; i < out_sz; ++i)
 		{
 			ts.m_db(i) += ts.m_delta(i);
-			for (int_t j = 0; j < in_sz; ++j)
+			for (nn_int j = 0; j < in_sz; ++j)
 			{
 				ts.m_dw(j, i) += ts.m_delta(i) * input[j];
 			}
@@ -144,10 +144,10 @@ public:
 			m_w : out_sz X in_sz
 			wd = w * delta
 		*/
-		for (int_t i = 0; i < in_sz; ++i)
+		for (nn_int i = 0; i < in_sz; ++i)
 		{
-			float_t dot = 0;
-			for (int_t j = 0; j < out_sz; ++j)
+			nn_float dot = 0;
+			for (nn_int j = 0; j < out_sz; ++j)
 			{
 				dot += m_w(i, j) * ts.m_delta(j);
 			}

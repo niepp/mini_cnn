@@ -6,17 +6,17 @@ namespace mini_cnn
 class input_layer : public layer_base
 {
 public:
-	input_layer(int_t out_size) : layer_base()
+	input_layer(nn_int out_size) : layer_base()
 	{
 		m_out_shape.set(out_size, 1, 1);
 	}
 
-	input_layer(int_t img_width, int_t img_height, int_t img_depth) : layer_base()
+	input_layer(nn_int img_width, nn_int img_height, nn_int img_depth) : layer_base()
 	{
 		m_out_shape.set(img_width, img_height, img_depth);
 	}
 
-	virtual void set_task_count(int_t task_count)
+	virtual void set_task_count(nn_int task_count)
 	{
 		m_task_storage.resize(task_count);
 		for (auto& ts : m_task_storage)
@@ -32,7 +32,7 @@ public:
 		}
 	}
 
-	virtual void forw_prop(const varray &input, int_t task_idx)
+	virtual void forw_prop(const varray &input, nn_int task_idx)
 	{
 		nn_assert(m_next != nullptr);
 
@@ -41,7 +41,7 @@ public:
 		m_next->forw_prop(in, task_idx);
 	}
 
-	virtual void back_prop(const varray &next_wd, int_t task_idx)
+	virtual void back_prop(const varray &next_wd, nn_int task_idx)
 	{
 	}
 

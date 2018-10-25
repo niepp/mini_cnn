@@ -54,9 +54,9 @@ public:
 		}
 	}
 
-	int_t paramters_count() const
+	nn_int paramters_count() const
 	{
-		int_t cnt = 0;
+		nn_int cnt = 0;
 		for (auto &layer : m_layers)
 		{
 			cnt += layer->paramters_count();
@@ -69,7 +69,7 @@ public:
 		initializer(m_layers);
 	}
 
-	void set_task_count(int_t task_count)
+	void set_task_count(nn_int task_count)
 	{
 		for (auto &layer : m_layers)
 		{
@@ -77,61 +77,65 @@ public:
 		}
 	}
 
-	float_t SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const index_vec &test_lab_vec
-		, std::mt19937_64 generator, int_t epoch, int_t batch_size, float_t learning_rate
-		, std::function<void(int_t, float_t, float_t)> epoch_callback)
+	nn_float SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const index_vec &test_lab_vec
+		, std::mt19937_64 generator, nn_int epoch, nn_int batch_size, nn_float learning_rate, nn_int nthreads
+		, std::function<void(nn_int, nn_int)> minibatch_callback
+		, std::function<void(nn_int, nn_int, nn_float, nn_float, nn_float)> epoch_callback)
 	{
-		int_t nthreads = std::thread::hardware_concurrency();
 		set_task_count(nthreads);
 
-		float_t max_accuracy = 0;
-		int_t img_count = img_vec.size();
-		int_t test_img_count = test_img_vec.size();
-		int_t batch = img_count / batch_size;
+		nn_float max_accuracy = 0;
+		nn_int img_count = img_vec.size();
+		nn_int test_img_count = test_img_vec.size();
+		nn_int batch = img_count / batch_size;
 
-		std::vector<int_t> idx_vec(img_count);
-		for (int_t k = 0; k < img_count; ++k)
+		std::vector<nn_int> idx_vec(img_count);
+		for (nn_int k = 0; k < img_count; ++k)
 		{
 			idx_vec[k] = k;
 		}
 
-		for (int_t c = 0; c < epoch; ++c)
+		for (nn_int c = 0; c < epoch; ++c)
 		{
-			float_t minCost = cMAX_FLOAT;
+			nn_float tstart = get_now_ms();
+			nn_float minCost = cMAX_FLOAT;
 			std::shuffle(idx_vec.begin(), idx_vec.end(), generator);
 			varray_vec batch_img_vec(batch_size);
 			varray_vec batch_label_vec(batch_size);
-			for (int_t i = 0; i < batch; ++i)
+			for (nn_int i = 0; i < batch; ++i)
 			{
-				for (int_t k = 0; k < batch_size; ++k)
+				for (nn_int k = 0; k < batch_size; ++k)
 				{
-					int_t j = idx_vec[(i * batch_size + k) % img_count];
+					nn_int j = idx_vec[(i * batch_size + k) % img_count];
 					batch_img_vec[k] = img_vec[j];
 					batch_label_vec[k] = lab_vec[j];
 				}
 				train_one_batch(batch_img_vec, batch_label_vec, learning_rate, nthreads);
+				minibatch_callback((i + 1) * batch_size, img_count);
 			}
-			int_t correct = test(test_img_vec, test_lab_vec, nthreads);
-			float_t cur_accuracy = (1.0f * correct / test_img_count);
+			nn_float tend = get_now_ms();
+			nn_float elapse = (tend - tstart) * 0.001f;
+			nn_int correct = test(test_img_vec, test_lab_vec, nthreads);
+			nn_float cur_accuracy = (1.0f * correct / test_img_count);
 			max_accuracy = std::max(max_accuracy, cur_accuracy);
-			float_t tot_cost = get_cost(img_vec, lab_vec, nthreads);
-			epoch_callback(c, cur_accuracy, tot_cost);
+			nn_float tot_cost = get_cost(img_vec, lab_vec, nthreads);
+			epoch_callback(c + 1, epoch, cur_accuracy, tot_cost, elapse);
 		}
 		return max_accuracy;
 	}
 
-	void train_one_batch(const varray_vec &batch_img_vec, const varray_vec &batch_label_vec, float_t eta, const int_t max_threads)
+	void train_one_batch(const varray_vec &batch_img_vec, const varray_vec &batch_label_vec, nn_float eta, const nn_int max_threads)
 	{
 		nn_assert(batch_img_vec.size() == batch_label_vec.size());
-		int_t batch_size = batch_img_vec.size();
-		int_t nthreads = std::min(max_threads, batch_size);
-		int_t nstep = (batch_size + nthreads - 1) / nthreads;
+		nn_int batch_size = batch_img_vec.size();
+		nn_int nthreads = std::min(max_threads, batch_size);
+		nn_int nstep = (batch_size + nthreads - 1) / nthreads;
 
 		std::vector<std::future<void>> futures;
-		for (int_t k = 0; k < nthreads && k * nstep < batch_size; ++k)
+		for (nn_int k = 0; k < nthreads && k * nstep < batch_size; ++k)
 		{
-			int_t begin = k * nstep;
-			int_t end = std::min(batch_size, begin + nstep);
+			nn_int begin = k * nstep;
+			nn_int end = std::min(batch_size, begin + nstep);
 			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
 				train_task(batch_img_vec, batch_label_vec, begin, end, k);
 			})));
@@ -140,28 +144,28 @@ public:
 		{
 			future.wait();
 		}
-		float_t eff = eta / batch_size;
+		nn_float eff = eta / batch_size;
 		update_all_weight(eff);
 	}
 
-	int_t test(const varray_vec &test_img_vec, const index_vec &test_lab_vec, const int_t max_threads)
+	nn_int test(const varray_vec &test_img_vec, const index_vec &test_lab_vec, const nn_int max_threads)
 	{
 		nn_assert(test_img_vec.size() == test_lab_vec.size());
-		int_t test_count = test_img_vec.size();
+		nn_int test_count = test_img_vec.size();
 
-		int_t nthreads = max_threads;
-		int_t nstep = (test_count + nthreads - 1) / nthreads;
+		nn_int nthreads = max_threads;
+		nn_int nstep = (test_count + nthreads - 1) / nthreads;
 
-		std::vector<std::future<int_t>> futures;
-		for (int_t k = 0; k < nthreads && k * nstep < test_count; ++k)
+		std::vector<std::future<nn_int>> futures;
+		for (nn_int k = 0; k < nthreads && k * nstep < test_count; ++k)
 		{
-			int_t begin = k * nstep;
-			int_t end = std::min(test_count, begin + nstep);
+			nn_int begin = k * nstep;
+			nn_int end = std::min(test_count, begin + nstep);
 			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
 				return test_task(test_img_vec, test_lab_vec, begin, end, k);
 			})));
 		}
-		int_t correct = 0;
+		nn_int correct = 0;
 		for (auto &future : futures)
 		{
 			correct += future.get();
@@ -169,24 +173,24 @@ public:
 		return correct;
 	}
 
-	float_t get_cost(const varray_vec &img_vec, const varray_vec &lab_vec, const int_t max_threads)
+	nn_float get_cost(const varray_vec &img_vec, const varray_vec &lab_vec, const nn_int max_threads)
 	{
 		nn_assert(img_vec.size() == lab_vec.size());
-		int_t tot_count = img_vec.size();
+		nn_int tot_count = img_vec.size();
 
-		int_t nthreads = max_threads;
-		int_t nstep = (tot_count + nthreads - 1) / nthreads;
+		nn_int nthreads = max_threads;
+		nn_int nstep = (tot_count + nthreads - 1) / nthreads;
 
-		std::vector<std::future<float_t>> futures;
-		for (int_t k = 0; k < nthreads && k * nstep < tot_count; ++k)
+		std::vector<std::future<nn_float>> futures;
+		for (nn_int k = 0; k < nthreads && k * nstep < tot_count; ++k)
 		{
-			int_t begin = k * nstep;
-			int_t end = std::min(tot_count, begin + nstep);
+			nn_int begin = k * nstep;
+			nn_int end = std::min(tot_count, begin + nstep);
 			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
 				return cost_task(img_vec, lab_vec, begin, end, k);
 			})));
 		}
-		float_t tot_cost = 0;
+		nn_float tot_cost = 0;
 		for (auto &future : futures)
 		{
 			tot_cost += future.get();
@@ -198,7 +202,7 @@ public:
 		return tot_cost;
 	}
 
-	bool gradient_check(const varray &test_img, const varray &test_lab, float_t precision = 1e-4)
+	bool gradient_check(const varray &test_img, const varray &test_lab, nn_float precision = 1e-4)
 	{
 		nn_assert(!m_layers.empty());
 
@@ -210,8 +214,8 @@ public:
 			auto &ts = layer->get_task_storage(0);
 			varray &w = layer->m_w;
 			varray &dw = ts.m_dw;
-			int_t w_sz = w.size();
-			for (int_t i = 0; i < w_sz; ++i)
+			nn_int w_sz = w.size();
+			for (nn_int i = 0; i < w_sz; ++i)
 			{
 				if (!calc_gradient(test_img, test_lab, w[i], dw[i], precision))
 				{
@@ -221,8 +225,8 @@ public:
 
 			varray &b = layer->m_b;
 			varray &db = ts.m_db;
-			int_t b_sz = b.size();
-			for (int_t i = 0; i < b_sz; ++i)
+			nn_int b_sz = b.size();
+			for (nn_int i = 0; i < b_sz; ++i)
 			{
 				if (!calc_gradient(test_img, test_lab, b[i], db[i], precision))
 				{
@@ -243,17 +247,17 @@ private:
 		}
 	}
 
-	void forward(const varray& input, int_t task_idx)
+	void forward(const varray& input, nn_int task_idx)
 	{
 		m_input_layer->forw_prop(input, task_idx);
 	}
 
-	void backward(const varray &label, int_t task_idx)
+	void backward(const varray &label, nn_int task_idx)
 	{
 		m_output_layer->backward(label, task_idx);
 	}
 
-	void update_all_weight(float_t eff)
+	void update_all_weight(nn_float eff)
 	{
 		for (auto &layer : m_layers)
 		{
@@ -261,22 +265,22 @@ private:
 		}
 	}
 
-	void train_task(const varray_vec &batch_img_vec, const varray_vec &batch_label_vec, int_t begin, int_t end, int_t task_idx)
+	void train_task(const varray_vec &batch_img_vec, const varray_vec &batch_label_vec, nn_int begin, nn_int end, nn_int task_idx)
 	{
-		for (int_t i = begin; i < end; ++i)
+		for (nn_int i = begin; i < end; ++i)
 		{
 			forward(*batch_img_vec[i], task_idx);
 			backward(*batch_label_vec[i], task_idx);
 		}
 	}
 
-	int_t test_task(const varray_vec &test_img_vec, const index_vec &test_lab_vec, int_t begin, int_t end, int_t task_idx)
+	nn_int test_task(const varray_vec &test_img_vec, const index_vec &test_lab_vec, nn_int begin, nn_int end, nn_int task_idx)
 	{
-		int_t c_count = 0;
-		for (int_t i = begin; i < end; ++i)
+		nn_int c_count = 0;
+		for (nn_int i = begin; i < end; ++i)
 		{
 			forward(*test_img_vec[i], task_idx);
-			int_t lab = m_output_layer->get_output(task_idx).arg_max();
+			nn_int lab = m_output_layer->get_output(task_idx).arg_max();
 			if (lab == test_lab_vec[i])
 			{
 				++c_count;
@@ -285,10 +289,10 @@ private:
 		return c_count;
 	}
 
-	float_t cost_task(const varray_vec &img_vec, const varray_vec &label_vec, int_t begin, int_t end, int_t task_idx)
+	nn_float cost_task(const varray_vec &img_vec, const varray_vec &label_vec, nn_int begin, nn_int end, nn_int task_idx)
 	{
-		float_t cost = 0;
-		for (int_t i = begin; i < end; ++i)
+		nn_float cost = 0;
+		for (nn_int i = begin; i < end; ++i)
 		{
 			m_input_layer->forw_prop(*img_vec[i], task_idx);
 			cost += m_output_layer->calc_cost(false, *label_vec[i], task_idx);
@@ -296,27 +300,27 @@ private:
 		return cost;
 	}
 
-	bool calc_gradient(const varray &test_img, const varray &test_lab, float_t &w, float_t &dw, float_t precision)
+	bool calc_gradient(const varray &test_img, const varray &test_lab, nn_float &w, nn_float &dw, nn_float precision)
 	{
-		static const float_t EPSILON = 1e-6f;
+		static const nn_float EPSILON = 1e-6f;
 
 		clear_all_grident();
 
-		float_t prev_w = w;
+		nn_float prev_w = w;
 		w = prev_w + EPSILON;
 		m_input_layer->forw_prop(test_img, 0);
-		float_t loss_0 = m_output_layer->calc_cost(true, test_lab, 0);
+		nn_float loss_0 = m_output_layer->calc_cost(true, test_lab, 0);
 
 		w = prev_w - EPSILON;
 		m_input_layer->forw_prop(test_img, 0);
-		float_t loss_1 = m_output_layer->calc_cost(true, test_lab, 0);
-		float_t delta_by_numerical = (loss_0 - loss_1) / (float_t(2.0) * EPSILON);
+		nn_float loss_1 = m_output_layer->calc_cost(true, test_lab, 0);
+		nn_float delta_by_numerical = (loss_0 - loss_1) / (nn_float(2.0) * EPSILON);
 
 		w = prev_w;
 		m_input_layer->forw_prop(test_img, 0);
 		m_output_layer->backward(test_lab, 0);
 
-		float_t delta_by_bprop = dw;
+		nn_float delta_by_bprop = dw;
 
 		if (!f_is_valid(loss_0) || !f_is_valid(loss_1) || !f_is_valid(dw))
 		{
@@ -324,7 +328,7 @@ private:
 			return false;
 		}
 
-		float_t absError = std::abs(delta_by_bprop - delta_by_numerical);
+		nn_float absError = std::abs(delta_by_bprop - delta_by_numerical);
 		bool correct = absError <= precision;
 		if (!correct)
 		{

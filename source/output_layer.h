@@ -15,7 +15,7 @@ protected:
 	lossfunc_type m_lossfunc_type;
 
 public:
-	output_layer(int_t neural_count, lossfunc_type lf_type, activation_type ac_type) : fully_connected_layer(neural_count, ac_type)
+	output_layer(nn_int neural_count, lossfunc_type lf_type, activation_type ac_type) : fully_connected_layer(neural_count, ac_type)
 	{
 		nn_assert(!(lf_type == lossfunc_type::eSigmod_CrossEntropy && ac_type != activation_type::eSigmod)
 			&& !(lf_type == lossfunc_type::eSoftMax_LogLikelihood && ac_type != activation_type::eSoftMax)
@@ -23,14 +23,14 @@ public:
 		m_lossfunc_type = lf_type;
 	}
 
-	void backward(const varray &label, int_t task_idx)
+	void backward(const varray &label, nn_int task_idx)
 	{
 		calc_delta(label, task_idx);
 
 		layer_base::task_storage &ts = m_task_storage[task_idx];
 		const varray &input = m_prev->get_output(task_idx);
-		int_t out_sz = get_output(task_idx).size();
-		int_t in_sz = input.size();
+		nn_int out_sz = get_output(task_idx).size();
+		nn_int in_sz = input.size();
 
 		nn_assert(m_w.check_dim(2));
 		nn_assert(in_sz == m_w.width());
@@ -39,10 +39,10 @@ public:
 		/*
 			dw = db * input
 		*/
-		for (int_t i = 0; i < out_sz; ++i)
+		for (nn_int i = 0; i < out_sz; ++i)
 		{
 			ts.m_db(i) += ts.m_delta(i);
-			for (int_t j = 0; j < in_sz; ++j)
+			for (nn_int j = 0; j < in_sz; ++j)
 			{
 				ts.m_dw(j, i) += ts.m_delta(i) * input[j];
 			}
@@ -51,10 +51,10 @@ public:
 		/*
 			m_w : out_sz X in_sz
 		*/
-		for (int_t i = 0; i < in_sz; ++i)
+		for (nn_int i = 0; i < in_sz; ++i)
 		{
-			float_t dot = 0;
-			for (int_t j = 0; j < out_sz; ++j)
+			nn_float dot = 0;
+			for (nn_int j = 0; j < out_sz; ++j)
 			{
 				dot += m_w(i, j) * ts.m_delta(j);
 			}
@@ -65,41 +65,41 @@ public:
 
 	}
 
-	float_t calc_cost(bool check_gradient, const varray &label, int_t task_idx) const
+	nn_float calc_cost(bool check_gradient, const varray &label, nn_int task_idx) const
 	{
 		const varray &output = get_output(task_idx);
 
-		int_t out_sz = output.size();
+		nn_int out_sz = output.size();
 		nn_assert(out_sz == output.size());
 
-		float_t e = check_gradient ? 0 : cEPSILON;
-		float_t cost = 0;
+		nn_float e = check_gradient ? 0 : cEPSILON;
+		nn_float cost = 0;
 		switch (m_lossfunc_type)
 		{
 			case lossfunc_type::eMSE:
 			{
-				for (int_t i = 0; i < out_sz; ++i)
+				for (nn_int i = 0; i < out_sz; ++i)
 				{
-					float_t s = output(i) - label(i);
+					nn_float s = output(i) - label(i);
 					cost += s * s;
 				}
-				cost *= (float_t)(0.5);
+				cost *= (nn_float)(0.5);
 			}
 			break;
 		case lossfunc_type::eSigmod_CrossEntropy:
 			{
-				for (int_t i = 0; i < out_sz; ++i)
+				for (nn_int i = 0; i < out_sz; ++i)
 				{
-					float_t p = label(i); // p is only 0 or 1
-					float_t q = output(i);
-					float_t c = p > 0 ? -log(q + e) : -log((float_t)(1.0) - q + e);
+					nn_float p = label(i); // p is only 0 or 1
+					nn_float q = output(i);
+					nn_float c = p > 0 ? -log(q + e) : -log((nn_float)(1.0) - q + e);
 					cost += c;
 				}
 			}
 			break;
 		case lossfunc_type::eSoftMax_LogLikelihood:
 			{
-				int_t idx = label.arg_max();
+				nn_int idx = label.arg_max();
 				cost = -log(output(idx) + e);
 			}
 			break;
@@ -111,11 +111,11 @@ public:
 	}
 
 private:
-	const varray& calc_delta(const varray &label, int_t task_idx)
+	const varray& calc_delta(const varray &label, nn_int task_idx)
 	{
 		layer_base::task_storage &ts = m_task_storage[task_idx];
 
-		int_t out_sz = label.size();
+		nn_int out_sz = label.size();
 		nn_assert(out_sz == ts.m_z.size());
 
 		switch (m_lossfunc_type)
@@ -123,7 +123,7 @@ private:
 		case lossfunc_type::eMSE:
 			{
 				m_df(ts.m_z, ts.m_delta);
-				for (int_t i = 0; i < out_sz; ++i)
+				for (nn_int i = 0; i < out_sz; ++i)
 				{
 					ts.m_delta(i) *= ts.m_x(i) - label(i); // 均方误差损失函数对输出层的输出值的偏导数
 				}
@@ -135,7 +135,7 @@ private:
 				// 交叉熵CrossEntropy损失函数和Sigmod激活函数的组合：
 				// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
 				// ref： http://neuralnetworksanddeeplearning.com/chap3.html#introducing_the_cross-entropy_cost_function
-				for (int_t i = 0; i < out_sz; ++i)
+				for (nn_int i = 0; i < out_sz; ++i)
 				{
 					ts.m_delta(i) = ts.m_x(i) - label(i);
 				}
@@ -148,7 +148,7 @@ private:
 				// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
 				// delta = output - label
 				// ref： https://www.cnblogs.com/ZJUT-jiangnan/p/5489047.html
-				for (int_t i = 0; i < out_sz; ++i)
+				for (nn_int i = 0; i < out_sz; ++i)
 				{
 					ts.m_delta(i) = ts.m_x(i) - label(i);
 				}

@@ -28,31 +28,31 @@ enum lossfunc_type
 class shape3d
 {
 public:
-	int_t m_w;
-	int_t m_h;
-	int_t m_d;
+	nn_int m_w;
+	nn_int m_h;
+	nn_int m_d;
 	shape3d() : m_w(0), m_h(0), m_d(0)
 	{
 	}
 
-	shape3d(int_t w, int_t h, int_t d) : m_w(w), m_h(h), m_d(d)
+	shape3d(nn_int w, nn_int h, nn_int d) : m_w(w), m_h(h), m_d(d)
 	{
 	}
 
-	void set(int_t w, int_t h, int_t d)
+	void set(nn_int w, nn_int h, nn_int d)
 	{
 		m_w = w;
 		m_h = h;
 		m_d = d;
 	}
 
-	void reshape(int_t w, int_t h, int_t d)
+	void reshape(nn_int w, nn_int h, nn_int d)
 	{
 		nn_assert(m_w * m_h * m_d == w * h * d);
 		set(w, h, d);
 	}
 
-	int_t size() const
+	nn_int size() const
 	{
 		nn_assert(m_w * m_h * m_d > 0);
 		return m_w * m_h * m_d;
@@ -94,22 +94,22 @@ public:
 	{
 	}
 
-	int_t out_size() const
+	nn_int out_size() const
 	{
 		return m_out_shape.size();
 	}
 
-	int_t paramters_count() const
+	nn_int paramters_count() const
 	{
 		return m_w.size() + m_b.size();
 	}
 
-	const varray& get_output(int_t task_idx) const
+	const varray& get_output(nn_int task_idx) const
 	{
 		return m_task_storage[task_idx].m_x;
 	}
 
-	task_storage& get_task_storage(int_t task_idx)
+	task_storage& get_task_storage(nn_int task_idx)
 	{
 		return m_task_storage[task_idx];
 	}
@@ -132,55 +132,55 @@ public:
 		}
 	}
 
-	virtual int_t fan_in_size() const
+	virtual nn_int fan_in_size() const
 	{
 		return out_size();
 	}
 
-	virtual int_t fan_out_size() const
+	virtual nn_int fan_out_size() const
 	{
 		return out_size();
 	}
 
-	virtual void set_task_count(int_t task_count) = 0;
+	virtual void set_task_count(nn_int task_count) = 0;
 
 	/*
 		input: input of this layer
 	*/
-	virtual void forw_prop(const varray &input, int_t task_idx) = 0;
+	virtual void forw_prop(const varray &input, nn_int task_idx) = 0;
 
 	/*
 		next_wd: next layer's transpose(weight) * delta
 	*/
-	virtual void back_prop(const varray &next_wd, int_t task_idx) = 0;
+	virtual void back_prop(const varray &next_wd, nn_int task_idx) = 0;
 
-	virtual void update_weights(float_t eff)
+	virtual void update_weights(nn_float eff)
 	{
-		int_t b_sz = m_b.size();
-		int_t w_sz = m_w.size();
+		nn_int b_sz = m_b.size();
+		nn_int w_sz = m_w.size();
 
 		// merge weights from all task
-		int_t task_count = (int_t)m_task_storage.size();
+		nn_int task_count = (nn_int)m_task_storage.size();
 		auto& ts_sum = m_task_storage[0];
-		for (int_t k = 1; k < task_count; ++k)
+		for (nn_int k = 1; k < task_count; ++k)
 		{
 			auto& ts = m_task_storage[k];
-			for (int_t i = 0; i < b_sz; ++i)
+			for (nn_int i = 0; i < b_sz; ++i)
 			{
 				ts_sum.m_db[i] += ts.m_db[i];
 			}
-			for (int_t i = 0; i < w_sz; ++i)
+			for (nn_int i = 0; i < w_sz; ++i)
 			{
 				ts_sum.m_dw[i] += ts.m_dw[i];
 			}
 		}
 
 		// update weights
-		for (int_t i = 0; i < b_sz; ++i)
+		for (nn_int i = 0; i < b_sz; ++i)
 		{
 			m_b[i] -= ts_sum.m_db[i] * eff;
 		}
-		for (int_t i = 0; i < w_sz; ++i)
+		for (nn_int i = 0; i < w_sz; ++i)
 		{
 			m_w[i] -= ts_sum.m_dw[i] * eff;
 		}

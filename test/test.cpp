@@ -9,12 +9,12 @@ namespace mini_cnn
 class gradient_checker
 {
 private:
-	const float_t cPrecision = 1e-4;
-	const int_t cInput_w = 18;
-	const int_t cInput_h = 18;
-	const int_t cInput_d = 1;
-	const int_t cInput_n = cInput_w * cInput_h * cInput_d;
-	const int_t cOutput_n = 10;
+	const nn_float cPrecision = 1e-4f;
+	const nn_int cInput_w = 18;
+	const nn_int cInput_h = 18;
+	const nn_int cInput_d = 1;
+	const nn_int cInput_n = cInput_w * cInput_h * cInput_d;
+	const nn_int cOutput_n = 10;
 
 public:
 #define TEST_GRADIENT(model)\
@@ -22,14 +22,14 @@ public:
 
 	gradient_checker()
 	{
-		int_t seed = get_now();
+		nn_int seed = (nn_int)get_now_ms();
 		seed = 2572007265;
 		std::mt19937_64 generator(seed);
 		uniform_random uRand(generator, 0, 1.0);
 
 		varray *input = new varray(cInput_n);
 		varray *label = new varray(cOutput_n);
-		for (int_t i = 0; i < input->size(); ++i)
+		for (nn_int i = 0; i < input->size(); ++i)
 		{
 			(*input)[i] = uRand.get_random();
 		}
@@ -230,9 +230,9 @@ private:
 		return nn;
 	}
 
-	bool test_nn_gradient_check(network &nn, std::mt19937_64 generator, varray *input, varray *label, float_t precision = 1e-4)
+	bool test_nn_gradient_check(network &nn, std::mt19937_64 generator, varray *input, varray *label, nn_float precision = 1e-4)
 	{
-		truncated_normal_initializer initializer(generator, 0, 0.1, 2);
+		truncated_normal_initializer initializer(generator, 0, 0.1f, 2);
 		nn.init_all_weight(initializer);
 		return nn.gradient_check(*input, *label, precision);
 	}
