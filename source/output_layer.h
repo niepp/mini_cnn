@@ -72,7 +72,7 @@ public:
 		nn_int out_sz = output.size();
 		nn_assert(out_sz == output.size());
 
-		nn_float e = check_gradient ? 0 : cEPSILON;
+		nn_float e = check_gradient ? 0 : cEpsilon;
 		nn_float cost = 0;
 		switch (m_lossfunc_type)
 		{

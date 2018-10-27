@@ -50,7 +50,7 @@ namespace mini_cnn
 */
 
 template<class T>
-class ALIGN(ALIGN_SIZE) _varray
+class nn_align(nn_align_size) _varray
 {
 public:
 	_varray();

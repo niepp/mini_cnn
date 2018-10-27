@@ -50,6 +50,7 @@ struct Shape
 
 std::map<Shape, Cost> g_shape_map;
 int g_conv_cnt = 0;
+float g_cost = 0;
 
 namespace mini_cnn 
 {
@@ -72,6 +73,8 @@ protected:
 	padding_type m_padding;
 	active_func m_f;
 	active_func m_df;
+
+	varray_vec m_temp_imgs;
 
 public:
 	convolutional_layer(nn_int filter_w, nn_int filter_h, nn_int filter_c, nn_int filter_n, nn_int stride_w, nn_int stride_h, padding_type padding, activation_type ac_type)
@@ -153,6 +156,14 @@ public:
 			ts.m_delta.resize(out_w, out_h, out_d);
 			ts.m_wd.resize(in_w, in_h, in_d);
 		}
+
+		nn_int temp_w = in_w + in_w - out_w;
+		nn_int temp_h = in_h + in_h - out_h;
+		m_temp_imgs.resize(task_count);
+		for (auto &timg : m_temp_imgs)
+		{
+			timg = new varray(temp_w, temp_h, out_d);
+		}
 	}
 
 	virtual void forw_prop(const varray &input, nn_int task_idx)
@@ -164,11 +175,13 @@ public:
 
 		for (nn_int k = 0; k < m_out_shape.m_d; ++k)
 		{
-			for (nn_int i = 0; i < m_out_shape.m_w; ++i)
+			nn_float bk = m_b(k);
+			for (nn_int i = 0; i < m_out_shape.m_h; ++i)
 			{
-				for (nn_int j = 0; j < m_out_shape.m_h; ++j)
+				nn_float *nn_restrict vec_out_z = &out_z(0, i, k);
+				for (nn_int j = 0; j < m_out_shape.m_w; ++j)
 				{
-					out_z(i, j, k) += m_b(k);
+					vec_out_z[j] += bk;
 				}
 			}
 		}
@@ -187,15 +200,17 @@ public:
 		const varray &input = m_prev->get_output(task_idx);
 
 		nn_int out_sz = next_wd.size();
-		nn_int in_sz = input.size();
 
 		/*
 			delta = next_wd element-wise multiplication df(z)
 		*/
 		m_df(ts.m_z, ts.m_delta);
+
+		nn_float *nn_restrict vec_delta = &ts.m_delta[0];
+		const nn_float *nn_restrict vec_next_wd = &next_wd[0];
 		for (nn_int i = 0; i < out_sz; ++i)
 		{
-			ts.m_delta[i] *= next_wd[i];
+			vec_delta[i] *= vec_next_wd[i];
 		}
 
 		/*
@@ -209,26 +224,74 @@ public:
 		for (nn_int k = 0; k < m_filter_count; ++k)
 		{
 			nn_float s = 0;
-			for (nn_int i = 0; i < m_out_shape.m_w; ++i)
+			for (nn_int i = 0; i < m_out_shape.m_h; ++i)
 			{
-				for (nn_int j = 0; j < m_out_shape.m_h; ++j)
+				const nn_float *nn_restrict vec_delta_hd = &ts.m_delta(0, i, k);
+				for (nn_int j = 0; j < m_out_shape.m_w; ++j)
 				{
-					s += ts.m_delta(i, j, k);
+					s += vec_delta_hd[j];
 				}
 			}
 			ts.m_db(k) += s;
 		}
-		
+
 		/*
-			wd = conv(w, delta)
+			wd = conv(delta, w)
 		*/
-		conv_delta_w(ts.m_delta, m_w, m_stride_w, m_stride_h, ts.m_wd);
+		nn_int out_w = m_out_shape.m_w;
+		nn_int out_h = m_out_shape.m_h;
+		nn_int offset_w = input.width() - out_w;
+		nn_int offset_h = input.height() - out_h;
+
+		m_temp_imgs[task_idx]->make_zero();
+
+		copy_to_temp(ts.m_delta, 0, 0
+			, *m_temp_imgs[task_idx], offset_w, offset_h
+			, out_w, out_h);
+
+		conv_delta_w(*m_temp_imgs[task_idx], offset_w, offset_h, m_w, m_stride_w, m_stride_h, ts.m_wd);
+
+		copy_to_temp(*m_temp_imgs[task_idx], offset_w, offset_h
+			, ts.m_delta, 0, 0
+			, out_w, out_h);
 
 		m_prev->back_prop(ts.m_wd, task_idx);
 
 	}
 
 private:
+	static inline void copy_to_temp(const varray &src, nn_int offset_src_w, nn_int offset_src_h
+		, varray &dst, nn_int offset_dst_w, nn_int offset_dst_h
+		, nn_int w, nn_int h)
+	{
+		nn_int src_w = src.width();
+		nn_int src_h = src.height();
+		nn_int src_d = src.depth();
+
+		nn_int dst_w = dst.width();
+		nn_int dst_h = dst.height();
+		nn_int dst_d = dst.depth();
+
+		nn_assert(src_d == dst_d);
+		nn_assert(w + offset_src_w <= src_w);
+		nn_assert(h + offset_src_h <= src_h);
+		nn_assert(w + offset_dst_w <= dst_w);
+		nn_assert(h + offset_dst_h <= dst_h);
+
+		for (nn_int c = 0; c < src_d; ++c)
+		{
+			for (nn_int i = 0; i < h; ++i)
+			{
+				nn_float *nn_restrict vec_dst = &dst(offset_dst_w, i + offset_dst_h, c);
+				const nn_float *nn_restrict vec_src = &src(offset_src_w, i + offset_src_h, c);
+				for (nn_int j = 0; j < w; ++j)
+				{
+					vec_dst[j] = vec_src[j];
+				}
+			}
+		}
+	}
+
 	static void conv_input_w(const varray &in_img, const varray &filters, nn_int stride_w, nn_int stride_h, varray &out_img)
 	{
 		nn_int in_w = in_img.width();
@@ -257,7 +320,7 @@ private:
 		{
 			for (nn_int c = 0; c < in_d; ++c)
 			{
-				conv_2d<false>(&in_img(0, 0, c), in_w, in_h
+				conv_2d(&in_img(0, 0, c), in_w, in_h
 					, &filters(0, 0, c, k), filter_w, filter_h
 					, stride_w, stride_h
 					, &out_img(0, 0, k), w, h);
@@ -291,7 +354,7 @@ private:
 		{
 			for (nn_int c = 0; c < d; ++c)
 			{
-				conv_2d<false>(&in_img(0, 0, c), in_w, in_h
+				conv_2d(&in_img(0, 0, c), in_w, in_h
 					, &delta(0, 0, k), delta_w, delta_h
 					, stride_w, stride_h
 					, &dw(0, 0, c, k), w, h);
@@ -299,11 +362,11 @@ private:
 		}
 	}
 
-	static void conv_delta_w(const varray &delta, const varray &filters, nn_int stride_w, nn_int stride_h, varray &ret)
+	static void conv_delta_w(const varray &delta_cache, nn_int offset_w, nn_int offset_h, const varray &filters, nn_int stride_w, nn_int stride_h, varray &ret)
 	{
-		nn_int delta_w = delta.width();
-		nn_int delta_h = delta.height();
-		nn_int delta_d = delta.depth();
+		nn_int delta_w = delta_cache.width();
+		nn_int delta_h = delta_cache.height();
+		nn_int delta_d = delta_cache.depth();
 
 		nn_int filter_count = filters.count();
 		nn_int filter_w = filters.width();
@@ -314,7 +377,7 @@ private:
 		nn_int h = ret.height();
 		nn_int d = ret.depth();
 
-		nn_assert(delta.check_dim(3));
+		nn_assert(delta_cache.check_dim(3));
 		nn_assert(filters.check_dim(4));
 		nn_assert(ret.check_dim(3));
 
@@ -328,7 +391,7 @@ private:
 		{
 			for (nn_int k = 0; k < filter_count; ++k)
 			{
-				conv_2d<true>(&delta(0, 0, k), delta_w, delta_h
+				conv_2d<true>(&delta_cache(offset_w, offset_h, k), delta_w, delta_h
 					, &filters(0, 0, c, k), filter_w, filter_h
 					, stride_w, stride_h
 					, &ret(0, 0, c), w, h);
@@ -339,19 +402,16 @@ private:
 	/*
 		common 2d convolution
 	*/
-	template<bool filter_flip>
-	static void conv_2d(const nn_float *img, nn_int iw, nn_int ih
+	template<bool filter_flip = false>
+	static inline void conv_2d(const nn_float *img, nn_int iw, nn_int ih
 		, const nn_float *filter, nn_int fw, nn_int fh
 		, nn_int stride_w, nn_int stride_h
 		, nn_float *out, nn_int ow, nn_int oh)
 	{
 
-		//int t0 = get_now();
-		/*if (fw == 3 && fh == 3)
-		{
-		conv_2d_3x3<filter_flip>(img, iw, ih, filter, fw, fh, stride_w, stride_h, out, ow, oh);
-		}
-		else*/
+		nn_float t0 = get_now_ms();
+
+		if (!filter_flip)
 		{
 			for (nn_int i = 0; i < ow; ++i)
 			{
@@ -362,70 +422,13 @@ private:
 					nn_float s = out[i + j * ow];
 					for (nn_int u = 0; u < fw; ++u)
 					{
-						nn_int x = filter_flip ? start_w - u : start_w + u;
-						if (x < 0 || x >= iw)
-						{
-							continue;
-						}
+						nn_int x = start_w + u;
 						for (nn_int v = 0; v < fh; ++v)
 						{
-							nn_int y = filter_flip ? start_h - v : start_h + v;
-							if (y < 0 || y >= ih)
-							{
-								continue;
-							}
+							nn_int y = start_h + v;
 							s += img[x + y * iw] * filter[u + v * fw];
 						}
 					}
-					out[i + j * ow] = s;
-				}
-			}
-		}
-		//int t1 = get_now();
-
-		//Shape shape;
-		//shape.iw = iw;
-		//shape.ih = ih;
-		//shape.fw = fw;
-		//shape.fh = fh;
-		//shape.ow = ow;
-		//shape.oh = oh;
-		//++g_shape_map[shape].cnt;
-		//g_shape_map[shape].cost += (t1 - t0) * 0.001f;
-		//++g_conv_cnt;
-
-	}
-
-	template<bool filter_flip>
-	static void conv_2d_3x3(const nn_float *img, nn_int iw, nn_int ih
-		, const nn_float *filter, nn_int fw, nn_int fh
-		, nn_int stride_w, nn_int stride_h
-		, nn_float *out, nn_int ow, nn_int oh)
-	{
-		if (!filter_flip)
-		{
-			for (nn_int i = 0; i < ow; ++i)
-			{
-				for (nn_int j = 0; j < oh; ++j)
-				{
-					nn_int start_w = i * stride_w;
-					nn_int start_h = j * stride_h;
-					nn_float s = out[i + j * ow];
-
-					nn_int x = start_w;
-					nn_int y = start_h;
-					s += ((x >= iw || y >= ih) ? 0 : img[x + y * iw]) * filter[0];
-					s += ((x + 1 >= iw || y >= ih) ? 0 : img[x + 1 + y * iw]) * filter[1];
-					s += ((x + 2 >= iw || y >= ih) ? 0 : img[x + 2 + y * iw]) * filter[2];
-
-					s += ((x >= iw || y + 1 >= ih) ? 0 : img[x + (y + 1) * iw]) * filter[3];
-					s += ((x + 1 >= iw || y + 1 >= ih) ? 0 : img[x + 1 + (y + 1) * iw]) * filter[4];
-					s += ((x + 2 >= iw || y + 1 >= ih) ? 0 : img[x + 2 + (y + 1) * iw]) * filter[5];
-
-					s += ((x >= iw || y + 2 >= ih) ? 0 : img[x + (y + 2) * iw]) * filter[6];
-					s += ((x + 1 >= iw || y + 2 >= ih) ? 0 : img[x + 1 + (y + 2) * iw]) * filter[7];
-					s += ((x + 2 >= iw || y + 2 >= ih) ? 0 : img[x + 2 + (y + 2) * iw]) * filter[8];
-
 					out[i + j * ow] = s;
 				}
 			}
@@ -439,26 +442,60 @@ private:
 					nn_int start_w = i * stride_w;
 					nn_int start_h = j * stride_h;
 					nn_float s = out[i + j * ow];
-
-					nn_int x = start_w;
-					nn_int y = start_h;
-					s += ((x >= iw || y >= ih) ? 0 : img[x + y * iw]) * filter[0];
-					s += ((x - 1 < 0 || x - 1 >= iw || y >= ih) ? 0 : img[x - 1 + y * iw]) * filter[1];
-					s += ((x - 2 < 0 || x - 2 >= iw || y >= ih) ? 0 : img[x - 2 + y * iw]) * filter[2];
-
-					s += ((y - 1 < 0 || x >= iw || y - 1 >= ih) ? 0 : img[x + (y - 1) * iw]) * filter[3];
-					s += ((x - 1 < 0 || y - 1 < 0 || x - 1 >= iw || y - 1 >= ih) ? 0 : img[x - 1 + (y - 1) * iw]) * filter[4];
-					s += ((x - 2 < 0 || y - 1 < 0 || x - 2 >= iw || y - 1 >= ih) ? 0 : img[x - 2 + (y - 1) * iw]) * filter[5];
-
-					s += ((y - 2 < 0 || x >= iw || y - 2 >= ih) ? 0 : img[x + (y - 2) * iw]) * filter[6];
-					s += ((x - 1 < 0 || y - 2 < 0 || x - 1 >= iw || y - 2 >= ih) ? 0 : img[x - 1 + (y - 2) * iw]) * filter[7];
-					s += ((x - 2 < 0 || y - 2 < 0 || x - 2 >= iw || y - 2 >= ih) ? 0 : img[x - 2 + (y - 2) * iw]) * filter[8];
-
+					for (nn_int u = 0; u < fw; ++u)
+					{
+						nn_int x = start_w - u;
+						for (nn_int v = 0; v < fh; ++v)
+						{
+							nn_int y = start_h - v;
+							s += img[x + y * iw] * filter[u + v * fw];
+						}
+					}
 					out[i + j * ow] = s;
 				}
 			}
 		}
+		nn_float t1 = get_now_ms();
+
+		g_cost += (t1 - t0) * 0.001f;
+		++g_conv_cnt;
+
 	}
+
+	//static inline void conv_2d_flip(const nn_float *img, nn_int iw, nn_int ih
+	//	, const nn_float *filter, nn_int fw, nn_int fh
+	//	, nn_int stride_w, nn_int stride_h
+	//	, nn_float *out, nn_int ow, nn_int oh)
+	//{
+
+	//	nn_float t0 = get_now_ms();
+
+	//	for (nn_int i = 0; i < ow; ++i)
+	//	{
+	//		for (nn_int j = 0; j < oh; ++j)
+	//		{
+	//			nn_int start_w = i * stride_w;
+	//			nn_int start_h = j * stride_h;
+	//			nn_float s = out[i + j * ow];
+	//			for (nn_int u = 0; u < fw; ++u)
+	//			{
+	//				nn_int x = start_w - u;
+	//				for (nn_int v = 0; v < fh; ++v)
+	//				{
+	//					nn_int y = start_h - v;
+	//					s += img[x + y * iw] * filter[u + v * fw];
+	//				}
+	//			}
+	//			out[i + j * ow] = s;
+	//		}
+	//	}
+
+	//	nn_float t1 = get_now_ms();
+
+	//	g_cost += (t1 - t0) * 0.001f;
+	//	++g_conv_cnt;
+
+	//}
 
 };
 }

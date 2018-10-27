@@ -152,19 +152,19 @@ private:
 				{
 					nn_int start_w = i * pool_stride_w;
 					nn_int start_h = j * pool_stride_h;
-					nn_float maxv = cMIN_FLOAT;
+					nn_float maxv = cMinFloat;
 					nn_int pool_idx = -1;
 					for (nn_int u = 0; u < pool_w; ++u)
 					{
 						nn_int x = start_w + u;
-						if (x < 0 || x >= in_w)
+						if (x >= in_w)
 						{
 							continue;
 						}
 						for (nn_int v = 0; v < pool_h; ++v)
 						{
 							nn_int y = start_h + v;
-							if (y < 0 || y >= in_h)
+							if (y >= in_h)
 							{
 								continue;
 							}

@@ -79,12 +79,12 @@ inline unsigned char* align_address(size_t address, int align_size)
 
 inline void* align_malloc(nn_int size)
 {
-	unsigned char* mptr = (unsigned char*)::malloc(size + sizeof(void*) + ALIGN_SIZE);
+	unsigned char* mptr = (unsigned char*)::malloc(size + sizeof(void*) + nn_align_size);
 	if (!mptr)
 	{
 		return nullptr;
 	}
-	unsigned char* aptr = align_address((size_t)mptr + sizeof(void*), ALIGN_SIZE);
+	unsigned char* aptr = align_address((size_t)mptr + sizeof(void*), nn_align_size);
 	unsigned char**p = (unsigned char**)((size_t)aptr - sizeof(void*));
 	*p = mptr;
 	return aptr;
@@ -115,10 +115,13 @@ inline void deriv_sigmoid(const varray &v, varray &retv)
 {
 	nn_int len = v.size();
 	nn_assert(len == retv.size());
+
+	const nn_float * __restrict src = &v[0];
+	nn_float * __restrict dst = &retv[0];
 	for (nn_int i = 0; i < len; ++i)
 	{
-		nn_float t = cOne / (cOne + exp(-v[i]));
-		retv[i] = t * (cOne - t);
+		nn_float t = cOne / (cOne + exp(-src[i]));
+		dst[i] = t * (cOne - t);
 	}
 }
 
@@ -136,9 +139,11 @@ inline void deriv_relu(const varray &v, varray &retv)
 {
 	nn_int len = v.size();
 	nn_assert(len == retv.size());
+	const nn_float * __restrict src = &v[0];
+	nn_float * __restrict dst = &retv[0];
 	for (nn_int i = 0; i < len; ++i)
 	{
-		retv[i] = v[i] > 0 ? cOne : 0;
+		dst[i] = src[i] > 0 ? cOne : 0;
 	}
 }
 
@@ -158,9 +163,10 @@ inline void softmax(const varray &v, varray &retv)
 		retv[i] = exp(retv[i]);
 		s += retv[i];
 	}
+	s = (nn_float)(1.0) / s;
 	for (nn_int i = 0; i < len; ++i)
 	{
-		retv[i] /= s;
+		retv[i] *= s;
 	}
 }
 

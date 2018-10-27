@@ -14,7 +14,7 @@ namespace mini_cnn
 
 	typedef std::vector<nn_int>	index_vec;
 
-	const nn_float cEPSILON = 1e-4f;
+	const nn_float cEpsilon = 1e-4f;
 
 #ifndef PI
 	const nn_float cPI = 3.141592653589793f;
@@ -23,8 +23,8 @@ namespace mini_cnn
 	const nn_float cZero = (nn_float)0.0;
 	const nn_float cOne = (nn_float)1.0;
 
-	const nn_float cMIN_FLOAT = std::numeric_limits<nn_float>::min();
-	const nn_float cMAX_FLOAT = std::numeric_limits<nn_float>::max();
+	const nn_float cMinFloat = std::numeric_limits<nn_float>::min();
+	const nn_float cMaxFloat = std::numeric_limits<nn_float>::max();
 
 #ifdef _DEBUG
 	#define nn_assert(cond) (void)(assert_break(cond))
@@ -41,16 +41,17 @@ namespace mini_cnn
 #endif
 
 // memory alignment
-#ifndef ALIGN
+#ifndef nn_align
 #if defined(__GNUC__)    // GCC
-#    define ALIGN(n)    __attribute__((aligned(n)))
+#    define nn_align(n)    __attribute__((aligned(n)))
 #elif defined( _MSC_VER ) // VC
-#    define ALIGN(n)    __declspec(align(n))
+#    define nn_align(n)    __declspec(align(n))
 #  endif
-#endif // ALIGN
+#endif // nn_align
 
-#define ALIGN_SIZE 32
+#define nn_align_size 32
 
-#define USE_AVX
+#define nn_restrict __restrict
+
 }
 #endif // __COMMON_DEF_H__

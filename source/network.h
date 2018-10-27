@@ -98,7 +98,6 @@ public:
 		for (nn_int c = 0; c < epoch; ++c)
 		{
 			nn_float tstart = get_now_ms();
-			nn_float minCost = cMAX_FLOAT;
 			std::shuffle(idx_vec.begin(), idx_vec.end(), generator);
 			varray_vec batch_img_vec(batch_size);
 			varray_vec batch_label_vec(batch_size);
@@ -112,7 +111,9 @@ public:
 				}
 				train_one_batch(batch_img_vec, batch_label_vec, learning_rate, nthreads);
 				minibatch_callback((i + 1) * batch_size, img_count);
+				break;
 			}
+			break;
 			nn_float tend = get_now_ms();
 			nn_float elapse = (tend - tstart) * 0.001f;
 			nn_int correct = test(test_img_vec, test_lab_vec, nthreads);

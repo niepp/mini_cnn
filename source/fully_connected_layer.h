@@ -9,6 +9,7 @@ protected:
 	nn_int m_neural_count;
 	active_func m_f;
 	active_func m_df;
+	varray m_tw;  // transpose of m_w
 
 public:
 	fully_connected_layer(nn_int neural_count, activation_type ac_type)
@@ -50,6 +51,7 @@ public:
 		m_out_shape.set(m_neural_count, 1, 1);
 		m_b.resize(out_size());
 		m_w.resize(m_prev->out_size(), out_size());
+		m_tw.resize(out_size(), m_prev->out_size());
 	}
 
 	virtual void set_task_count(nn_int task_count)
@@ -92,11 +94,7 @@ public:
 
 		for (nn_int i = 0; i < height; ++i)
 		{
-			nn_float dot = 0;
-			for (nn_int j = 0; j < width; ++j)
-			{
-				dot += m_w(j, i) * input[j];
-			}
+			nn_float dot = vec_dot(&m_w(0, i), &input[0], width);
 			ts.m_z(i) = dot + m_b(i);
 		}
 		m_f(ts.m_z, ts.m_x);
@@ -123,20 +121,29 @@ public:
 		nn_assert(out_sz == m_w.height());
 
 		m_df(ts.m_z, ts.m_delta);
+
+		const nn_float *nn_restrict vec_next_wd = &next_wd[0];
+		nn_float *nn_restrict vec_delta = &ts.m_delta[0];
 		for (nn_int i = 0; i < out_sz; ++i)
 		{
-			ts.m_delta(i) *= next_wd(i);
+			vec_delta[i] *= vec_next_wd[i];
 		}
 
 		/*
 			dw = db * input
 		*/
+		nn_float *nn_restrict vec_db = &ts.m_db[0];
 		for (nn_int i = 0; i < out_sz; ++i)
 		{
-			ts.m_db(i) += ts.m_delta(i);
+			vec_db[i] += vec_delta[i];
+		}
+		for (nn_int i = 0; i < out_sz; ++i)
+		{
+			nn_float *nn_restrict vec_dw_i = &ts.m_dw(0, i);
+			const nn_float *nn_restrict vec_input = &input[0];
 			for (nn_int j = 0; j < in_sz; ++j)
 			{
-				ts.m_dw(j, i) += ts.m_delta(i) * input[j];
+				vec_dw_i[j] = vec_delta[i] * vec_input[j];
 			}
 		}
 
@@ -146,16 +153,37 @@ public:
 		*/
 		for (nn_int i = 0; i < in_sz; ++i)
 		{
-			nn_float dot = 0;
-			for (nn_int j = 0; j < out_sz; ++j)
-			{
-				dot += m_w(i, j) * ts.m_delta(j);
-			}
-			ts.m_wd[i] = dot;
+			ts.m_wd[i] = vec_dot(&m_tw(0, i), vec_delta, out_sz);
 		}
 
 		m_prev->back_prop(ts.m_wd, task_idx);
 
+	}
+
+	virtual void update_weights(nn_float eff)
+	{
+		layer_base::update_weights(eff);
+
+		nn_int out_sz = m_tw.width();
+		nn_int in_sz = m_tw.height();
+		for (nn_int i = 0; i < out_sz; ++i)
+		{
+			for (nn_int j = 0; j < in_sz; ++j)
+			{
+				m_tw(i, j) = m_w(j, i);
+			}
+		}
+	}
+
+private:
+	static inline nn_float vec_dot(const nn_float *nn_restrict v1, const nn_float *nn_restrict v2, nn_int len)
+	{
+		nn_float s = 0;
+		for (nn_int i = 0; i < len; ++i)
+		{
+			s += v1[i] * v2[i];
+		}
+		return s;
 	}
 
 };

@@ -39,7 +39,7 @@ public:
 			m_cur_progress = cur_progress;
 		}
 
-		if (1.0f - cur_progress < mini_cnn::cEPSILON)
+		if (1.0f - cur_progress < mini_cnn::cEpsilon)
 		{
 			for (int i = m_cur_ticks; i < m_tick_count; ++i)
 			{
@@ -59,6 +59,19 @@ network create_fnn()
 	nn.add_layer(new input_layer(N_inputCount));
 	nn.add_layer(new fully_connected_layer(100, activation_type::eRelu));
 	nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
+	nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+	return nn;
+}
+
+network create_cnn_small()
+{
+	network nn;
+	nn.add_layer(new input_layer(W_input, H_input, D_input));
+	nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+	nn.add_layer(new convolutional_layer(3, 3, 4, 8, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+	nn.add_layer(new fully_connected_layer(32, activation_type::eRelu));
 	nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 	return nn;
 }
@@ -88,8 +101,6 @@ int main()
 		, "t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte");
 	mnist.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
-	nn_float t0 = get_now_ms();
-
 	// random init
 	nn_int seed = (nn_int)get_now_ms();
 	seed = 2572007265;	// fixed seed to repeat test
@@ -111,9 +122,9 @@ int main()
 
 	float learning_rate = 0.1f;
 	int epoch = 10;
-	int batch_size = 10;
+	int batch_size = 100;
 	nn_int nthreads = std::thread::hardware_concurrency();
-	nthreads = 8;
+	nthreads = 1;
 
 	auto epoch_callback = [&train_progress_bar](nn_int c, nn_int epoch, nn_float cur_accuracy, nn_float tot_cost, nn_float elapse)
 	{
@@ -129,6 +140,8 @@ int main()
 		train_progress_bar.grow(cur_size * 1.0f / img_count);
 	};
 
+	nn_float t0 = get_now_ms();
+
 	nn_float max_accuracy = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, generator, epoch, batch_size, learning_rate, nthreads, minibatch_callback, epoch_callback);
 
 	cout << "max_accuracy: " << max_accuracy << endl;
@@ -138,6 +151,7 @@ int main()
 	nn_float timeCost = (t1 - t0) * 0.001f;
 	cout << "TimeCost: " << timeCost << "(s)" << endl;
 
+	cout << "g_cost: " << g_cost << "(s)" << endl;
 	cout << "g_conv_cnt: " << g_conv_cnt << endl;
 	for (auto &p : g_shape_map)
 	{
