@@ -122,9 +122,9 @@ int main()
 
 	float learning_rate = 0.1f;
 	int epoch = 10;
-	int batch_size = 100;
+	int batch_size = 10;
 	nn_int nthreads = std::thread::hardware_concurrency();
-	nthreads = 1;
+	//nthreads = 1;
 
 	auto epoch_callback = [&train_progress_bar](nn_int c, nn_int epoch, nn_float cur_accuracy, nn_float tot_cost, nn_float elapse)
 	{

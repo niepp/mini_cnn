@@ -162,27 +162,37 @@ public:
 		// merge weights from all task
 		nn_int task_count = (nn_int)m_task_storage.size();
 		auto& ts_sum = m_task_storage[0];
+		
+		nn_float *nn_restrict vec_sum_db = &ts_sum.m_db[0];
+		nn_float *nn_restrict vec_sum_dw = &ts_sum.m_dw[0];
+
 		for (nn_int k = 1; k < task_count; ++k)
 		{
 			auto& ts = m_task_storage[k];
+			const nn_float *nn_restrict vec_task_db = &ts.m_db[0];
 			for (nn_int i = 0; i < b_sz; ++i)
 			{
-				ts_sum.m_db[i] += ts.m_db[i];
+				vec_sum_db[i] += vec_task_db[i];
 			}
+
+			const nn_float *nn_restrict vec_task_dw = &ts.m_dw[0];
 			for (nn_int i = 0; i < w_sz; ++i)
 			{
-				ts_sum.m_dw[i] += ts.m_dw[i];
+				vec_sum_dw[i] += vec_task_dw[i];
 			}
 		}
 
 		// update weights
+		nn_float *nn_restrict vec_b = &m_b[0];
 		for (nn_int i = 0; i < b_sz; ++i)
 		{
-			m_b[i] -= ts_sum.m_db[i] * eff;
+			vec_b[i] -= vec_sum_db[i] * eff;
 		}
+
+		nn_float *nn_restrict vec_w = &m_w[0];
 		for (nn_int i = 0; i < w_sz; ++i)
 		{
-			m_w[i] -= ts_sum.m_dw[i] * eff;
+			vec_w[i] -= vec_sum_dw[i] * eff;
 		}
 
 		// clear task storage

@@ -74,7 +74,12 @@ protected:
 	active_func m_f;
 	active_func m_df;
 
-	varray_vec m_temp_imgs;
+	struct conv_task_storage
+	{
+		varray m_padded_img;
+		varray m_mem_cache;
+	};
+	std::vector<conv_task_storage> m_conv_task_storage;
 
 public:
 	convolutional_layer(nn_int filter_w, nn_int filter_h, nn_int filter_c, nn_int filter_n, nn_int stride_w, nn_int stride_h, padding_type padding, activation_type ac_type)
@@ -159,10 +164,11 @@ public:
 
 		nn_int temp_w = in_w + in_w - out_w;
 		nn_int temp_h = in_h + in_h - out_h;
-		m_temp_imgs.resize(task_count);
-		for (auto &timg : m_temp_imgs)
+		m_conv_task_storage.resize(task_count);
+		for (auto &cts : m_conv_task_storage)
 		{
-			timg = new varray(temp_w, temp_h, out_d);
+			cts.m_padded_img.resize(temp_w, temp_h, out_d);
+			cts.m_mem_cache.resize(in_w * in_h);
 		}
 	}
 
@@ -171,7 +177,8 @@ public:
 		varray &out_z = m_task_storage[task_idx].m_z;
 		varray &out_x = m_task_storage[task_idx].m_x;
 
-		conv_input_w(input, m_w, m_stride_w, m_stride_h, out_z);
+		varray &cache = m_conv_task_storage[task_idx].m_mem_cache;
+		conv_input_w(input, cache, m_w, m_stride_w, m_stride_h, out_z);
 
 		for (nn_int k = 0; k < m_out_shape.m_d; ++k)
 		{
@@ -216,7 +223,8 @@ public:
 		/*
 			dw_k = conv2d(input_d, delta_k)
 		*/
-		conv_input_delta(input, ts.m_delta, m_stride_w, m_stride_h, ts.m_dw);
+		varray &cache = m_conv_task_storage[task_idx].m_mem_cache;
+		conv_input_delta(input, cache, ts.m_delta, m_stride_w, m_stride_h, ts.m_dw);
 
 		/*
 			db_k = sum(delta_k)
@@ -243,15 +251,16 @@ public:
 		nn_int offset_w = input.width() - out_w;
 		nn_int offset_h = input.height() - out_h;
 
-		m_temp_imgs[task_idx]->make_zero();
+		varray &padded_img = m_conv_task_storage[task_idx].m_padded_img;
+		padded_img.make_zero();
 
 		copy_to_temp(ts.m_delta, 0, 0
-			, *m_temp_imgs[task_idx], offset_w, offset_h
+			, padded_img, offset_w, offset_h
 			, out_w, out_h);
 
-		conv_delta_w(*m_temp_imgs[task_idx], offset_w, offset_h, m_w, m_stride_w, m_stride_h, ts.m_wd);
+		conv_delta_w(padded_img, offset_w, offset_h, cache, m_w, m_stride_w, m_stride_h, ts.m_wd);
 
-		copy_to_temp(*m_temp_imgs[task_idx], offset_w, offset_h
+		copy_to_temp(padded_img, offset_w, offset_h
 			, ts.m_delta, 0, 0
 			, out_w, out_h);
 
@@ -292,7 +301,7 @@ private:
 		}
 	}
 
-	static void conv_input_w(const varray &in_img, const varray &filters, nn_int stride_w, nn_int stride_h, varray &out_img)
+	static void conv_input_w(const varray &in_img, varray &cache, const varray &filters, nn_int stride_w, nn_int stride_h, varray &out_img)
 	{
 		nn_int in_w = in_img.width();
 		nn_int in_h = in_img.height();
@@ -320,7 +329,7 @@ private:
 		{
 			for (nn_int c = 0; c < in_d; ++c)
 			{
-				conv_2d(&in_img(0, 0, c), in_w, in_h
+				conv_2d(&in_img(0, 0, c), in_w, in_h, &cache[0]
 					, &filters(0, 0, c, k), filter_w, filter_h
 					, stride_w, stride_h
 					, &out_img(0, 0, k), w, h);
@@ -328,7 +337,7 @@ private:
 		}
 	}
 
-	static void conv_input_delta(const varray &in_img, const varray &delta, nn_int stride_w, nn_int stride_h, varray &dw)
+	static void conv_input_delta(const varray &in_img, varray &cache, const varray &delta, nn_int stride_w, nn_int stride_h, varray &dw)
 	{
 		nn_int in_w = in_img.width();
 		nn_int in_h = in_img.height();
@@ -354,7 +363,7 @@ private:
 		{
 			for (nn_int c = 0; c < d; ++c)
 			{
-				conv_2d(&in_img(0, 0, c), in_w, in_h
+				conv_2d(&in_img(0, 0, c), in_w, in_h, &cache[0]
 					, &delta(0, 0, k), delta_w, delta_h
 					, stride_w, stride_h
 					, &dw(0, 0, c, k), w, h);
@@ -362,7 +371,8 @@ private:
 		}
 	}
 
-	static void conv_delta_w(const varray &delta_cache, nn_int offset_w, nn_int offset_h, const varray &filters, nn_int stride_w, nn_int stride_h, varray &ret)
+	static void conv_delta_w(const varray &delta_cache, nn_int offset_w, nn_int offset_h, varray &cache
+		, const varray &filters, nn_int stride_w, nn_int stride_h, varray &ret)
 	{
 		nn_int delta_w = delta_cache.width();
 		nn_int delta_h = delta_cache.height();
@@ -391,7 +401,7 @@ private:
 		{
 			for (nn_int k = 0; k < filter_count; ++k)
 			{
-				conv_2d<true>(&delta_cache(offset_w, offset_h, k), delta_w, delta_h
+				conv_2d<true>(&delta_cache(offset_w, offset_h, k), delta_w, delta_h, &cache[0]
 					, &filters(0, 0, c, k), filter_w, filter_h
 					, stride_w, stride_h
 					, &ret(0, 0, c), w, h);
@@ -403,13 +413,13 @@ private:
 		common 2d convolution
 	*/
 	template<bool filter_flip = false>
-	static inline void conv_2d(const nn_float *img, nn_int iw, nn_int ih
+	static inline void conv_2d(const nn_float *img, nn_int iw, nn_int ih, nn_float *cache
 		, const nn_float *filter, nn_int fw, nn_int fh
 		, nn_int stride_w, nn_int stride_h
 		, nn_float *out, nn_int ow, nn_int oh)
 	{
 
-		nn_float t0 = get_now_ms();
+		//nn_float t0 = get_now_ms();
 
 		if (!filter_flip)
 		{
@@ -419,17 +429,18 @@ private:
 				{
 					nn_int start_w = i * stride_w;
 					nn_int start_h = j * stride_h;
-					nn_float s = out[i + j * ow];
-					for (nn_int u = 0; u < fw; ++u)
+					nn_int idx = 0;
+					for (nn_int r = 0; r < fh; ++r)
 					{
-						nn_int x = start_w + u;
-						for (nn_int v = 0; v < fh; ++v)
+						nn_int ir = start_h + r;
+						for (nn_int c = 0; c < fw; ++c)
 						{
-							nn_int y = start_h + v;
-							s += img[x + y * iw] * filter[u + v * fw];
+							nn_int ic = start_w + c;
+							cache[idx] = img[ic + ir * iw];
+							++idx;
 						}
 					}
-					out[i + j * ow] = s;
+					out[i + j * ow] += vec_dot(cache, filter, fw * fh);
 				}
 			}
 		}
@@ -441,61 +452,27 @@ private:
 				{
 					nn_int start_w = i * stride_w;
 					nn_int start_h = j * stride_h;
-					nn_float s = out[i + j * ow];
-					for (nn_int u = 0; u < fw; ++u)
+					nn_int idx = 0;
+					for (nn_int r = 0; r < fh; ++r)
 					{
-						nn_int x = start_w - u;
-						for (nn_int v = 0; v < fh; ++v)
+						nn_int ir = start_h - r;
+						for (nn_int c = 0; c < fw; ++c)
 						{
-							nn_int y = start_h - v;
-							s += img[x + y * iw] * filter[u + v * fw];
+							nn_int ic = start_w - c;
+							cache[idx] = img[ic + ir * iw];
+							++idx;
 						}
 					}
-					out[i + j * ow] = s;
+					out[i + j * ow] += vec_dot(cache, filter, fw * fh);
 				}
 			}
 		}
-		nn_float t1 = get_now_ms();
+		//nn_float t1 = get_now_ms();
 
-		g_cost += (t1 - t0) * 0.001f;
-		++g_conv_cnt;
+		//g_cost += (t1 - t0) * 0.001f;
+		//++g_conv_cnt;
 
 	}
-
-	//static inline void conv_2d_flip(const nn_float *img, nn_int iw, nn_int ih
-	//	, const nn_float *filter, nn_int fw, nn_int fh
-	//	, nn_int stride_w, nn_int stride_h
-	//	, nn_float *out, nn_int ow, nn_int oh)
-	//{
-
-	//	nn_float t0 = get_now_ms();
-
-	//	for (nn_int i = 0; i < ow; ++i)
-	//	{
-	//		for (nn_int j = 0; j < oh; ++j)
-	//		{
-	//			nn_int start_w = i * stride_w;
-	//			nn_int start_h = j * stride_h;
-	//			nn_float s = out[i + j * ow];
-	//			for (nn_int u = 0; u < fw; ++u)
-	//			{
-	//				nn_int x = start_w - u;
-	//				for (nn_int v = 0; v < fh; ++v)
-	//				{
-	//					nn_int y = start_h - v;
-	//					s += img[x + y * iw] * filter[u + v * fw];
-	//				}
-	//			}
-	//			out[i + j * ow] = s;
-	//		}
-	//	}
-
-	//	nn_float t1 = get_now_ms();
-
-	//	g_cost += (t1 - t0) * 0.001f;
-	//	++g_conv_cnt;
-
-	//}
 
 };
 }

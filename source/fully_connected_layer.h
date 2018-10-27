@@ -175,17 +175,6 @@ public:
 		}
 	}
 
-private:
-	static inline nn_float vec_dot(const nn_float *nn_restrict v1, const nn_float *nn_restrict v2, nn_int len)
-	{
-		nn_float s = 0;
-		for (nn_int i = 0; i < len; ++i)
-		{
-			s += v1[i] * v2[i];
-		}
-		return s;
-	}
-
 };
 }
 #endif //__FULLY_CONNECTED_LAYER_H__

@@ -105,9 +105,12 @@ inline void sigmoid(const varray &v, varray &retv)
 {
 	nn_int len = v.size();
 	nn_assert(len == retv.size());
+
+	const nn_float * nn_restrict src = &v[0];
+	nn_float * nn_restrict dst = &retv[0];
 	for (nn_int i = 0; i < len; ++i)
 	{
-		retv[i] = cOne / (cOne + exp(-v[i]));
+		dst[i] = cOne / (cOne + exp(-src[i]));
 	}
 }
 
@@ -116,8 +119,8 @@ inline void deriv_sigmoid(const varray &v, varray &retv)
 	nn_int len = v.size();
 	nn_assert(len == retv.size());
 
-	const nn_float * __restrict src = &v[0];
-	nn_float * __restrict dst = &retv[0];
+	const nn_float * nn_restrict src = &v[0];
+	nn_float * nn_restrict dst = &retv[0];
 	for (nn_int i = 0; i < len; ++i)
 	{
 		nn_float t = cOne / (cOne + exp(-src[i]));
@@ -129,9 +132,12 @@ inline void relu(const varray &v, varray &retv)
 {
 	nn_int len = v.size();
 	nn_assert(len == retv.size());
+
+	const nn_float * nn_restrict src = &v[0];
+	nn_float * nn_restrict dst = &retv[0];
 	for (nn_int i = 0; i < len; ++i)
 	{
-		retv[i] = v[i] > 0 ? v[i] : 0;
+		dst[i] = src[i] > 0 ? src[i] : 0;
 	}
 }
 
@@ -139,8 +145,9 @@ inline void deriv_relu(const varray &v, varray &retv)
 {
 	nn_int len = v.size();
 	nn_assert(len == retv.size());
-	const nn_float * __restrict src = &v[0];
-	nn_float * __restrict dst = &retv[0];
+
+	const nn_float * nn_restrict src = &v[0];
+	nn_float * nn_restrict dst = &retv[0];
 	for (nn_int i = 0; i < len; ++i)
 	{
 		dst[i] = src[i] > 0 ? cOne : 0;
@@ -153,21 +160,33 @@ inline void softmax(const varray &v, varray &retv)
 	nn_assert(len == retv.size());
 	nn_int idx = v.arg_max();
 	nn_float maxv = v[idx];
+
+	const nn_float * nn_restrict src = &v[0];
+	nn_float * nn_restrict dst = &retv[0];
 	for (nn_int i = 0; i < len; ++i)
 	{
-		retv[i] = v[i] - maxv;
+		dst[i] = exp(src[i] - maxv);
 	}
 	nn_float s = 0;
 	for (nn_int i = 0; i < len; ++i)
 	{
-		retv[i] = exp(retv[i]);
-		s += retv[i];
+		s += dst[i];
 	}
 	s = (nn_float)(1.0) / s;
 	for (nn_int i = 0; i < len; ++i)
 	{
-		retv[i] *= s;
+		dst[i] *= s;
 	}
+}
+
+inline nn_float vec_dot(const nn_float *nn_restrict v1, const nn_float *nn_restrict v2, nn_int len)
+{
+	nn_float s = 0;
+	for (nn_int i = 0; i < len; ++i)
+	{
+		s += v1[i] * v2[i];
+	}
+	return s;
 }
 
 }

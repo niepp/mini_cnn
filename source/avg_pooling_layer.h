@@ -116,14 +116,14 @@ private:
 					for (nn_int u = 0; u < pool_w; ++u)
 					{
 						nn_int x = start_w + u;
-						if (x < 0 || x >= in_w)
+						if (x >= in_w)
 						{
 							continue;
 						}
 						for (nn_int v = 0; v < pool_h; ++v)
 						{
 							nn_int y = start_h + v;
-							if (y < 0 || y >= in_h)
+							if (y >= in_h)
 							{
 								continue;
 							}
@@ -164,14 +164,14 @@ private:
 					for (nn_int u = 0; u < pool_w; ++u)
 					{
 						nn_int x = start_w + u;
-						if (x < 0 || x >= w)
+						if (x >= w)
 						{
 							continue;
 						}
 						for (nn_int v = 0; v < pool_h; ++v)
 						{
 							nn_int y = start_h + v;
-							if (y < 0 || y >= h)
+							if (y >= h)
 							{
 								continue;
 							}
