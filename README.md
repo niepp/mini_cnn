@@ -24,7 +24,7 @@
 	- mean squared error
 - optimization algorithms
 	- stochastic gradient descent
-### todo list
+### Todo list
 	- fast convolution(gemm, winograd)
 	- train on gpu
 	- batch normalization
@@ -62,13 +62,11 @@ int main()
 
 	std::string relate_data_path = "../../dataset/mnist/";
 	mnist_dataset_parser mnist(relate_data_path, "train-images.idx3-ubyte", "train-labels.idx1-ubyte"
-								, "t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte");
+		, "t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte");
 	mnist.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
-	uint_t t0 = get_now();
-
 	// random init
-	uint_t seed = t0;
+	nn_int seed = (nn_int)get_now_ms();
 	seed = 2572007265;	// fixed seed to repeat test
 	cout << "random seed:" << seed << endl;
 	std::mt19937_64 generator(seed);
@@ -78,32 +76,49 @@ int main()
 
 	cout << "total paramters count:" << nn.paramters_count() << endl;
 
+	progress_bar train_progress_bar;
+	train_progress_bar.begin();
+
 	//truncated_normal_initializer initializer(generator, 0, 0.1, 2);
 	he_normal_initializer initializer(generator);
 
 	nn.init_all_weight(initializer);
 
-	double learning_rate = 0.1;
-	int epoch = 20;
+	float learning_rate = 0.1f;
+	int epoch = 10;
 	int batch_size = 10;
+	nn_int nthreads = std::thread::hardware_concurrency();
 
-	auto epoch_callback = [](int_t c, mini_cnn::float_t cur_accuracy, mini_cnn::float_t tot_cost) {
-		std::cout << "epoch " << c << ": " << cur_accuracy << "  tot_cost = " << tot_cost << std::endl;
+	auto epoch_callback = [&train_progress_bar](nn_int c, nn_int epoch, nn_float cur_accuracy, nn_float tot_cost, nn_float elapse)
+	{
+		std::cout << "epoch " << c << "/" << epoch << "  accuracy: " << cur_accuracy << "  tot_cost: " << tot_cost << "  train elapse: " << elapse << "(s)" << std::endl;
+		if (c < epoch)
+		{
+			train_progress_bar.begin();
+		}
 	};
 
-	auto max_accuracy = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, generator, epoch, batch_size, learning_rate, epoch_callback);
+	auto minibatch_callback = [&train_progress_bar](nn_int cur_size, nn_int img_count)
+	{
+		train_progress_bar.grow(cur_size * 1.0f / img_count);
+	};
+
+	nn_float t0 = get_now_ms();
+
+	nn_float max_accuracy = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, generator, epoch, batch_size, learning_rate, nthreads, minibatch_callback, epoch_callback);
 
 	cout << "max_accuracy: " << max_accuracy << endl;
 
-	uint_t t1 = get_now();
+	nn_float t1 = get_now_ms();
 
-	float timeCost = (t1 - t0) * 0.001f;
+	nn_float timeCost = (t1 - t0) * 0.001f;
 	cout << "TimeCost: " << timeCost << "(s)" << endl;
 
 	system("pause");
 	return 0;
 
 }
+
 ```
 ## Result</br>
 
