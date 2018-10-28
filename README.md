@@ -89,9 +89,13 @@ int main()
 	int batch_size = 10;
 	nn_int nthreads = std::thread::hardware_concurrency();
 
-	auto epoch_callback = [&train_progress_bar](nn_int c, nn_int epoch, nn_float cur_accuracy, nn_float tot_cost, nn_float elapse)
+	auto epoch_callback = [&train_progress_bar](nn_int c, nn_int epoch, nn_float cur_accuracy, nn_float tot_cost, nn_float train_elapse, nn_float test_elapse)
 	{
-		std::cout << "epoch " << c << "/" << epoch << "  accuracy: " << cur_accuracy << "  tot_cost: " << tot_cost << "  train elapse: " << elapse << "(s)" << std::endl;
+		std::cout << "epoch " << c << "/" << epoch 
+			<< "  accuracy: " << cur_accuracy
+			<< "  tot_cost: " << tot_cost 
+			<< "  train elapse: " << train_elapse << "(s)" 
+			<< "  test elapse: " << test_elapse << "(s)" << std::endl;
 		if (c < epoch)
 		{
 			train_progress_bar.begin();
@@ -110,7 +114,6 @@ int main()
 	cout << "max_accuracy: " << max_accuracy << endl;
 
 	nn_float t1 = get_now_ms();
-
 	nn_float timeCost = (t1 - t0) * 0.001f;
 	cout << "TimeCost: " << timeCost << "(s)" << endl;
 
@@ -136,7 +139,28 @@ int main()
 	   |
 	log-likelihood softmax 10
 ```
-accuracy is about 98.8 
+total paramters count:1668490</br>
+0%   10   20   30   40   50   60   70   80   90   100%</br>
+|----|----|----|----|----|----|----|----|----|----|</br>
+**************************************************</br>
+epoch 1/10  accuracy: 0.9873  tot_cost: 0.0317854  train elapse: 1572.86(s)  test elapse: 786.432(s)</br>
+0%   10   20   30   40   50   60   70   80   90   100%</br>
+|----|----|----|----|----|----|----|----|----|----|</br>
+**************************************************</br>
+epoch 2/10  accuracy: 0.9873  tot_cost: 0.0266996  train elapse: 1572.86(s)  test elapse: 786.432(s)</br>
+0%   10   20   30   40   50   60   70   80   90   100%</br>
+|----|----|----|----|----|----|----|----|----|----|</br>
+**************************************************</br>
+epoch 3/10  accuracy: 0.9907  tot_cost: 0.0108913  train elapse: 1572.86(s)  test elapse: 786.432(s)</br>
+0%   10   20   30   40   50   60   70   80   90   100%</br>
+|----|----|----|----|----|----|----|----|----|----|</br>
+**************************************************</br>
+epoch 4/10  accuracy: 0.9857  tot_cost: 0.0251474  train elapse: 1572.86(s)  test elapse: 786.432(s)</br>
+0%   10   20   30   40   50   60   70   80   90   100%</br>
+|----|----|----|----|----|----|----|----|----|----|</br>
+**************************************************</br>
+epoch 5/10  accuracy: 0.9889  tot_cost: 0.00822667  train elapse: 1572.86(s)  test elapse: 786.432(s)</br>
+
 
 ## References</br>
 [1]  [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
