@@ -80,7 +80,7 @@ public:
 	nn_float SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const index_vec &test_lab_vec
 		, std::mt19937_64 generator, nn_int epoch, nn_int batch_size, nn_float learning_rate, nn_int nthreads
 		, std::function<void(nn_int, nn_int)> minibatch_callback
-		, std::function<void(nn_int, nn_int, nn_float, nn_float, nn_float)> epoch_callback)
+		, std::function<void(nn_int, nn_int, nn_float, nn_float, nn_float, nn_float)> epoch_callback)
 	{
 		set_task_count(nthreads);
 
@@ -112,13 +112,15 @@ public:
 				train_one_batch(batch_img_vec, batch_label_vec, learning_rate, nthreads);
 				minibatch_callback((i + 1) * batch_size, img_count);
 			}
-			nn_float tend = get_now_ms();
-			nn_float elapse = (tend - tstart) * 0.001f;
+			nn_float train_end = get_now_ms();
+			nn_float train_elapse = (train_end - tstart) * 0.001f;
 			nn_int correct = test(test_img_vec, test_lab_vec, nthreads);
 			nn_float cur_accuracy = (1.0f * correct / test_img_count);
 			max_accuracy = std::max(max_accuracy, cur_accuracy);
 			nn_float tot_cost = get_cost(img_vec, lab_vec, nthreads);
-			epoch_callback(c + 1, epoch, cur_accuracy, tot_cost, elapse);
+			nn_float test_end = get_now_ms();
+			nn_float test_elapse = (test_end - train_end) * 0.001f;
+			epoch_callback(c + 1, epoch, cur_accuracy, tot_cost, train_elapse, test_elapse);
 		}
 		return max_accuracy;
 	}
@@ -201,7 +203,7 @@ public:
 		return tot_cost;
 	}
 
-	bool gradient_check(const varray &test_img, const varray &test_lab, nn_float precision = 1e-4)
+	bool gradient_check(const varray &test_img, const varray &test_lab)
 	{
 		nn_assert(!m_layers.empty());
 
@@ -216,7 +218,7 @@ public:
 			nn_int w_sz = w.size();
 			for (nn_int i = 0; i < w_sz; ++i)
 			{
-				if (!calc_gradient(test_img, test_lab, w[i], dw[i], precision))
+				if (!calc_gradient(test_img, test_lab, w[i], dw[i]))
 				{
 					check_ok = false;
 				}
@@ -227,7 +229,7 @@ public:
 			nn_int b_sz = b.size();
 			for (nn_int i = 0; i < b_sz; ++i)
 			{
-				if (!calc_gradient(test_img, test_lab, b[i], db[i], precision))
+				if (!calc_gradient(test_img, test_lab, b[i], db[i]))
 				{
 					check_ok = false;
 				}
@@ -299,9 +301,10 @@ private:
 		return cost;
 	}
 
-	bool calc_gradient(const varray &test_img, const varray &test_lab, nn_float &w, nn_float &dw, nn_float precision)
+	bool calc_gradient(const varray &test_img, const varray &test_lab, nn_float &w, nn_float &dw)
 	{
 		static const nn_float EPSILON = 1e-6f;
+		static const nn_float Precision = 1e-4f;
 
 		clear_all_grident();
 
@@ -328,7 +331,7 @@ private:
 		}
 
 		nn_float absError = std::abs(delta_by_bprop - delta_by_numerical);
-		bool correct = absError <= precision;
+		bool correct = absError <= Precision;
 		if (!correct)
 		{
 			std::cout << "bprop:" << delta_by_bprop << "\tnumerical:" << delta_by_numerical << std::endl;

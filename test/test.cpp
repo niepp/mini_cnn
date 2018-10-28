@@ -6,10 +6,12 @@
 namespace mini_cnn
 {
 
+// gradient checker need high percise
+//	typedef double nn_float;
+
 class gradient_checker
 {
 private:
-	const nn_float cPrecision = 1e-4f;
 	const nn_int cInput_w = 18;
 	const nn_int cInput_h = 18;
 	const nn_int cInput_d = 1;
@@ -18,7 +20,7 @@ private:
 
 public:
 #define TEST_GRADIENT(model)\
-	std::cout << std::setw(30) << std::setiosflags(std::ios::left) << #model << "\t" << std::boolalpha << test_nn_gradient_check(model(), generator, input, label, cPrecision) << std::endl;
+	std::cout << std::setw(30) << std::setiosflags(std::ios::left) << #model << "\t" << std::boolalpha << test_nn_gradient_check(model(), generator, input, label) << std::endl;
 
 	gradient_checker()
 	{
@@ -68,6 +70,13 @@ public:
 	}
 
 private:
+	bool test_nn_gradient_check(network &nn, std::mt19937_64 generator, varray *input, varray *label)
+	{
+		truncated_normal_initializer initializer(generator, 0, 0.1f, 2);
+		nn.init_all_weight(initializer);
+		return nn.gradient_check(*input, *label);
+	}
+
 	network create_fcn_sigmod_mse()
 	{
 		network nn;
@@ -230,12 +239,6 @@ private:
 		return nn;
 	}
 
-	bool test_nn_gradient_check(network &nn, std::mt19937_64 generator, varray *input, varray *label, nn_float precision = 1e-4)
-	{
-		truncated_normal_initializer initializer(generator, 0, 0.1f, 2);
-		nn.init_all_weight(initializer);
-		return nn.gradient_check(*input, *label, precision);
-	}
 };
 
 }

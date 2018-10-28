@@ -158,6 +158,10 @@ public:
 	{
 		nn_int b_sz = m_b.size();
 		nn_int w_sz = m_w.size();
+		if (b_sz == 0 || w_sz == 0)
+		{
+			return;
+		}
 
 		// merge weights from all task
 		nn_int task_count = (nn_int)m_task_storage.size();

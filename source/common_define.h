@@ -10,7 +10,7 @@ namespace mini_cnn
 	typedef int					nn_int;
 	typedef unsigned int		nn_uint;
 
-	typedef double				nn_float;
+	typedef float				nn_float;
 
 	typedef std::vector<nn_int>	index_vec;
 

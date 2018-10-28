@@ -124,11 +124,15 @@ int main()
 	int epoch = 10;
 	int batch_size = 10;
 	nn_int nthreads = std::thread::hardware_concurrency();
-	//nthreads = 1;
+	nthreads = 12;
 
-	auto epoch_callback = [&train_progress_bar](nn_int c, nn_int epoch, nn_float cur_accuracy, nn_float tot_cost, nn_float elapse)
+	auto epoch_callback = [&train_progress_bar](nn_int c, nn_int epoch, nn_float cur_accuracy, nn_float tot_cost, nn_float train_elapse, nn_float test_elapse)
 	{
-		std::cout << "epoch " << c << "/" << epoch << "  accuracy: " << cur_accuracy << "  tot_cost: " << tot_cost << "  train elapse: " << elapse << "(s)" << std::endl;
+		std::cout << "epoch " << c << "/" << epoch 
+			<< "  accuracy: " << cur_accuracy
+			<< "  tot_cost: " << tot_cost 
+			<< "  train elapse: " << train_elapse << "(s)" 
+			<< "  test elapse: " << test_elapse << "(s)" << std::endl;
 		if (c < epoch)
 		{
 			train_progress_bar.begin();
