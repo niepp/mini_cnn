@@ -1,57 +1,6 @@
 #ifndef __CONVOLUTIONAL_LAYER_H__
 #define __CONVOLUTIONAL_LAYER_H__
 
-#include <map>
-
-struct  Cost
-{
-	int cnt;
-	float cost;
-};
-
-struct Shape
-{
-	int iw, ih;
-	int fw, fh;
-	int ow, oh;
-	bool operator<(const Shape &other) const
-	{
-		if (iw == other.iw)
-		{
-			if (ih == other.ih)
-			{
-				if (fw == other.fw)
-				{
-					if (fh == other.fh)
-					{
-						return ow < other.ow;
-					}
-					else
-					{
-						return fh < other.fh;
-					}
-				}
-				else
-				{
-					return fw < other.fw;
-				}
-			}
-			else
-			{
-				return ih < other.ih;
-			}
-		}
-		else
-		{
-			return iw < other.iw;
-		}
-	}
-};
-
-std::map<Shape, Cost> g_shape_map;
-int g_conv_cnt = 0;
-float g_cost = 0;
-
 namespace mini_cnn 
 {
 
@@ -419,8 +368,6 @@ private:
 		, nn_float *out, nn_int ow, nn_int oh)
 	{
 
-		//nn_float t0 = get_now_ms();
-
 		if (!filter_flip)
 		{
 			for (nn_int i = 0; i < ow; ++i)
@@ -467,10 +414,6 @@ private:
 				}
 			}
 		}
-		//nn_float t1 = get_now_ms();
-
-		//g_cost += (t1 - t0) * 0.001f;
-		//++g_conv_cnt;
 
 	}
 

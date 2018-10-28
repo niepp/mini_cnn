@@ -155,14 +155,6 @@ int main()
 	nn_float timeCost = (t1 - t0) * 0.001f;
 	cout << "TimeCost: " << timeCost << "(s)" << endl;
 
-	cout << "g_cost: " << g_cost << "(s)" << endl;
-	cout << "g_conv_cnt: " << g_conv_cnt << endl;
-	for (auto &p : g_shape_map)
-	{
-		auto s = p.first;
-		cout << s.iw << ", " << s.ih << "\n" << s.fw << ", " << s.fh << "\n" << s.ow << ", " << s.oh << "\n--------" << p.second.cnt << "\t" << p.second.cost << "--------\n" << endl;
-	}
-
 	system("pause");
 	return 0;
 
