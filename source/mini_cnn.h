@@ -4,6 +4,7 @@
 #include "common_define.h"
 #include "varray.h"
 #include "utils.h"
+#include "fast_matrix_operation.h"
 #include "layer.h"
 #include "fully_connected_layer.h"
 #include "input_layer.h"

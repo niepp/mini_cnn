@@ -120,7 +120,7 @@ inline void _varray<T>::_create(nn_int w, nn_int h, nn_int d, nn_int n)
 	m_h = h;
 	m_d = d;
 	m_n = n;
-	m_data = (T*)align_malloc(w * h * d * n * sizeof(T));
+	m_data = (T*)align_malloc(w * h * d * n * sizeof(T), nn_align_size);
 	this->make_zero();
 }
 
@@ -178,7 +178,7 @@ template <class T>
 inline _varray<T>::_varray(const _varray<T> &other) : m_w(other.m_w), m_h(other.m_h), m_d(other.m_d), m_n(other.m_n)
 {
 	nn_int len = other.m_w * other.m_h * other.m_d * other.m_n;
-	m_data = (T*)align_malloc(len * sizeof(T));
+	m_data = (T*)align_malloc(len * sizeof(T), nn_align_size);
 	::memcpy(m_data, other.m_data, len * sizeof(T));
 }
 
@@ -201,7 +201,7 @@ inline _varray<T>& _varray<T>::operator=(const _varray<T> &other)
 	m_d = other.m_d;
 	m_n = other.m_n;
 	nn_int len = m_w * m_h * m_d * m_n;
-	m_data = (T*)align_malloc(len * sizeof(T));
+	m_data = (T*)align_malloc(len * sizeof(T), nn_align_size);
 	::memcpy(m_data, other.m_data, len * sizeof(T));
 	return *this;
 }

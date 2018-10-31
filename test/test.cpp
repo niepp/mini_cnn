@@ -1,13 +1,11 @@
 #include <iostream>
 #include <iomanip>
 
+#define GRADIENT_CHECKER
 #include "../source/mini_cnn.h"
 
 namespace mini_cnn
 {
-
-// gradient checker need high percise
-//	typedef double nn_float;
 
 class gradient_checker
 {
@@ -24,8 +22,7 @@ public:
 
 	gradient_checker()
 	{
-		nn_int seed = (nn_int)get_now_ms();
-		seed = 2572007265;
+		auto seed = get_now_ms();
 		std::mt19937_64 generator(seed);
 		uniform_random uRand(generator, 0, 1.0);
 
@@ -62,11 +59,11 @@ public:
 		TEST_GRADIENT(create_cnn_relu_mse);
 
 		TEST_GRADIENT(create_cnn_relu_softmax);
-		
+
 		TEST_GRADIENT(create_cnn_relu_softmax_max_pool);
 
 		TEST_GRADIENT(create_cnn_relu_softmax_avg_pool);
-		
+
 	}
 
 private:
@@ -108,6 +105,7 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_n));
+		nn.add_layer(new fully_connected_layer(100, activation_type::eRelu));
 		nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 		return nn;

@@ -158,7 +158,7 @@ public:
 		nn_int out_sz = next_wd.size();
 
 		/*
-			delta = next_wd element-wise multiplication df(z)
+			delta := next_wd กั df(z)
 		*/
 		m_df(ts.m_z, ts.m_delta);
 
@@ -170,13 +170,13 @@ public:
 		}
 
 		/*
-			dw_k = conv2d(input_d, delta_k)
+			dw_k := conv2d(input_d, delta_k)
 		*/
 		varray &cache = m_conv_task_storage[task_idx].m_mem_cache;
 		conv_input_delta(input, cache, ts.m_delta, m_stride_w, m_stride_h, ts.m_dw);
 
 		/*
-			db_k = sum(delta_k)
+			db_k := sum(delta_k)
 		*/
 		for (nn_int k = 0; k < m_filter_count; ++k)
 		{
@@ -193,7 +193,7 @@ public:
 		}
 
 		/*
-			wd = conv(delta, w)
+			wd := conv(delta, w)
 		*/
 		nn_int out_w = m_out_shape.m_w;
 		nn_int out_h = m_out_shape.m_h;

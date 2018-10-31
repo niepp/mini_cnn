@@ -144,16 +144,16 @@ int main()
 		train_progress_bar.grow(cur_size * 1.0f / img_count);
 	};
 
-	nn_float t0 = get_now_ms();
+	auto t0 = get_now_ms();
 
 	nn_float max_accuracy = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, generator, epoch, batch_size, learning_rate, nthreads, minibatch_callback, epoch_callback);
 
 	cout << "max_accuracy: " << max_accuracy << endl;
 
-	nn_float t1 = get_now_ms();
+	auto t1 = get_now_ms();
 
 	nn_float timeCost = (t1 - t0) * 0.001f;
-	cout << "TimeCost: " << timeCost << "(s)" << endl;
+	cout << "time_cost: " << timeCost << "(s)" << endl;
 
 	system("pause");
 	return 0;

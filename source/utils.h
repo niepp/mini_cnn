@@ -59,12 +59,10 @@ public:
 
 };
 
-inline nn_float get_now_ms()
+inline long long get_now_ms()
 {
 	auto tp_now = std::chrono::high_resolution_clock::now();
-	auto ms_now = std::chrono::time_point_cast<std::chrono::milliseconds>(tp_now);
-	auto t_now = ms_now.time_since_epoch();
-	return static_cast<nn_float>(t_now.count());
+	return std::chrono::duration_cast<std::chrono::milliseconds>(tp_now.time_since_epoch()).count();
 }
 
 inline bool f_is_valid(nn_float f)
@@ -77,14 +75,14 @@ inline unsigned char* align_address(size_t address, int align_size)
 	return (unsigned char*)((address + align_size - 1) & (-align_size));
 }
 
-inline void* align_malloc(nn_int size)
+inline void* align_malloc(size_t size, int align_size)
 {
-	unsigned char* mptr = (unsigned char*)::malloc(size + sizeof(void*) + nn_align_size);
+	unsigned char* mptr = (unsigned char*)::malloc(size + sizeof(void*) + align_size);
 	if (!mptr)
 	{
 		return nullptr;
 	}
-	unsigned char* aptr = align_address((size_t)mptr + sizeof(void*), nn_align_size);
+	unsigned char* aptr = align_address((size_t)mptr + sizeof(void*), align_size);
 	unsigned char**p = (unsigned char**)((size_t)aptr - sizeof(void*));
 	*p = mptr;
 	return aptr;
@@ -177,16 +175,6 @@ inline void softmax(const varray &v, varray &retv)
 	{
 		dst[i] *= s;
 	}
-}
-
-inline nn_float vec_dot(const nn_float *nn_restrict v1, const nn_float *nn_restrict v2, nn_int len)
-{
-	nn_float s = 0;
-	for (nn_int i = 0; i < len; ++i)
-	{
-		s += v1[i] * v2[i];
-	}
-	return s;
 }
 
 }

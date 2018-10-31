@@ -97,7 +97,7 @@ public:
 
 		for (nn_int c = 0; c < epoch; ++c)
 		{
-			nn_float tstart = get_now_ms();
+			auto tstart = get_now_ms();
 			std::shuffle(idx_vec.begin(), idx_vec.end(), generator);
 			varray_vec batch_img_vec(batch_size);
 			varray_vec batch_label_vec(batch_size);
@@ -112,13 +112,13 @@ public:
 				train_one_batch(batch_img_vec, batch_label_vec, learning_rate, nthreads);
 				minibatch_callback((i + 1) * batch_size, img_count);
 			}
-			nn_float train_end = get_now_ms();
+			auto train_end = get_now_ms();
 			nn_float train_elapse = (train_end - tstart) * 0.001f;
 			nn_int correct = test(test_img_vec, test_lab_vec, nthreads);
 			nn_float cur_accuracy = (1.0f * correct / test_img_count);
 			max_accuracy = std::max(max_accuracy, cur_accuracy);
 			nn_float tot_cost = get_cost(img_vec, lab_vec, nthreads);
-			nn_float test_end = get_now_ms();
+			auto test_end = get_now_ms();
 			nn_float test_elapse = (test_end - train_end) * 0.001f;
 			epoch_callback(c + 1, epoch, cur_accuracy, tot_cost, train_elapse, test_elapse);
 		}

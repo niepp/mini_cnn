@@ -14,6 +14,7 @@
     <ClInclude Include="..\source\avg_pooling_layer.h" />
     <ClInclude Include="..\source\common_define.h" />
     <ClInclude Include="..\source\convolutional_layer.h" />
+    <ClInclude Include="..\source\fast_matrix_operation.h" />
     <ClInclude Include="..\source\fully_connected_layer.h" />
     <ClInclude Include="..\source\input_layer.h" />
     <ClInclude Include="..\source\layer.h" />
@@ -71,6 +72,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)/../thirdparty/eigen_3.3.5/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -95,6 +97,7 @@
       <AdditionalOptions>/Qvec-report:2 %(AdditionalOptions)</AdditionalOptions>
       <OpenMPSupport>
       </OpenMPSupport>
+      <AdditionalIncludeDirectories>$(SolutionDir)/../thirdparty/eigen_3.3.5/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

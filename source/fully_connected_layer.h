@@ -9,7 +9,6 @@ protected:
 	nn_int m_neural_count;
 	active_func m_f;
 	active_func m_df;
-	varray m_tw;  // transpose of m_w
 
 public:
 	fully_connected_layer(nn_int neural_count, activation_type ac_type)
@@ -51,7 +50,6 @@ public:
 		m_out_shape.set(m_neural_count, 1, 1);
 		m_b.resize(out_size());
 		m_w.resize(m_prev->out_size(), out_size());
-		m_tw.resize(out_size(), m_prev->out_size());
 	}
 
 	virtual void set_task_count(nn_int task_count)
@@ -92,11 +90,12 @@ public:
 
 		nn_assert(ts.m_z.width() == height);
 
-		for (nn_int i = 0; i < height; ++i)
-		{
-			nn_float dot = vec_dot(&m_w(0, i), &input[0], width);
-			ts.m_z(i) = dot + m_b(i);
-		}
+		// z = w * input + b
+		fo_mvv_v(&m_w[0], width, height
+			, (nn_float*)&input[0]
+			, &m_b[0]
+			, &ts.m_z[0]);
+
 		m_f(ts.m_z, ts.m_x);
 
 		if (m_next != nullptr)
@@ -120,6 +119,9 @@ public:
 		nn_assert(in_sz == m_w.width());
 		nn_assert(out_sz == m_w.height());
 
+		/*
+			prev delta := w * delta กั df(z)
+		*/
 		m_df(ts.m_z, ts.m_delta);
 
 		const nn_float *nn_restrict vec_next_wd = &next_wd[0];
@@ -130,49 +132,28 @@ public:
 		}
 
 		/*
-			dw = db * input
+			dw := db * input
 		*/
 		nn_float *nn_restrict vec_db = &ts.m_db[0];
 		for (nn_int i = 0; i < out_sz; ++i)
 		{
-			vec_db[i] += vec_delta[i];
+			vec_db[i] = vec_delta[i];
 		}
-		for (nn_int i = 0; i < out_sz; ++i)
-		{
-			nn_float *nn_restrict vec_dw_i = &ts.m_dw(0, i);
-			const nn_float *nn_restrict vec_input = &input[0];
-			for (nn_int j = 0; j < in_sz; ++j)
-			{
-				vec_dw_i[j] = vec_delta[i] * vec_input[j];
-			}
-		}
+
+		fo_vv_m(vec_delta, out_sz
+			, (nn_float*)&input[0], in_sz
+			, &ts.m_dw[0]);
 
 		/*
 			m_w : out_sz X in_sz
-			wd = w * delta
+			wd := w.transpose * delta
 		*/
-		for (nn_int i = 0; i < in_sz; ++i)
-		{
-			ts.m_wd[i] = vec_dot(&m_tw(0, i), vec_delta, out_sz);
-		}
+		fo_mtv_v(&m_w[0], in_sz, out_sz
+			, vec_delta
+			, &ts.m_wd[0]);
 
 		m_prev->back_prop(ts.m_wd, task_idx);
 
-	}
-
-	virtual void update_weights(nn_float eff)
-	{
-		layer_base::update_weights(eff);
-
-		nn_int out_sz = m_tw.width();
-		nn_int in_sz = m_tw.height();
-		for (nn_int i = 0; i < out_sz; ++i)
-		{
-			for (nn_int j = 0; j < in_sz; ++j)
-			{
-				m_tw(i, j) = m_w(j, i);
-			}
-		}
 	}
 
 };

@@ -10,7 +10,12 @@ namespace mini_cnn
 	typedef int					nn_int;
 	typedef unsigned int		nn_uint;
 
+// gradient checker need high percise
+#ifdef GRADIENT_CHECKER
+	typedef double				nn_float;
+#else
 	typedef float				nn_float;
+#endif
 
 	typedef std::vector<nn_int>	index_vec;
 
