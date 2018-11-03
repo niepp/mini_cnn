@@ -8,6 +8,7 @@ namespace mini_cnn
 
 /*
 	n(<=4) dimension array
+	row major in w * h 
 	w * h * c * n
 
 	************* --------

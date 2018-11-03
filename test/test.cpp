@@ -46,6 +46,8 @@ public:
 
 		TEST_GRADIENT(create_cnn_sigmod);
 
+		TEST_GRADIENT(create_cnn_stride_2x2_sigmod);
+
 		TEST_GRADIENT(create_cnn_sigmod_softmax);
 
 		TEST_GRADIENT(create_cnn_sigmod_softmax_max_pool);
@@ -130,12 +132,22 @@ private:
 		return nn;
 	}
 
+	network create_cnn_stride_2x2_sigmod()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 2, 2, padding_type::eValid, activation_type::eSigmod));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 8, 2, 2, padding_type::eValid, activation_type::eSigmod));
+		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eMSE, activation_type::eSigmod));
+		return nn;
+	}
+
 	network create_cnn_sigmod_softmax()
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
 		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eValid, activation_type::eSigmod));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, padding_type::eValid, activation_type::eSigmod));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 8, 1, 1, padding_type::eValid, activation_type::eSigmod));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 		return nn;
 	}
