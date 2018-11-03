@@ -382,6 +382,20 @@ private:
 		}
 	}
 
+	static bool is_pad(nn_int a, nn_int stride, nn_int size)
+	{
+		if ((a % stride) != 0)
+		{
+			return true;
+		}
+		nn_int dr = a / stride;
+		if (dr < 0 || dr >= size)
+		{
+			return true;
+		}
+		return false;
+	}
+
 	static void conv_delta_w(const varray &delta, mem_block &block
 		, const varray &filters, nn_int stride_w, nn_int stride_h, varray &ret)
 	{
@@ -408,6 +422,10 @@ private:
 
 		ret.make_zero();
 
+		/*
+			delta(u, v) = sum_i_j( delta(i, j) * w(u - stride_w * i, v - stride_h * j) )
+		*/
+
 		for (nn_int c = 0; c < d; ++c)
 		{
 			nn_float *ret_c = &ret(0, 0, c);
@@ -421,38 +439,18 @@ private:
 					for (nn_int v = 0; v < h; ++v)
 					{
 						nn_int idx = 0;
-
-						nn_int ibegin = static_cast<nn_int>(::ceil(1.0f * (u - filter_w + 1) / stride_w));
-						nn_int iend = static_cast<nn_int>(::floor(1.0f * u / stride_w));
-						ibegin = std::max(0, ibegin);
-						iend = std::min(delta_w - 1, iend);
-
-						nn_int jbegin = static_cast<nn_int>(::ceil(1.0f * (v - filter_h + 1) / stride_h));
-						nn_int jend = static_cast<nn_int>(::floor(1.0f * v / stride_h));
-						jbegin = std::max(0, jbegin);
-						jend = std::min(delta_h - 1, jend);
-
-						nn_float dot = 0;
-
-						for (nn_int i = ibegin; i <= iend; ++i)
+						for (nn_int i = 0; i < filter_h; ++i)
 						{
-							nn_int ic = u - i * stride_w;
-							for (nn_int j = jbegin; j <= jend; ++j)
+							for (nn_int j = 0; j < filter_w; ++j)
 							{
-								nn_int ir = v - j * stride_h;
-								nn_assert(ir >= 0 && ir < filter_h && ic >= 0 && ic < filter_w);
-
-								dot += filter_c_k[ic + ir * filter_w] * delta_k[i + j * delta_w];
-								//block.data[idx] = filter_c_k[ic + ir * filter_w];
-								//++idx;
+								nn_int dc = (u - j) / stride_w;
+								nn_int dr = (v - i) / stride_h;
+								block.data[idx] = is_pad(u - j, stride_w, delta_w) || is_pad(v - i, stride_h, delta_h)
+									? 0 : delta_k[dc + dr * delta_w];
+								++idx;
 							}
 						}
-						if (idx > filter_w * filter_h)
-						{
-							int kkk = 0;
-						}
-						ret_c[u + v * w] += dot;
-						//ret_c[u + v * w] += vec_dot(block.data, delta_k, delta_w * delta_h);
+						ret_c[u + v * w] += vec_dot(block.data, filter_c_k, filter_w * filter_h);
 					}
 				}
 
