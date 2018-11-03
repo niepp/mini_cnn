@@ -119,7 +119,20 @@ namespace mini_cnn
 	// gemm (general matrix multiply matrix) 
 	// m1: h1 X w1
 	// m2: h2 X w2
-	static inline void ge_mm(float *m1, int w1, int h1
+	static inline void gemm(double *m1, int w1, int h1
+		, double *m2, int w2, int h2
+		, double *m, int w, int h)
+	{
+		nn_assert(w1 == h2);
+		nn_assert(h1 == h && w2 == w);
+		eigenMat_d_row_a32 _m1(m1, h1, w1);
+		eigenMat_d_row_a32 _m2(m2, h2, w2);
+		eigenMat_d_row_a32 _m(m, h, w);
+		_m += _m1 * _m2;
+		m = _m.data();
+	}
+
+	static inline void gemm(float *m1, int w1, int h1
 		, float *m2, int w2, int h2
 		, float *m, int w, int h)
 	{
@@ -128,7 +141,7 @@ namespace mini_cnn
 		eigenMat_f_row_a32 _m1(m1, h1, w1);
 		eigenMat_f_row_a32 _m2(m2, h2, w2);
 		eigenMat_f_row_a32 _m(m, h, w);
-		_m = _m1 * _m2;
+		_m += _m1 * _m2;
 		m = _m.data();
 	}
 

@@ -291,6 +291,36 @@ private:
 		}
 	}
 
+	static inline void img2row(const nn_float *img, nn_int iw, nn_int ih
+		, nn_int fw, nn_int fh
+		, nn_int stride_w, nn_int stride_h
+		, nn_int ow, nn_int oh
+		, mem_block &block)
+	{
+		block.w = fw * fh;
+		block.h = ow * oh;
+		nn_float *prow = block.data;
+		for (nn_int i = 0; i < oh; ++i)
+		{
+			for (nn_int j = 0; j < ow; ++j)
+			{
+				nn_int start_h = i * stride_h;
+				nn_int start_w = j * stride_w;
+				for (nn_int r = 0; r < fh; ++r)
+				{
+					nn_int ir = start_h + r;
+					for (nn_int c = 0; c < fw; ++c)
+					{
+						nn_int ic = start_w + c;
+						prow[c + r * fw] = img[ic + ir * iw];
+					}
+				}
+				prow += fw * fh;
+			}
+		}
+
+	}
+
 	static void conv_input_w(const varray &in_img, mem_block &block, const varray &filters, nn_int stride_w, nn_int stride_h, varray &out_img)
 	{
 		nn_int in_w = in_img.width();
@@ -319,10 +349,17 @@ private:
 		{
 			for (nn_int c = 0; c < in_d; ++c)
 			{
-				conv_2d(&in_img(0, 0, c), in_w, in_h, block.data
-					, &filters(0, 0, c, k), filter_w, filter_h
-					, stride_w, stride_h
-					, &out_img(0, 0, k), w, h);
+				//conv_2d(&in_img(0, 0, c), in_w, in_h, block.data
+				//	, &filters(0, 0, c, k), filter_w, filter_h
+				//	, stride_w, stride_h
+				//	, &out_img(0, 0, k), w, h);
+
+				img2row(&in_img(0, 0, c), in_w, in_h, filter_w, filter_h, stride_w, stride_h, w, h, block);
+
+				gemm(block.data, block.w, block.h
+					, (nn_float*)&filters(0, 0, c, k), 1, filter_w * filter_h
+					, &out_img(0, 0, k), 1, w * h);
+
 			}
 		}
 	}
@@ -461,57 +498,29 @@ private:
 	/*
 		common 2d convolution
 	*/
-	template<bool filter_flip = false>
 	static inline void conv_2d(const nn_float *img, nn_int iw, nn_int ih, nn_float *cache
 		, const nn_float *filter, nn_int fw, nn_int fh
 		, nn_int stride_w, nn_int stride_h
 		, nn_float *out, nn_int ow, nn_int oh)
 	{
-
-		if (!filter_flip)
+		for (nn_int i = 0; i < ow; ++i)
 		{
-			for (nn_int i = 0; i < ow; ++i)
+			for (nn_int j = 0; j < oh; ++j)
 			{
-				for (nn_int j = 0; j < oh; ++j)
+				nn_int start_w = i * stride_w;
+				nn_int start_h = j * stride_h;
+				nn_int idx = 0;
+				for (nn_int r = 0; r < fh; ++r)
 				{
-					nn_int start_w = i * stride_w;
-					nn_int start_h = j * stride_h;
-					nn_int idx = 0;
-					for (nn_int r = 0; r < fh; ++r)
+					nn_int ir = start_h + r;
+					for (nn_int c = 0; c < fw; ++c)
 					{
-						nn_int ir = start_h + r;
-						for (nn_int c = 0; c < fw; ++c)
-						{
-							nn_int ic = start_w + c;
-							cache[idx] = img[ic + ir * iw];
-							++idx;
-						}
+						nn_int ic = start_w + c;
+						cache[idx] = img[ic + ir * iw];
+						++idx;
 					}
-					out[i + j * ow] += vec_dot(cache, filter, fw * fh);
 				}
-			}
-		}
-		else
-		{
-			for (nn_int i = 0; i < ow; ++i)
-			{
-				for (nn_int j = 0; j < oh; ++j)
-				{
-					nn_int start_w = i * stride_w;
-					nn_int start_h = j * stride_h;
-					nn_int idx = 0;
-					for (nn_int r = 0; r < fh; ++r)
-					{
-						nn_int ir = start_h - r;
-						for (nn_int c = 0; c < fw; ++c)
-						{
-							nn_int ic = start_w - c;
-							cache[idx] = img[ic + ir * iw];
-							++idx;
-						}
-					}
-					out[i + j * ow] += vec_dot(cache, filter, fw * fh);
-				}
+				out[i + j * ow] += vec_dot(cache, filter, fw * fh);
 			}
 		}
 
