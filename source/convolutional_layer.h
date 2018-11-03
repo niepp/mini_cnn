@@ -421,23 +421,38 @@ private:
 					for (nn_int v = 0; v < h; ++v)
 					{
 						nn_int idx = 0;
-						for (nn_int i = 0; i < delta_h; ++i)
+
+						nn_int ibegin = static_cast<nn_int>(::ceil(1.0f * (u - filter_w + 1) / stride_w));
+						nn_int iend = static_cast<nn_int>(::floor(1.0f * u / stride_w));
+						ibegin = std::max(0, ibegin);
+						iend = std::min(delta_w - 1, iend);
+
+						nn_int jbegin = static_cast<nn_int>(::ceil(1.0f * (v - filter_h + 1) / stride_h));
+						nn_int jend = static_cast<nn_int>(::floor(1.0f * v / stride_h));
+						jbegin = std::max(0, jbegin);
+						jend = std::min(delta_h - 1, jend);
+
+						nn_float dot = 0;
+
+						for (nn_int i = ibegin; i <= iend; ++i)
 						{
-							nn_int ir = v - i * stride_h;
-							for (nn_int j = 0; j < delta_w; ++j)
+							nn_int ic = u - i * stride_w;
+							for (nn_int j = jbegin; j <= jend; ++j)
 							{
-								nn_int ic = u - j * stride_w;
-								if ((ir < 0 || ir >= filter_h) || (ic < 0 || ic >= filter_w))
-								{
-									block.data[idx] = 0;
-								}
-								else{
-									block.data[idx] = filter_c_k[ic + ir * filter_w];
-								}
-								++idx;
+								nn_int ir = v - j * stride_h;
+								nn_assert(ir >= 0 && ir < filter_h && ic >= 0 && ic < filter_w);
+
+								dot += filter_c_k[ic + ir * filter_w] * delta_k[i + j * delta_w];
+								//block.data[idx] = filter_c_k[ic + ir * filter_w];
+								//++idx;
 							}
 						}
-						ret_c[u + v * w] += vec_dot(block.data, delta_k, delta_w * delta_h);
+						if (idx > filter_w * filter_h)
+						{
+							int kkk = 0;
+						}
+						ret_c[u + v * w] += dot;
+						//ret_c[u + v * w] += vec_dot(block.data, delta_k, delta_w * delta_h);
 					}
 				}
 
