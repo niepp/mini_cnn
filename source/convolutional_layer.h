@@ -153,7 +153,7 @@ public:
 
 		nn_int temp_w = in_w + in_w - out_w;
 		nn_int temp_h = in_h + in_h - out_h;
-		nn_int img2row_size = temp_w * temp_h * m_filter_shape.m_w * m_filter_shape.m_h;
+		nn_int img2row_size = temp_w * temp_h * m_filter_shape.m_w * m_filter_shape.m_h * m_filter_shape.m_d;
 		m_conv_task_storage.resize(task_count);
 		for (auto &cts : m_conv_task_storage)
 		{
@@ -248,14 +248,14 @@ public:
 	}
 
 private:
-	static inline void img2row(const nn_float *img, nn_int iw, nn_int ih
+	static inline void img2row(const nn_float *img, nn_int iw, nn_int ih, nn_int channels
 		, nn_int fw, nn_int fh
 		, nn_int stride_iw, nn_int stride_ih
 		, nn_int ow, nn_int oh
 		, nn_int stride_ow, nn_int stride_oh
 		, mem_block &block)
 	{
-		block.w = fw * fh;
+		block.w = fw * fh * channels;
 		block.h = ow * oh;
 		nn_float *prow = block.data;
 		for (nn_int i = 0; i < oh; ++i)
@@ -264,16 +264,21 @@ private:
 			{
 				nn_int start_h = i * stride_oh;
 				nn_int start_w = j * stride_ow;
-				for (nn_int r = 0; r < fh; ++r)
+				for (nn_int c = 0; c < channels; ++c)
 				{
-					nn_int ir = start_h + r * stride_iw;
-					for (nn_int c = 0; c < fw; ++c)
+					nn_float *prow_c = prow + fw * fh * c;
+					nn_float *pimg = (nn_float*)img + iw * ih * c;
+					for (nn_int v = 0; v < fh; ++v)
 					{
-						nn_int ic = start_w + c * stride_ih;
-						prow[c + r * fw] = img[ic + ir * iw];
+						nn_int ir = start_h + v * stride_iw;
+						for (nn_int u = 0; u < fw; ++u)
+						{
+							nn_int ic = start_w + u * stride_ih;
+							prow_c[u + v * fw] = pimg[ic + ir * iw];
+						}
 					}
 				}
-				prow += fw * fh;
+				prow += fw * fh * channels;
 			}
 		}
 
@@ -305,20 +310,19 @@ private:
 
 		for (nn_int k = 0; k < filter_count; ++k)
 		{
-			for (nn_int c = 0; c < in_d; ++c)
-			{
-				//conv_2d(&in_img(0, 0, c), in_w, in_h, block.data
-				//	, &filters(0, 0, c, k), filter_w, filter_h
-				//	, stride_w, stride_h
-				//	, &out_img(0, 0, k), w, h);
+			img2row(&in_img(0, 0, 0), in_w, in_h, in_d, filter_w, filter_h, 1, 1, w, h, stride_w, stride_h, block);
 
-				img2row(&in_img(0, 0, c), in_w, in_h, filter_w, filter_h, 1, 1, w, h, stride_w, stride_h, block);
+			gemm(block.data, block.w, block.h
+				, (nn_float*)&filters(0, 0, 0, k), 1, filter_w * filter_h * filter_d
+				, &out_img(0, 0, k), 1, w * h);
 
-				gemm(block.data, block.w, block.h
-					, (nn_float*)&filters(0, 0, c, k), 1, filter_w * filter_h
-					, &out_img(0, 0, k), 1, w * h);
-
-			}
+			//for (nn_int c = 0; c < in_d; ++c)
+			//{
+			//	img2row(&in_img(0, 0, c), in_w, in_h, filter_w, filter_h, 1, 1, w, h, stride_w, stride_h, block);
+			//	gemm(block.data, block.w, block.h
+			//		, (nn_float*)&filters(0, 0, c, k), 1, filter_w * filter_h
+			//		, &out_img(0, 0, k), 1, w * h);
+			//}
 		}
 	}
 
@@ -352,7 +356,7 @@ private:
 				const nn_float *delta_k = &delta(0, 0, k);
 				nn_float *dw_ck = &dw(0, 0, c, k);
 
-				img2row(&in_img(0, 0, c), in_w, in_h, delta_w, delta_h, stride_w, stride_h, w, h, 1, 1, block);
+				img2row(&in_img(0, 0, c), in_w, in_h, 1, delta_w, delta_h, stride_w, stride_h, w, h, 1, 1, block);
 
 				gemm(block.data, block.w, block.h
 					, (nn_float*)&delta(0, 0, k), 1, delta_w * delta_h
