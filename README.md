@@ -163,13 +163,13 @@ epoch 5/10  accuracy: 0.9889  tot_cost: 0.00822667  train elapse: 1572.86(s)  te
 
 
 ## References</br>
-[1]  [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
-[2]  [Deep Learning](http://www.deeplearningbook.org/), book by Ian Goodfellow, Yoshua Bengio, and Aaron Courville</br>
-[3]  http://cs231n.github.io/convolutional-networks </br>
+[1] [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) by By Michael Nielsen</br>
+[2] [Deep Learning](http://www.deeplearningbook.org/), book by Ian Goodfellow, Yoshua Bengio, and Aaron Courville</br>
+[3] http://cs231n.github.io/convolutional-networks </br>
 [4] http://cs231n.stanford.edu/slides/2018/cs231n_2018_lecture05.pdf</br>
 [5] http://ufldl.stanford.edu/tutorial/supervised/ConvolutionalNeuralNetwork/</br>
 [6] http://deeplearning.net/software/theano_versions/dev/tutorial/conv_arithmetic.html#transposed-convolution-arithmetic</br>
 [7] [Gradient checking](http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization)</br>
 [8] [2D Max Pooling Backward Layer](https://software.intel.com/sites/products/documentation/doclib/daal/daal-user-and-reference-guides/daal_prog_guide/GUID-2C3AA967-AE6A-4162-84EB-93BE438E3A05.htm)</br>
-[9] ["Fast Algorithms for Convolutional Neural Networks" Lavin and Gray, CVPR 2016](http://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/Lavin_Fast_Algorithms_for_CVPR_2016_paper.pdf)
+[9] https://blog.csdn.net/mrhiuser/article/details/52672824
 
