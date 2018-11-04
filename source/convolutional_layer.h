@@ -65,7 +65,6 @@ protected:
 
 	struct conv_task_storage
 	{
-		varray m_padded_img;
 		mem_block m_img_block;
 	};
 	std::vector<conv_task_storage> m_conv_task_storage;
@@ -151,15 +150,16 @@ public:
 			ts.m_wd.resize(in_w, in_h, in_d);
 		}
 
+#ifdef nnGEMM
 		nn_int temp_w = in_w + in_w - out_w;
 		nn_int temp_h = in_h + in_h - out_h;
 		nn_int img2row_size = temp_w * temp_h * m_filter_shape.m_w * m_filter_shape.m_h * m_filter_shape.m_d;
 		m_conv_task_storage.resize(task_count);
 		for (auto &cts : m_conv_task_storage)
 		{
-			cts.m_padded_img.resize(temp_w, temp_h, out_d);
 			cts.m_img_block.resize(img2row_size);
 		}
+#endif
 	}
 
 	virtual void forw_prop(const varray &input, nn_int task_idx)
@@ -167,8 +167,12 @@ public:
 		varray &out_z = m_task_storage[task_idx].m_z;
 		varray &out_x = m_task_storage[task_idx].m_x;
 
+#ifdef nnGEMM
 		mem_block &block = m_conv_task_storage[task_idx].m_img_block;
 		conv_input_w(input, block, m_w, m_stride_w, m_stride_h, out_z);
+#else
+		conv_input_w(input, m_w, m_stride_w, m_stride_h, out_z);
+#endif
 
 		for (nn_int k = 0; k < m_out_shape.m_d; ++k)
 		{
@@ -213,8 +217,12 @@ public:
 		/*
 			dw_k := conv2d(input_d, delta_k)
 		*/
+#ifdef nnGEMM
 		mem_block &block = m_conv_task_storage[task_idx].m_img_block;
 		conv_input_delta(input, block, ts.m_delta, m_stride_w, m_stride_h, ts.m_dw);
+#else
+		conv_input_delta(input, ts.m_delta, m_stride_w, m_stride_h, ts.m_dw);
+#endif
 
 		/*
 			db_k := sum(delta_k)
@@ -241,13 +249,18 @@ public:
 		nn_int offset_w = input.width() - out_w;
 		nn_int offset_h = input.height() - out_h;
 
+#ifdef nnGEMM
 		conv_delta_w(ts.m_delta, block, m_w, m_stride_w, m_stride_h, ts.m_wd);
-
+#else
+		conv_delta_w(ts.m_delta, m_w, m_stride_w, m_stride_h, ts.m_wd);
+#endif
 		m_prev->back_prop(ts.m_wd, task_idx);
 
 	}
 
 private:
+
+#ifdef nnGEMM
 	static inline void img2row(const nn_float *img, nn_int iw, nn_int ih, nn_int channels
 		, nn_int fw, nn_int fh
 		, nn_int stride_iw, nn_int stride_ih
@@ -316,13 +329,6 @@ private:
 				, (nn_float*)&filters(0, 0, 0, k), 1, filter_w * filter_h * filter_d
 				, &out_img(0, 0, k), 1, w * h);
 
-			//for (nn_int c = 0; c < in_d; ++c)
-			//{
-			//	img2row(&in_img(0, 0, c), in_w, in_h, filter_w, filter_h, 1, 1, w, h, stride_w, stride_h, block);
-			//	gemm(block.data, block.w, block.h
-			//		, (nn_float*)&filters(0, 0, c, k), 1, filter_w * filter_h
-			//		, &out_img(0, 0, k), 1, w * h);
-			//}
 		}
 	}
 
@@ -420,17 +426,17 @@ private:
 				block.w = filter_w * filter_h;
 				block.h = w * h;
 				nn_float *prow = block.data;
-				for (nn_int u = 0; u < h; ++u)
+				for (nn_int i = 0; i < h; ++i)
 				{
-					for (nn_int v = 0; v < w; ++v)
+					for (nn_int j = 0; j < w; ++j)
 					{
-						for (nn_int i = 0; i < filter_h; ++i)
+						for (nn_int r = 0; r < filter_h; ++r)
 						{
-							for (nn_int j = 0; j < filter_w; ++j)
+							for (nn_int c = 0; c < filter_w; ++c)
 							{
-								nn_int dc = (v - j) / stride_w;
-								nn_int dr = (u - i) / stride_h;
-								prow[j + i * filter_w] = is_pad(v - j, stride_w, dc, delta_w) || is_pad(u - i, stride_h, dr, delta_h)
+								nn_int dc = (j - c) / stride_w;
+								nn_int dr = (i - r) / stride_h;
+								prow[c + r * filter_w] = is_pad(j - c, stride_w, dc, delta_w) || is_pad(i - r, stride_h, dr, delta_h)
 									? 0 : delta_k[dc + dr * delta_w];
 							}
 						}
@@ -445,7 +451,181 @@ private:
 			}
 		}
 	}
+#else //nnGEMM
+static void conv_input_w(const varray &in_img, const varray &filters, nn_int stride_w, nn_int stride_h, varray &out_img)
+{
+	nn_int in_w = in_img.width();
+	nn_int in_h = in_img.height();
+	nn_int in_d = in_img.depth();
 
+	nn_int filter_count = filters.count();
+	nn_int filter_w = filters.width();
+	nn_int filter_h = filters.height();
+	nn_int filter_d = filters.depth();
+
+	nn_int w = out_img.width();
+	nn_int h = out_img.height();
+	nn_int d = out_img.depth();
+
+	nn_assert(in_img.check_dim(3));
+	nn_assert(filters.check_dim(4));
+	nn_assert(out_img.check_dim(3));
+
+	nn_assert(in_d == filter_d);
+	nn_assert(d == filter_count);
+
+	out_img.make_zero();
+
+	for (nn_int k = 0; k < filter_count; ++k)
+	{
+		for (nn_int c = 0; c < in_d; ++c)
+		{
+			conv_2d(&in_img(0, 0, c), in_w, in_h
+				, 1, 1
+				, &filters(0, 0, c, k), filter_w, filter_h
+				, stride_w, stride_h
+				, &out_img(0, 0, k), w, h);
+		}
+	}
+}
+
+static void conv_input_delta(const varray &in_img, const varray &delta, nn_int stride_w, nn_int stride_h, varray &dw)
+{
+	nn_int in_w = in_img.width();
+	nn_int in_h = in_img.height();
+	nn_int in_d = in_img.depth();
+
+	nn_int delta_w = delta.width();
+	nn_int delta_h = delta.height();
+	nn_int delta_d = delta.depth();
+
+	nn_int w = dw.width();
+	nn_int h = dw.height();
+	nn_int d = dw.depth();
+	nn_int n = dw.count();
+
+	nn_assert(in_img.check_dim(3));
+	nn_assert(dw.check_dim(4));
+	nn_assert(in_d == d);
+	nn_assert(n == delta_d);
+
+	dw.make_zero();
+
+	for (nn_int k = 0; k < n; ++k)
+	{
+		for (nn_int c = 0; c < d; ++c)
+		{
+			conv_2d(&in_img(0, 0, c), in_w, in_h
+				, stride_w, stride_h
+				, &delta(0, 0, k), delta_w, delta_h
+				, 1, 1
+				, &dw(0, 0, c, k), w, h);
+		}
+	}
+}
+
+static void conv_delta_w(const varray &delta, const varray &filters, nn_int stride_w, nn_int stride_h, varray &ret)
+{
+	nn_int delta_w = delta.width();
+	nn_int delta_h = delta.height();
+	nn_int delta_d = delta.depth();
+
+	nn_int filter_count = filters.count();
+	nn_int filter_w = filters.width();
+	nn_int filter_h = filters.height();
+	nn_int filter_d = filters.depth();
+
+	nn_int w = ret.width();
+	nn_int h = ret.height();
+	nn_int d = ret.depth();
+
+	nn_assert(delta_cache.check_dim(3));
+	nn_assert(filters.check_dim(4));
+	nn_assert(ret.check_dim(3));
+
+	nn_assert(delta_d == filter_count);
+
+	nn_assert(d == filter_d);
+
+	ret.make_zero();
+
+	for (nn_int c = 0; c < d; ++c)
+	{
+		for (nn_int k = 0; k < filter_count; ++k)
+		{
+			conv_2d<true>(&delta(0, 0, k), delta_w, delta_h
+				, stride_w, stride_h
+				, &filters(0, 0, c, k), filter_w, filter_h
+				, 1, 1
+				, &ret(0, 0, c), w, h);
+		}
+	}
+}
+
+/*
+common 2d convolution
+*/
+template<bool filter_flip = false>
+static inline void conv_2d(const nn_float *img, nn_int iw, nn_int ih
+	, nn_int stride_iw, nn_int stride_ih
+	, const nn_float *filter, nn_int fw, nn_int fh
+	, nn_int stride_ow, nn_int stride_oh
+	, nn_float *out, nn_int ow, nn_int oh)
+{
+	if (!filter_flip)
+	{
+		for (nn_int i = 0; i < oh; ++i)
+		{
+			for (nn_int j = 0; j < ow; ++j)
+			{
+				nn_int start_h = i * stride_oh;
+				nn_int start_w = j * stride_ow;
+				nn_float dot = 0;
+				for (nn_int r = 0; r < fh; ++r)
+				{
+					nn_int ir = start_h + r * stride_ih;
+					for (nn_int c = 0; c < fw; ++c)
+					{
+						nn_int ic = start_w + c * stride_iw;
+						dot += img[ic + ir * iw] * filter[c + r * fw];
+					}
+				}
+				out[j + i * ow] += dot;
+			}
+		}
+	}
+	else
+	{
+		for (nn_int i = 0; i < oh; ++i)
+		{
+			for (nn_int j = 0; j < ow; ++j)
+			{
+				nn_float dot = 0;
+				for (nn_int r = 0; r < fh; ++r)
+				{
+					nn_int v = (i - r) / stride_ih;
+					if (v < 0 || v >= ih || v * stride_ih != i - r)
+					{
+						continue;
+					}
+					for (nn_int c = 0; c < fw; ++c)
+					{
+						nn_int u = (j - c) / stride_iw;
+						if (u < 0 || u >= iw || u * stride_iw != j - c)
+						{
+							continue;
+						}
+						dot += img[u + v * iw] * filter[c + r * fw];
+					}
+				}
+				out[j + i * ow] += dot;
+			}
+		}
+	}
+
+}
+
+#endif
 };
 }
 #endif //__CONVOLUTIONAL_LAYER_H__
