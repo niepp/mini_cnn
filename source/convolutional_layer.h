@@ -241,60 +241,18 @@ public:
 		nn_int offset_w = input.width() - out_w;
 		nn_int offset_h = input.height() - out_h;
 
-		//varray &padded_img = m_conv_task_storage[task_idx].m_padded_img;
-		//padded_img.make_zero();
-
-		//copy_to_temp(ts.m_delta, 0, 0
-		//	, padded_img, offset_w, offset_h
-		//	, out_w, out_h);
-
 		conv_delta_w(ts.m_delta, block, m_w, m_stride_w, m_stride_h, ts.m_wd);
-
-		//copy_to_temp(padded_img, offset_w, offset_h
-		//	, ts.m_delta, 0, 0
-		//	, out_w, out_h);
 
 		m_prev->back_prop(ts.m_wd, task_idx);
 
 	}
 
 private:
-	static inline void copy_to_temp(const varray &src, nn_int offset_src_w, nn_int offset_src_h
-		, varray &dst, nn_int offset_dst_w, nn_int offset_dst_h
-		, nn_int w, nn_int h)
-	{
-		nn_int src_w = src.width();
-		nn_int src_h = src.height();
-		nn_int src_d = src.depth();
-
-		nn_int dst_w = dst.width();
-		nn_int dst_h = dst.height();
-		nn_int dst_d = dst.depth();
-
-		nn_assert(src_d == dst_d);
-		nn_assert(w + offset_src_w <= src_w);
-		nn_assert(h + offset_src_h <= src_h);
-		nn_assert(w + offset_dst_w <= dst_w);
-		nn_assert(h + offset_dst_h <= dst_h);
-
-		for (nn_int c = 0; c < src_d; ++c)
-		{
-			for (nn_int i = 0; i < h; ++i)
-			{
-				nn_float *nn_restrict vec_dst = &dst(offset_dst_w, i + offset_dst_h, c);
-				const nn_float *nn_restrict vec_src = &src(offset_src_w, i + offset_src_h, c);
-				for (nn_int j = 0; j < w; ++j)
-				{
-					vec_dst[j] = vec_src[j];
-				}
-			}
-		}
-	}
-
 	static inline void img2row(const nn_float *img, nn_int iw, nn_int ih
 		, nn_int fw, nn_int fh
-		, nn_int stride_w, nn_int stride_h
+		, nn_int stride_iw, nn_int stride_ih
 		, nn_int ow, nn_int oh
+		, nn_int stride_ow, nn_int stride_oh
 		, mem_block &block)
 	{
 		block.w = fw * fh;
@@ -304,14 +262,14 @@ private:
 		{
 			for (nn_int j = 0; j < ow; ++j)
 			{
-				nn_int start_h = i * stride_h;
-				nn_int start_w = j * stride_w;
+				nn_int start_h = i * stride_oh;
+				nn_int start_w = j * stride_ow;
 				for (nn_int r = 0; r < fh; ++r)
 				{
-					nn_int ir = start_h + r;
+					nn_int ir = start_h + r * stride_iw;
 					for (nn_int c = 0; c < fw; ++c)
 					{
-						nn_int ic = start_w + c;
+						nn_int ic = start_w + c * stride_ih;
 						prow[c + r * fw] = img[ic + ir * iw];
 					}
 				}
@@ -354,7 +312,7 @@ private:
 				//	, stride_w, stride_h
 				//	, &out_img(0, 0, k), w, h);
 
-				img2row(&in_img(0, 0, c), in_w, in_h, filter_w, filter_h, stride_w, stride_h, w, h, block);
+				img2row(&in_img(0, 0, c), in_w, in_h, filter_w, filter_h, 1, 1, w, h, stride_w, stride_h, block);
 
 				gemm(block.data, block.w, block.h
 					, (nn_float*)&filters(0, 0, c, k), 1, filter_w * filter_h
@@ -394,38 +352,22 @@ private:
 				const nn_float *delta_k = &delta(0, 0, k);
 				nn_float *dw_ck = &dw(0, 0, c, k);
 
-				for (nn_int i = 0; i < w; ++i)
-				{
-					for (nn_int j = 0; j < h; ++j)
-					{
-						nn_int start_w = i;
-						nn_int start_h = j;
-						nn_int idx = 0;
-						for (nn_int r = 0; r < delta_h; ++r)
-						{
-							nn_int ir = start_h + r * stride_h;
-							for (nn_int c = 0; c < delta_w; ++c)
-							{
-								nn_int ic = start_w + c * stride_w;
-								block.data[idx] = img_c[ic + ir * in_w];
-								++idx;
-							}
-						}
-						dw_ck[i + j * w] += vec_dot(block.data, delta_k, delta_w * delta_h);
-					}
-				}
+				img2row(&in_img(0, 0, c), in_w, in_h, delta_w, delta_h, stride_w, stride_h, w, h, 1, 1, block);
+
+				gemm(block.data, block.w, block.h
+					, (nn_float*)&delta(0, 0, k), 1, delta_w * delta_h
+					, &dw(0, 0, c, k), 1, w * h);
 
 			}
 		}
 	}
 
-	static bool is_pad(nn_int a, nn_int stride, nn_int size)
+	static bool is_pad(nn_int a, nn_int stride, nn_int dr, nn_int size)
 	{
-		if ((a % stride) != 0)
+		if (dr * stride != a)
 		{
 			return true;
 		}
-		nn_int dr = a / stride;
 		if (dr < 0 || dr >= size)
 		{
 			return true;
@@ -471,59 +413,33 @@ private:
 				const nn_float *delta_k = &delta(0, 0, k);
 				const nn_float *filter_c_k = &filters(0, 0, c, k);
 
-				for (nn_int u = 0; u < w; ++u)
+				block.w = filter_w * filter_h;
+				block.h = w * h;
+				nn_float *prow = block.data;
+				for (nn_int u = 0; u < h; ++u)
 				{
-					for (nn_int v = 0; v < h; ++v)
+					for (nn_int v = 0; v < w; ++v)
 					{
-						nn_int idx = 0;
 						for (nn_int i = 0; i < filter_h; ++i)
 						{
 							for (nn_int j = 0; j < filter_w; ++j)
 							{
-								nn_int dc = (u - j) / stride_w;
-								nn_int dr = (v - i) / stride_h;
-								block.data[idx] = is_pad(u - j, stride_w, delta_w) || is_pad(v - i, stride_h, delta_h)
+								nn_int dc = (v - j) / stride_w;
+								nn_int dr = (u - i) / stride_h;
+								prow[j + i * filter_w] = is_pad(v - j, stride_w, dc, delta_w) || is_pad(u - i, stride_h, dr, delta_h)
 									? 0 : delta_k[dc + dr * delta_w];
-								++idx;
 							}
 						}
-						ret_c[u + v * w] += vec_dot(block.data, filter_c_k, filter_w * filter_h);
+						prow += filter_w * filter_h;
 					}
 				}
 
+				gemm(block.data, block.w, block.h
+					, (nn_float*)&filters(0, 0, c, k), 1, filter_w * filter_h
+					, ret_c, 1, w * h);
+
 			}
 		}
-	}
-
-	/*
-		common 2d convolution
-	*/
-	static inline void conv_2d(const nn_float *img, nn_int iw, nn_int ih, nn_float *cache
-		, const nn_float *filter, nn_int fw, nn_int fh
-		, nn_int stride_w, nn_int stride_h
-		, nn_float *out, nn_int ow, nn_int oh)
-	{
-		for (nn_int i = 0; i < ow; ++i)
-		{
-			for (nn_int j = 0; j < oh; ++j)
-			{
-				nn_int start_w = i * stride_w;
-				nn_int start_h = j * stride_h;
-				nn_int idx = 0;
-				for (nn_int r = 0; r < fh; ++r)
-				{
-					nn_int ir = start_h + r;
-					for (nn_int c = 0; c < fw; ++c)
-					{
-						nn_int ic = start_w + c;
-						cache[idx] = img[ic + ir * iw];
-						++idx;
-					}
-				}
-				out[i + j * ow] += vec_dot(cache, filter, fw * fh);
-			}
-		}
-
 	}
 
 };
