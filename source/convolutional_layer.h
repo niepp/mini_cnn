@@ -68,6 +68,7 @@ protected:
 		mem_block m_img_block;
 	};
 	std::vector<conv_task_storage> m_conv_task_storage;
+	std::vector<nn_int> m_index_map;
 
 public:
 	convolutional_layer(nn_int filter_w, nn_int filter_h, nn_int filter_c, nn_int filter_n, nn_int stride_w, nn_int stride_h, padding_type padding, activation_type ac_type)
@@ -108,8 +109,19 @@ public:
 		nn_int out_h = static_cast<nn_int>(::floorf(1.0f * (in_h - m_filter_shape.m_h) / m_stride_h)) + 1;
 		m_out_shape.set(out_w, out_h, m_filter_count);
 
+		nn_int fw = m_filter_shape.m_w;
+		nn_int fh = m_filter_shape.m_h;
+		nn_int fd = m_filter_shape.m_d;
+
 		m_b.resize(m_filter_count);
-		m_w.resize(m_filter_shape.m_w, m_filter_shape.m_h, m_filter_shape.m_d, m_filter_count);
+		m_w.resize(fw, fh, fd, m_filter_count);
+
+		m_index_map.resize(fw * fh * in_w * in_h);
+		bake_index_map(m_index_map, out_w, out_h
+			, m_stride_w, m_stride_h
+			, fw, fh
+			, in_w, in_h);
+
 	}
 
 	virtual nn_int fan_in_size() const
@@ -259,7 +271,7 @@ public:
 #ifdef nnGEMM
 		conv_delta_w(ts.m_delta, block, m_w, m_stride_w, m_stride_h, ts.m_wd);
 #else
-		conv_delta_w(ts.m_delta, block, m_w, m_stride_w, m_stride_h, ts.m_wd);
+		conv_delta_w(ts.m_delta, block, m_index_map, m_w, m_stride_w, m_stride_h, ts.m_wd);
 #endif
 		m_prev->back_prop(ts.m_wd, task_idx);
 
@@ -531,7 +543,7 @@ static void conv_input_delta(const varray &in_img, mem_block &block, const varra
 	}
 }
 
-static void conv_delta_w(const varray &delta, mem_block &block, const varray &filters, nn_int stride_w, nn_int stride_h, varray &ret)
+static void conv_delta_w(const varray &delta, mem_block &block, std::vector<nn_int> &index_map, const varray &filters, nn_int stride_w, nn_int stride_h, varray &ret)
 {
 	nn_int delta_w = delta.width();
 	nn_int delta_h = delta.height();
@@ -560,10 +572,9 @@ static void conv_delta_w(const varray &delta, mem_block &block, const varray &fi
 	{
 		for (nn_int k = 0; k < filter_count; ++k)
 		{
-			conv_2d<true>(&delta(0, 0, k), delta_w, delta_h, block.data
-				, stride_w, stride_h
+			conv_2d_flip(&delta(0, 0, k), delta_w, delta_h, block.data
+				, index_map
 				, &filters(0, 0, c, k), filter_w, filter_h
-				, 1, 1
 				, &ret(0, 0, c), w, h);
 		}
 	}
@@ -572,60 +583,77 @@ static void conv_delta_w(const varray &delta, mem_block &block, const varray &fi
 /*
 common 2d convolution
 */
-template<bool filter_flip = false>
 static inline void conv_2d(const nn_float *img, nn_int iw, nn_int ih, nn_float *data
 	, nn_int stride_iw, nn_int stride_ih
 	, const nn_float *filter, nn_int fw, nn_int fh
 	, nn_int stride_ow, nn_int stride_oh
 	, nn_float *out, nn_int ow, nn_int oh)
 {
-	if (!filter_flip)
+	for (nn_int i = 0; i < oh; ++i)
 	{
-		for (nn_int i = 0; i < oh; ++i)
+		for (nn_int j = 0; j < ow; ++j)
 		{
-			for (nn_int j = 0; j < ow; ++j)
+			nn_int start_h = i * stride_oh;
+			nn_int start_w = j * stride_ow;
+			nn_float dot = 0;
+			for (nn_int r = 0; r < fh; ++r)
 			{
-				nn_int start_h = i * stride_oh;
-				nn_int start_w = j * stride_ow;
-				nn_float dot = 0;
-				for (nn_int r = 0; r < fh; ++r)
+				nn_int v = start_h + r * stride_ih;
+				for (nn_int c = 0; c < fw; ++c)
 				{
-					nn_int v = start_h + r * stride_ih;
-					for (nn_int c = 0; c < fw; ++c)
-					{
-						nn_int u = start_w + c * stride_iw;
-						data[c + r * fw] = img[u + v * iw];
-					}
+					nn_int u = start_w + c * stride_iw;
+					data[c + r * fw] = img[u + v * iw];
 				}
-				out[j + i * ow] += vec_dot(data, filter, fw * fh);
 			}
+			out[j + i * ow] += vec_dot(data, filter, fw * fh);
 		}
 	}
-	else
-	{
-		for (nn_int i = 0; i < oh; ++i)
-		{
-			for (nn_int j = 0; j < ow; ++j)
-			{
-				nn_int idx = 0;
-				for (nn_int r = 0; r < fh; ++r)
-				{
-					nn_int v = (i - r) / stride_ih;
-					bool vpad = (v < 0 || v >= ih || v * stride_ih != i - r);
-					for (nn_int c = 0; c < fw; ++c)
-					{
-						nn_int u = (j - c) / stride_iw;
-						data[idx++] = (vpad || (u < 0 || u >= iw || u * stride_iw != j - c)) ? 0 : img[u + v * iw];
-					}
-				}
-				out[j + i * ow] += vec_dot(data, filter, fw * fh);
-			}
-		}
-	}
+}
 
+static inline void conv_2d_flip(const nn_float *img, nn_int iw, nn_int ih, nn_float *data
+	, std::vector<nn_int> &index_map
+	, const nn_float *filter, nn_int fw, nn_int fh
+	, nn_float *out, nn_int ow, nn_int oh)
+{
+	for (nn_int i = 0; i < oh; ++i)
+	{
+		for (nn_int j = 0; j < ow; ++j)
+		{
+			nn_int *pmap = &index_map[(j + i * ow) * fw * fh];
+			for (nn_int idx = 0; idx < fw * fh; ++idx)
+			{
+				data[idx] = pmap[idx] >= 0 ? img[pmap[idx]] : 0;
+			}
+			out[j + i * ow] += vec_dot(data, filter, fw * fh);
+		}
+	}
 }
 
 #endif //nnGEMM
+
+static void bake_index_map(std::vector<nn_int> &index_map, nn_int iw, nn_int ih
+	, nn_int stride_iw, nn_int stride_ih
+	, nn_int fw, nn_int fh
+	, nn_int ow, nn_int oh)
+{
+	for (nn_int i = 0; i < oh; ++i)
+	{
+		for (nn_int j = 0; j < ow; ++j)
+		{
+			nn_int *pmap = &index_map[(j + i * ow) * fw * fh];
+			for (nn_int r = 0; r < fh; ++r)
+			{
+				nn_int v = (i - r) / stride_ih;
+				bool vpad = (v < 0 || v >= ih || v * stride_ih != i - r);
+				for (nn_int c = 0; c < fw; ++c)
+				{
+					nn_int u = (j - c) / stride_iw;
+					pmap[c + r * fw] = (vpad || (u < 0 || u >= iw || u * stride_iw != j - c)) ? -1 : u + v * iw;
+				}
+			}
+		}
+	}
+}
 
 };
 }
