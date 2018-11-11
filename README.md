@@ -53,6 +53,8 @@ network create_cnn()
 	return nn;
 }
 
+std::mt19937_64 global_setting::m_rand_generator = std::mt19937_64(get_now_ms());
+
 int main()
 {
 	varray_vec img_vec;
@@ -65,12 +67,6 @@ int main()
 		, "t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte");
 	mnist.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
-	// random init
-	nn_int seed = (nn_int)get_now_ms();
-	seed = 2572007265;	// fixed seed to repeat test
-	cout << "random seed:" << seed << endl;
-	std::mt19937_64 generator(seed);
-
 	// define neural network
 	network nn = create_cnn();
 
@@ -79,15 +75,13 @@ int main()
 	progress_bar train_progress_bar;
 	train_progress_bar.begin();
 
-	//truncated_normal_initializer initializer(generator, 0, 0.1, 2);
-	he_normal_initializer initializer(generator);
-
-	nn.init_all_weight(initializer);
+	nn.init_all_weight(he_normal_initializer());
 
 	float learning_rate = 0.1f;
 	int epoch = 10;
 	int batch_size = 10;
 	nn_int nthreads = std::thread::hardware_concurrency();
+	nthreads = 12;
 
 	auto epoch_callback = [&train_progress_bar](nn_int c, nn_int epoch, nn_float cur_accuracy, nn_float tot_cost, nn_float train_elapse, nn_float test_elapse)
 	{
@@ -107,15 +101,16 @@ int main()
 		train_progress_bar.grow(cur_size * 1.0f / img_count);
 	};
 
-	nn_float t0 = get_now_ms();
+	auto t0 = get_now_ms();
 
-	nn_float max_accuracy = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, generator, epoch, batch_size, learning_rate, nthreads, minibatch_callback, epoch_callback);
+	nn_float max_accuracy = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, epoch, batch_size, learning_rate, nthreads, minibatch_callback, epoch_callback);
 
 	cout << "max_accuracy: " << max_accuracy << endl;
 
-	nn_float t1 = get_now_ms();
+	auto t1 = get_now_ms();
+
 	nn_float timeCost = (t1 - t0) * 0.001f;
-	cout << "TimeCost: " << timeCost << "(s)" << endl;
+	cout << "time_cost: " << timeCost << "(s)" << endl;
 
 	system("pause");
 	return 0;
