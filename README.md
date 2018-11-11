@@ -15,6 +15,7 @@
 	- sigmod cross entropy output layer
 	- average pooling layer
 	- max pooling layer
+	- dropout layer
 - activation functions
 	- sigmoid
 	- softmax
@@ -28,7 +29,6 @@
 	- fast convolution(gemm, winograd)
 	- train on gpu
 	- batch normalization
-	- dropout layer
 	- more optimization algorithms such as adagrad，momentum etc	
 	- serilize/deserilize
 ## Examples</br>
