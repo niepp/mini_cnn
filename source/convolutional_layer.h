@@ -605,21 +605,17 @@ static inline void conv_2d(const nn_float *img, nn_int iw, nn_int ih, nn_float *
 	{
 		for (nn_int i = 0; i < oh; ++i)
 		{
-			nn_int rmax = std::min(i + 1, fh);
 			for (nn_int j = 0; j < ow; ++j)
 			{
 				nn_int idx = 0;
-				nn_int cmax = std::min(j + 1, fw);
-
-				for (nn_int r = 0; r < rmax; ++r)
+				for (nn_int r = 0; r < fh; ++r)
 				{
 					nn_int v = (i - r) / stride_ih;
-					bool vpad = (v >= ih || v * stride_ih != i - r);
-
-					for (nn_int c = 0; c < cmax; ++c)
+					bool vpad = (v < 0 || v >= ih || v * stride_ih != i - r);
+					for (nn_int c = 0; c < fw; ++c)
 					{
 						nn_int u = (j - c) / stride_iw;
-						data[idx++] = (vpad || (u >= iw || u * stride_iw != j - c)) ? 0 : img[u + v * iw];
+						data[idx++] = (vpad || (u < 0 || u >= iw || u * stride_iw != j - c)) ? 0 : img[u + v * iw];
 					}
 				}
 				out[j + i * ow] += vec_dot(data, filter, fw * fh);

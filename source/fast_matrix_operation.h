@@ -146,15 +146,21 @@ namespace mini_cnn
 		}
 	}
 #endif
-	static inline void fo_vv_m(nn_float *nn_restrict x, nn_int w, nn_float *nn_restrict y, nn_int h, nn_float *nn_restrict m)
+
+	// m := x * y
+	// 
+	// get matrix by vector multiply vector
+	// m: matrix with shape of h X w
+	// x, y: vector
+	static inline void fo_vv_m(nn_float *nn_restrict x, nn_int h, nn_float *nn_restrict y, nn_int w, nn_float *nn_restrict m)
 	{
 		for (nn_int i = 0; i < h; ++i)
 		{
 			nn_float *nn_restrict vec_m = &m[i * w];
-			nn_float yi = y[i];
+			nn_float xi = x[i];
 			for (nn_int j = 0; j < w; ++j)
 			{
-				vec_m[j] = x[j] * yi;
+				vec_m[j] = xi * y[j];
 			}
 		}
 	}
