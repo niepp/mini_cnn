@@ -87,33 +87,6 @@ namespace mini_cnn
 		z = _z.data();
 	}
 
-	// m := x * y
-	// 
-	// get matrix by vector multiply vector
-	// m: matrix
-	// x, y: vector
-	static inline void fo_vv_m(double *x, int w
-		, double *y, int h
-		, double *m)
-	{
-		eigenVec_d_a32 _x(x, w);
-		eigenVec_d_a32 _y(y, h);
-		eigenMat_d_row_a32 _m(m, w, h);
-		_m = _x * _y.transpose();
-		m = _m.data();
-	}
-
-	static inline void fo_vv_m(float *x, int w
-		, float *y, int h
-		, float *m)
-	{
-		eigenVec_f_a32 _x(x, w);
-		eigenVec_f_a32 _y(y, h);
-		eigenMat_f_row_a32 _m(m, w, h);
-		_m = _x * _y.transpose();
-		m = _m.data();
-	}
-
 	// m: = m1 * m2
 	//
 	// gemm (general matrix multiply matrix) 
@@ -172,7 +145,7 @@ namespace mini_cnn
 			z[i] = dot + y[i];
 		}
 	}
-
+#endif
 	static inline void fo_vv_m(nn_float *nn_restrict x, nn_int w, nn_float *nn_restrict y, nn_int h, nn_float *nn_restrict m)
 	{
 		for (nn_int i = 0; i < h; ++i)
@@ -185,9 +158,6 @@ namespace mini_cnn
 			}
 		}
 	}
-#endif
-
-
 
 
 	//inline unsigned char* align_address(size_t address, int align_size)
