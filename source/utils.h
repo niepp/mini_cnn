@@ -15,11 +15,10 @@ private:
 	nn_float m_stdev;
 	nn_int m_truncated;
 public:
-	std::mt19937_64 m_generator;
 	std::normal_distribution<nn_float> m_distribution;
 public:
-	normal_random(std::mt19937_64 generator, nn_float mean = 0, nn_float stdev = 1.0, nn_int truncated = 0) :
-		m_mean(mean), m_stdev(stdev), m_truncated(truncated), m_generator(generator), m_distribution(mean, stdev)
+	normal_random(nn_float mean = 0, nn_float stdev = 1.0, nn_int truncated = 0) :
+		m_mean(mean), m_stdev(stdev), m_truncated(truncated), m_distribution(mean, stdev)
 	{
 	}
 
@@ -27,14 +26,14 @@ public:
 	{
 		if (m_truncated <= 0)
 		{
-			return m_distribution(m_generator);
+			return m_distribution(global_setting::m_rand_generator);
 		}
 		else
 		{
 			nn_float r = m_mean;
 			do
 			{
-				r = m_distribution(m_generator);
+				r = m_distribution(global_setting::m_rand_generator);
 			}
 			while (abs(r - m_mean) >= m_truncated * m_stdev);
 			return r;
@@ -45,16 +44,15 @@ public:
 class uniform_random
 {
 public:
-	std::mt19937_64 m_generator;
 	std::uniform_real_distribution<nn_float> m_distribution;
 public:
-	uniform_random(std::mt19937_64 generator, nn_float min, nn_float max) : m_generator(generator), m_distribution(min, max)
+	uniform_random(nn_float min, nn_float max) : m_distribution(min, max)
 	{
 	}
 
 	nn_float get_random()
 	{
-		return m_distribution(m_generator);
+		return m_distribution(global_setting::m_rand_generator);
 	}
 
 };

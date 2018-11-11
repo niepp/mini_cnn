@@ -4,7 +4,14 @@
 namespace mini_cnn
 {
 
-enum class padding_type
+enum phase_type
+{
+	eTrain,
+	eTest,
+	eGradientCheck,
+};
+
+enum padding_type
 {
 	eValid, // only use valid pixels of input
 	eSame   // padding zero around input to keep image size
@@ -130,6 +137,14 @@ public:
 			next->m_prev = this;
 			m_next = next;
 		}
+	}
+
+	virtual void set_phase_type(phase_type phase)
+	{
+	}
+
+	virtual void set_fixed_prop(nn_int task_idx)
+	{
 	}
 
 	virtual nn_int fan_in_size() const

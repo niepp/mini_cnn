@@ -89,6 +89,10 @@ network create_cnn()
 	return nn;
 }
 
+// random init
+// seed = 2572007265;	// fixed seed to repeat test
+std::mt19937_64 global_setting::m_rand_generator = std::mt19937_64(get_now_ms());
+
 int main()
 {
 	varray_vec img_vec;
@@ -101,12 +105,6 @@ int main()
 		, "t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte");
 	mnist.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
-	// random init
-	nn_int seed = (nn_int)get_now_ms();
-	seed = 2572007265;	// fixed seed to repeat test
-	cout << "random seed:" << seed << endl;
-	std::mt19937_64 generator(seed);
-
 	// define neural network
 	network nn = create_cnn();
 
@@ -115,10 +113,7 @@ int main()
 	progress_bar train_progress_bar;
 	train_progress_bar.begin();
 
-	//truncated_normal_initializer initializer(generator, 0, 0.1, 2);
-	he_normal_initializer initializer(generator);
-
-	nn.init_all_weight(initializer);
+	nn.init_all_weight(he_normal_initializer());
 
 	float learning_rate = 0.1f;
 	int epoch = 10;
@@ -146,7 +141,7 @@ int main()
 
 	auto t0 = get_now_ms();
 
-	nn_float max_accuracy = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, generator, epoch, batch_size, learning_rate, nthreads, minibatch_callback, epoch_callback);
+	nn_float max_accuracy = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, epoch, batch_size, learning_rate, nthreads, minibatch_callback, epoch_callback);
 
 	cout << "max_accuracy: " << max_accuracy << endl;
 

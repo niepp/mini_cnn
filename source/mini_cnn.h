@@ -2,6 +2,7 @@
 #define __MINI_CNN_H__
 
 #include "common_define.h"
+#include "global_setting.h"
 #include "varray.h"
 #include "utils.h"
 #include "fast_matrix_operation.h"
@@ -12,6 +13,7 @@
 #include "convolutional_layer.h"
 #include "max_pooling_layer.h"
 #include "avg_pooling_layer.h"
+#include "dropout_layer.h"
 #include "weight_initializer.h"
 #include "network.h"
 

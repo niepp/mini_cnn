@@ -24,8 +24,8 @@ class truncated_normal_initializer : public weight_initializer
 	nn_float m_bias_constant;
 	normal_random m_normal_random;
 public:
-	truncated_normal_initializer(std::mt19937_64 generator, nn_float mean = 0, nn_float stdev = 1.0, nn_int truncated = 3, nn_float bias_constant = 0.1)
-		: m_normal_random(generator, mean, stdev, truncated), m_bias_constant(bias_constant)
+	truncated_normal_initializer(nn_float mean = 0, nn_float stdev = 1.0, nn_int truncated = 3, nn_float bias_constant = 0.1)
+		: m_normal_random(mean, stdev, truncated), m_bias_constant(bias_constant)
 	{
 	}
 
@@ -63,10 +63,9 @@ class xavier_normal_initializer : public weight_initializer
 {
 	nn_int m_truncated;
 	nn_float m_bias_constant;
-	std::mt19937_64 m_generator;
 public:
-	xavier_normal_initializer(std::mt19937_64 generator, nn_int truncated = 3, nn_float bias_constant = 0.1)
-		: m_generator(generator), m_truncated(truncated), m_bias_constant(bias_constant)
+	xavier_normal_initializer(nn_int truncated = 3, nn_float bias_constant = 0.1)
+		: m_truncated(truncated), m_bias_constant(bias_constant)
 	{
 	}
 
@@ -78,7 +77,7 @@ public:
 			varray &b = layer->m_b;
 
 			nn_float stdev = sqrt(2.0f / (layer->fan_in_size() + layer->fan_out_size()));
-			normal_random nrand(m_generator, 0, stdev, m_truncated);
+			normal_random nrand(0, stdev, m_truncated);
 
 			nn_int w_sz = w.size();
 			for (nn_int i = 0; i < w_sz; ++i)
@@ -98,10 +97,9 @@ public:
 class xavier_uniform_initializer : public weight_initializer
 {
 	nn_float m_bias_constant;
-	std::mt19937_64 m_generator;
 public:
-	xavier_uniform_initializer(std::mt19937_64 generator, nn_float bias_constant = 0.1)
-		: m_generator(generator), m_bias_constant(bias_constant)
+	xavier_uniform_initializer(nn_float bias_constant = 0.1)
+		: m_bias_constant(bias_constant)
 	{
 	}
 
@@ -113,7 +111,7 @@ public:
 			varray &b = layer->m_b;
 
 			nn_float range = std::sqrt(6.0f / (layer->fan_in_size() + layer->fan_out_size()));
-			uniform_random urand(m_generator, -range, range);
+			uniform_random urand(-range, range);
 
 			nn_int w_sz = w.size();
 			for (nn_int i = 0; i < w_sz; ++i)
@@ -139,10 +137,9 @@ class he_normal_initializer : public weight_initializer
 {
 	nn_int m_truncated;
 	nn_float m_bias_constant;
-	std::mt19937_64 m_generator;
 public:
-	he_normal_initializer(std::mt19937_64 generator, nn_int truncated = 3, nn_float bias_constant = 0.1)
-		: m_generator(generator), m_truncated(truncated), m_bias_constant(bias_constant)
+	he_normal_initializer(nn_int truncated = 3, nn_float bias_constant = 0.1)
+		: m_truncated(truncated), m_bias_constant(bias_constant)
 	{
 	}
 
@@ -154,7 +151,7 @@ public:
 			varray &b = layer->m_b;
 
 			nn_float stdev = sqrt(2.0f / (layer->fan_in_size()));
-			normal_random nrand(m_generator, 0, stdev, m_truncated);
+			normal_random nrand(0, stdev, m_truncated);
 
 			nn_int w_sz = w.size();
 			for (nn_int i = 0; i < w_sz; ++i)
@@ -174,10 +171,9 @@ public:
 class he_uniform_initializer : public weight_initializer
 {
 	nn_float m_bias_constant;
-	std::mt19937_64 m_generator;
 public:
-	he_uniform_initializer(std::mt19937_64 generator, nn_float bias_constant = 0.1)
-		: m_generator(generator), m_bias_constant(bias_constant)
+	he_uniform_initializer(nn_float bias_constant = 0.1)
+		: m_bias_constant(bias_constant)
 	{
 	}
 
@@ -189,7 +185,7 @@ public:
 			varray &b = layer->m_b;
 
 			nn_float range = std::sqrt(6.0f / (layer->fan_in_size()));
-			uniform_random urand(m_generator, -range, range);
+			uniform_random urand(-range, range);
 
 			nn_int w_sz = w.size();
 			for (nn_int i = 0; i < w_sz; ++i)

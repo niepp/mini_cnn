@@ -546,7 +546,7 @@ static void conv_delta_w(const varray &delta, mem_block &block, const varray &fi
 	nn_int h = ret.height();
 	nn_int d = ret.depth();
 
-	nn_assert(delta_cache.check_dim(3));
+	nn_assert(delta.check_dim(3));
 	nn_assert(filters.check_dim(4));
 	nn_assert(ret.check_dim(3));
 
@@ -611,11 +611,11 @@ static inline void conv_2d(const nn_float *img, nn_int iw, nn_int ih, nn_float *
 				for (nn_int r = 0; r < fh; ++r)
 				{
 					nn_int v = (i - r) / stride_ih;
+					bool vpad = (v < 0 || v >= ih || v * stride_ih != i - r);
 					for (nn_int c = 0; c < fw; ++c)
 					{
 						nn_int u = (j - c) / stride_iw;
-						data[idx++] = ((v < 0 || v >= ih || v * stride_ih != i - r) ||
-							(u < 0 || u >= iw || u * stride_iw != j - c)) ? 0 : img[u + v * iw];
+						data[idx++] = (vpad || (u < 0 || u >= iw || u * stride_iw != j - c)) ? 0 : img[u + v * iw];
 					}
 				}
 				out[j + i * ow] += vec_dot(data, filter, fw * fh);

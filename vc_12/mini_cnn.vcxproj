@@ -14,8 +14,10 @@
     <ClInclude Include="..\source\avg_pooling_layer.h" />
     <ClInclude Include="..\source\common_define.h" />
     <ClInclude Include="..\source\convolutional_layer.h" />
+    <ClInclude Include="..\source\dropout_layer.h" />
     <ClInclude Include="..\source\fast_matrix_operation.h" />
     <ClInclude Include="..\source\fully_connected_layer.h" />
+    <ClInclude Include="..\source\global_setting.h" />
     <ClInclude Include="..\source\input_layer.h" />
     <ClInclude Include="..\source\layer.h" />
     <ClInclude Include="..\source\max_pooling_layer.h" />

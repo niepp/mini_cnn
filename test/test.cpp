@@ -7,24 +7,24 @@
 namespace mini_cnn
 {
 
+std::mt19937_64 global_setting::m_rand_generator = std::mt19937_64(get_now_ms());
+
 class gradient_checker
 {
 private:
-	const nn_int cInput_w = 18;
-	const nn_int cInput_h = 18;
+	const nn_int cInput_w = 12;
+	const nn_int cInput_h = 12;
 	const nn_int cInput_d = 1;
 	const nn_int cInput_n = cInput_w * cInput_h * cInput_d;
 	const nn_int cOutput_n = 10;
 
 public:
 #define TEST_GRADIENT(model)\
-	std::cout << std::setw(30) << std::setiosflags(std::ios::left) << #model << "\t" << std::boolalpha << test_nn_gradient_check(model(), generator, input, label) << std::endl;
+	std::cout << std::setw(30) << std::setiosflags(std::ios::left) << #model << "\t" << std::boolalpha << test_nn_gradient_check(model(), input, label) << std::endl;
 
 	gradient_checker()
 	{
-		auto seed = get_now_ms();
-		std::mt19937_64 generator(seed);
-		uniform_random uRand(generator, 0, 1.0);
+		uniform_random uRand(0, 1.0);
 
 		varray *input = new varray(cInput_n);
 		varray *label = new varray(cOutput_n);
@@ -42,9 +42,13 @@ public:
 
 		TEST_GRADIENT(create_fcn_relu);
 
+		TEST_GRADIENT(create_fcn_relu_dropout);
+
 		TEST_GRADIENT(create_fcn_softmax);
 
 		TEST_GRADIENT(create_cnn_sigmod);
+
+		TEST_GRADIENT(create_cnn_sigmod_dropout);
 
 		TEST_GRADIENT(create_cnn_stride_2x2_sigmod);
 
@@ -69,9 +73,9 @@ public:
 	}
 
 private:
-	bool test_nn_gradient_check(network &nn, std::mt19937_64 generator, varray *input, varray *label)
+	bool test_nn_gradient_check(network &nn, varray *input, varray *label)
 	{
-		truncated_normal_initializer initializer(generator, 0, 0.1f, 2);
+		truncated_normal_initializer initializer(0, 0.1f, 2);
 		nn.init_all_weight(initializer);
 		return nn.gradient_check(*input, *label);
 	}
@@ -113,6 +117,17 @@ private:
 		return nn;
 	}
 
+	network create_fcn_relu_dropout()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_n));
+		nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
+		nn.add_layer(new fully_connected_layer(20, activation_type::eRelu));
+		nn.add_layer(new dropout_layer((nn_float)(0.5)));
+		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+		return nn;
+	}
+
 	network create_fcn_softmax()
 	{
 		network nn;
@@ -128,6 +143,18 @@ private:
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
 		nn.add_layer(new convolutional_layer(3, 3, 1, 2, 1, 1, padding_type::eValid, activation_type::eSigmod));
 		nn.add_layer(new convolutional_layer(3, 3, 2, 3, 1, 1, padding_type::eValid, activation_type::eSigmod));
+		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eMSE, activation_type::eSigmod));
+		return nn;
+	}
+
+	network create_cnn_sigmod_dropout()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 2, 1, 1, padding_type::eValid, activation_type::eSigmod));
+		nn.add_layer(new convolutional_layer(3, 3, 2, 3, 1, 1, padding_type::eValid, activation_type::eSigmod));
+		nn.add_layer(new fully_connected_layer(30, activation_type::eSigmod));
+		nn.add_layer(new dropout_layer((nn_float)(0.5)));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eMSE, activation_type::eSigmod));
 		return nn;
 	}

@@ -154,20 +154,12 @@ private:
 					nn_int start_h = j * pool_stride_h;
 					nn_float maxv = cMinFloat;
 					nn_int pool_idx = -1;
-					for (nn_int u = 0; u < pool_w; ++u)
+					for (nn_int v = 0; v < pool_h; ++v)
 					{
-						nn_int x = start_w + u;
-						if (x >= in_w)
+						nn_int y = start_h + v;
+						for (nn_int u = 0; u < pool_w; ++u)
 						{
-							continue;
-						}
-						for (nn_int v = 0; v < pool_h; ++v)
-						{
-							nn_int y = start_h + v;
-							if (y >= in_h)
-							{
-								continue;
-							}
+							nn_int x = start_w + u;
 							nn_float t = in_img(x, y, c);
 							if (t > maxv)
 							{

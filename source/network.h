@@ -78,7 +78,7 @@ public:
 	}
 
 	nn_float SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const index_vec &test_lab_vec
-		, std::mt19937_64 generator, nn_int epoch, nn_int batch_size, nn_float learning_rate, nn_int nthreads
+		, nn_int epoch, nn_int batch_size, nn_float learning_rate, nn_int nthreads
 		, std::function<void(nn_int, nn_int)> minibatch_callback
 		, std::function<void(nn_int, nn_int, nn_float, nn_float, nn_float, nn_float)> epoch_callback)
 	{
@@ -98,7 +98,7 @@ public:
 		for (nn_int c = 0; c < epoch; ++c)
 		{
 			auto tstart = get_now_ms();
-			std::shuffle(idx_vec.begin(), idx_vec.end(), generator);
+			std::shuffle(idx_vec.begin(), idx_vec.end(), global_setting::m_rand_generator);
 			varray_vec batch_img_vec(batch_size);
 			varray_vec batch_label_vec(batch_size);
 			for (nn_int i = 0; i < batch; ++i)
@@ -207,6 +207,7 @@ public:
 	{
 		nn_assert(!m_layers.empty());
 
+		set_phase(phase_type::eGradientCheck);
 		set_task_count(1);
 
 		bool check_ok = true;
@@ -248,6 +249,22 @@ private:
 		}
 	}
 
+	void set_phase(phase_type phase)
+	{
+		for (auto &layer : m_layers)
+		{
+			layer->set_phase_type(phase);
+		}
+	}
+
+	void set_fixed_prop(nn_int task_idx)
+	{
+		for (auto& layer : m_layers)
+		{
+			layer->set_fixed_prop(task_idx);
+		}
+	}
+
 	void forward(const varray& input, nn_int task_idx)
 	{
 		m_input_layer->forw_prop(input, task_idx);
@@ -268,6 +285,7 @@ private:
 
 	void train_task(const varray_vec &batch_img_vec, const varray_vec &batch_label_vec, nn_int begin, nn_int end, nn_int task_idx)
 	{
+		set_phase(phase_type::eTrain);
 		for (nn_int i = begin; i < end; ++i)
 		{
 			forward(*batch_img_vec[i], task_idx);
@@ -277,6 +295,7 @@ private:
 
 	nn_int test_task(const varray_vec &test_img_vec, const index_vec &test_lab_vec, nn_int begin, nn_int end, nn_int task_idx)
 	{
+		set_phase(phase_type::eTest);
 		nn_int c_count = 0;
 		for (nn_int i = begin; i < end; ++i)
 		{
@@ -292,6 +311,7 @@ private:
 
 	nn_float cost_task(const varray_vec &img_vec, const varray_vec &label_vec, nn_int begin, nn_int end, nn_int task_idx)
 	{
+		set_phase(phase_type::eTest);
 		nn_float cost = 0;
 		for (nn_int i = begin; i < end; ++i)
 		{
@@ -307,6 +327,7 @@ private:
 		static const nn_float Precision = 1e-4f;
 
 		clear_all_grident();
+		set_fixed_prop(0);
 
 		nn_float prev_w = w;
 		w = prev_w + EPSILON;
