@@ -12,8 +12,8 @@ std::mt19937_64 global_setting::m_rand_generator = std::mt19937_64(get_now_ms())
 class gradient_checker
 {
 private:
-	const nn_int cInput_w = 12;
-	const nn_int cInput_h = 12;
+	const nn_int cInput_w = 18;
+	const nn_int cInput_h = 18;
 	const nn_int cInput_d = 1;
 	const nn_int cInput_n = cInput_w * cInput_h * cInput_d;
 	const nn_int cOutput_n = 10;

@@ -123,10 +123,13 @@ int main()
 
 	auto epoch_callback = [&train_progress_bar](nn_int c, nn_int epoch, nn_float cur_accuracy, nn_float tot_cost, nn_float train_elapse, nn_float test_elapse)
 	{
-		std::cout << "epoch " << c << "/" << epoch 
-			<< "  accuracy: " << cur_accuracy
-			<< "  tot_cost: " << tot_cost 
-			<< "  train elapse: " << train_elapse << "(s)" 
+		std::cout << "epoch " << c << "/" << epoch
+			<< "  accuracy: " << cur_accuracy;
+		if (tot_cost >= 0)
+		{
+			std::cout << "  tot_cost: " << tot_cost;
+		}
+		std::cout << "  train elapse: " << train_elapse << "(s)"
 			<< "  test elapse: " << test_elapse << "(s)" << std::endl;
 		if (c < epoch)
 		{
@@ -141,7 +144,7 @@ int main()
 
 	auto t0 = get_now_ms();
 
-	nn_float max_accuracy = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, epoch, batch_size, learning_rate, nthreads, minibatch_callback, epoch_callback);
+	nn_float max_accuracy = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, epoch, batch_size, learning_rate, false, nthreads, minibatch_callback, epoch_callback);
 
 	cout << "max_accuracy: " << max_accuracy << endl;
 

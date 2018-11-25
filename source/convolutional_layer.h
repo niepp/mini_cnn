@@ -1,6 +1,8 @@
 #ifndef __CONVOLUTIONAL_LAYER_H__
 #define __CONVOLUTIONAL_LAYER_H__
 
+//#define nnGEMM
+
 namespace mini_cnn 
 {
 
@@ -165,11 +167,11 @@ public:
 #ifdef nnGEMM
 		nn_int temp_w = in_w + in_w - out_w;
 		nn_int temp_h = in_h + in_h - out_h;
-		nn_int img2row_size = temp_w * temp_h * m_filter_shape.m_w * m_filter_shape.m_h * m_filter_shape.m_d;
+		nn_int im2col_size = temp_w * temp_h * m_filter_shape.m_w * m_filter_shape.m_h * m_filter_shape.m_d;
 		m_conv_task_storage.resize(task_count);
 		for (auto &cts : m_conv_task_storage)
 		{
-			cts.m_img_block.resize(img2row_size);
+			cts.m_img_block.resize(im2col_size);
 		}
 #else
 		m_conv_task_storage.resize(task_count);
@@ -187,7 +189,7 @@ public:
 
 		mem_block &block = m_conv_task_storage[task_idx].m_img_block;
 
-#ifdef nnGEMM		
+#ifdef nnGEMM
 		conv_input_w(input, block, m_w, m_stride_w, m_stride_h, out_z);
 #else
 		conv_input_w(input, block, m_w, m_stride_w, m_stride_h, out_z);
@@ -269,7 +271,7 @@ public:
 		nn_int offset_h = input.height() - out_h;
 
 #ifdef nnGEMM
-		conv_delta_w(ts.m_delta, block, m_w, m_stride_w, m_stride_h, ts.m_wd);
+		conv_delta_w(ts.m_delta, block, m_index_map, m_w, m_stride_w, m_stride_h, ts.m_wd);
 #else
 		conv_delta_w(ts.m_delta, block, m_index_map, m_w, m_stride_w, m_stride_h, ts.m_wd);
 #endif
@@ -280,7 +282,7 @@ public:
 private:
 
 #ifdef nnGEMM
-	static inline void img2row(const nn_float *img, nn_int iw, nn_int ih, nn_int channels
+	static inline void im2col(const nn_float *img, nn_int iw, nn_int ih, nn_int channels
 		, nn_int fw, nn_int fh
 		, nn_int stride_iw, nn_int stride_ih
 		, nn_int ow, nn_int oh
@@ -342,7 +344,7 @@ private:
 
 		for (nn_int k = 0; k < filter_count; ++k)
 		{
-			img2row(&in_img(0, 0, 0), in_w, in_h, in_d, filter_w, filter_h, 1, 1, w, h, stride_w, stride_h, block);
+			im2col(&in_img(0, 0, 0), in_w, in_h, in_d, filter_w, filter_h, 1, 1, w, h, stride_w, stride_h, block);
 
 			gemm(block.data, block.w, block.h
 				, (nn_float*)&filters(0, 0, 0, k), 1, filter_w * filter_h * filter_d
@@ -381,7 +383,7 @@ private:
 				const nn_float *delta_k = &delta(0, 0, k);
 				nn_float *dw_ck = &dw(0, 0, c, k);
 
-				img2row(&in_img(0, 0, c), in_w, in_h, 1, delta_w, delta_h, stride_w, stride_h, w, h, 1, 1, block);
+				im2col(&in_img(0, 0, c), in_w, in_h, 1, delta_w, delta_h, stride_w, stride_h, w, h, 1, 1, block);
 
 				gemm(block.data, block.w, block.h
 					, (nn_float*)&delta(0, 0, k), 1, delta_w * delta_h
@@ -391,20 +393,8 @@ private:
 		}
 	}
 
-	static bool is_pad(nn_int a, nn_int stride, nn_int dr, nn_int size)
-	{
-		if (dr * stride != a)
-		{
-			return true;
-		}
-		if (dr < 0 || dr >= size)
-		{
-			return true;
-		}
-		return false;
-	}
-
 	static void conv_delta_w(const varray &delta, mem_block &block
+		, std::vector<nn_int> &index_map
 		, const varray &filters, nn_int stride_w, nn_int stride_h, varray &ret)
 	{
 		nn_int delta_w = delta.width();
@@ -449,15 +439,10 @@ private:
 				{
 					for (nn_int j = 0; j < w; ++j)
 					{
-						for (nn_int r = 0; r < filter_h; ++r)
+						nn_int *pmap = &index_map[(j + i * w) * filter_w * filter_h];
+						for (nn_int idx = 0; idx < filter_w * filter_h; ++idx)
 						{
-							for (nn_int c = 0; c < filter_w; ++c)
-							{
-								nn_int dc = (j - c) / stride_w;
-								nn_int dr = (i - r) / stride_h;
-								prow[c + r * filter_w] = is_pad(j - c, stride_w, dc, delta_w) || is_pad(i - r, stride_h, dr, delta_h)
-									? 0 : delta_k[dc + dr * delta_w];
-							}
+							prow[idx] = pmap[idx] >= 0 ? delta_k[pmap[idx]] : 0;
 						}
 						prow += filter_w * filter_h;
 					}

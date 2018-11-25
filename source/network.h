@@ -78,7 +78,7 @@ public:
 	}
 
 	nn_float SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const index_vec &test_lab_vec
-		, nn_int epoch, nn_int batch_size, nn_float learning_rate, nn_int nthreads
+		, nn_int epoch, nn_int batch_size, nn_float learning_rate, bool calc_cost, nn_int nthreads
 		, std::function<void(nn_int, nn_int)> minibatch_callback
 		, std::function<void(nn_int, nn_int, nn_float, nn_float, nn_float, nn_float)> epoch_callback)
 	{
@@ -117,7 +117,7 @@ public:
 			nn_int correct = test(test_img_vec, test_lab_vec, nthreads);
 			nn_float cur_accuracy = (1.0f * correct / test_img_count);
 			max_accuracy = std::max(max_accuracy, cur_accuracy);
-			nn_float tot_cost = get_cost(img_vec, lab_vec, nthreads);
+			nn_float tot_cost = calc_cost ? - 1 : get_cost(img_vec, lab_vec, nthreads);
 			auto test_end = get_now_ms();
 			nn_float test_elapse = (test_end - train_end) * 0.001f;
 			epoch_callback(c + 1, epoch, cur_accuracy, tot_cost, train_elapse, test_elapse);
