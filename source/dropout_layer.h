@@ -87,7 +87,7 @@ public:
 		{
 			for (nn_int i = 0; i < in_sz; ++i)
 			{
-				 out_x[i] = drop_mask[i] > 0 ? input[i] : nn_float(0);
+				out_x[i] = drop_mask[i] > 0 ? input[i] : nn_float(0);
 			}
 		}
 		else

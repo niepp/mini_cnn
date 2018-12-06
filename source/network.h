@@ -77,7 +77,7 @@ public:
 		}
 	}
 
-	nn_float SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const index_vec &test_lab_vec
+	nn_float SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const varray_vec &test_lab_vec
 		, nn_int epoch, nn_int batch_size, nn_float learning_rate, bool calc_cost, nn_int nthreads
 		, std::function<void(nn_int, nn_int)> minibatch_callback
 		, std::function<void(nn_int, nn_int, nn_float, nn_float, nn_float, nn_float)> epoch_callback)
@@ -117,7 +117,7 @@ public:
 			nn_int correct = test(test_img_vec, test_lab_vec, nthreads);
 			nn_float cur_accuracy = (1.0f * correct / test_img_count);
 			max_accuracy = std::max(max_accuracy, cur_accuracy);
-			nn_float tot_cost = calc_cost ? - 1 : get_cost(img_vec, lab_vec, nthreads);
+			nn_float tot_cost = calc_cost ? get_cost(img_vec, lab_vec, nthreads) : (nn_float)(-1.0);
 			auto test_end = get_now_ms();
 			nn_float test_elapse = (test_end - train_end) * 0.001f;
 			epoch_callback(c + 1, epoch, cur_accuracy, tot_cost, train_elapse, test_elapse);
@@ -149,7 +149,7 @@ public:
 		update_all_weight(eff);
 	}
 
-	nn_int test(const varray_vec &test_img_vec, const index_vec &test_lab_vec, const nn_int max_threads)
+	nn_int test(const varray_vec &test_img_vec, const varray_vec &test_lab_vec, const nn_int max_threads)
 	{
 		nn_assert(test_img_vec.size() == test_lab_vec.size());
 		nn_int test_count = test_img_vec.size();
@@ -293,7 +293,7 @@ private:
 		}
 	}
 
-	nn_int test_task(const varray_vec &test_img_vec, const index_vec &test_lab_vec, nn_int begin, nn_int end, nn_int task_idx)
+	nn_int test_task(const varray_vec &test_img_vec, const varray_vec &test_lab_vec, nn_int begin, nn_int end, nn_int task_idx)
 	{
 		set_phase(phase_type::eTest);
 		nn_int c_count = 0;
@@ -301,7 +301,7 @@ private:
 		{
 			forward(*test_img_vec[i], task_idx);
 			nn_int lab = m_output_layer->get_output(task_idx).arg_max();
-			if (lab == test_lab_vec[i])
+			if (lab == test_lab_vec[i]->arg_max())
 			{
 				++c_count;
 			}
