@@ -1,7 +1,8 @@
 #include <iostream>
 
 #include "source/mini_cnn.h"
-#include "source/mnist_dataset_parser.h"
+#include "source/mnist_parser.h"
+#include "source/cifar_10_parser.h"
 
 using namespace std;
 using namespace mini_cnn;
@@ -53,41 +54,54 @@ public:
 
 };
 
-network create_fnn()
+network create_mnist_fnn()
 {
 	network nn;
-	nn.add_layer(new input_layer(N_inputCount));
+	nn.add_layer(new input_layer(mnist_parser::N_inputCount));
 	nn.add_layer(new fully_connected_layer(100, activation_type::eRelu));
 	nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
-	nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+	nn.add_layer(new output_layer(mnist_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 	return nn;
 }
 
-network create_cnn_small()
+network create_mnist_cnn()
 {
 	network nn;
-	nn.add_layer(new input_layer(W_input, H_input, D_input));
-	nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new convolutional_layer(3, 3, 4, 8, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new fully_connected_layer(32, activation_type::eRelu));
-	nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
-	return nn;
-}
-
-network create_cnn()
-{
-	network nn;
-	nn.add_layer(new input_layer(W_input, H_input, D_input));
+	nn.add_layer(new input_layer(mnist_parser::W_input, mnist_parser::H_input, mnist_parser::D_input));
 	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::eValid, activation_type::eRelu));
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
 	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
 	nn.add_layer(new fully_connected_layer(1024, activation_type::eRelu));
-	nn.add_layer(new output_layer(C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+	nn.add_layer(new dropout_layer((nn_float)0.5));
+	nn.add_layer(new output_layer(mnist_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 	return nn;
 }
+
+network create_cifar_10_fnn()
+{
+	network nn;
+	nn.add_layer(new input_layer(cifar_10_parser::Size_img));
+	nn.add_layer(new fully_connected_layer(100, activation_type::eRelu));
+	nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
+	nn.add_layer(new output_layer(cifar_10_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+	return nn;
+}
+
+network create_cifar_10_cnn()
+{
+	network nn;
+	nn.add_layer(new input_layer(cifar_10_parser::W_img, cifar_10_parser::H_img, cifar_10_parser::D_img));
+	nn.add_layer(new convolutional_layer(3, 3, 3, 32, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+	nn.add_layer(new fully_connected_layer(1024, activation_type::eRelu));
+	nn.add_layer(new dropout_layer((nn_float)0.5));
+	nn.add_layer(new output_layer(cifar_10_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+	return nn;
+}
+
 
 // random init
 // seed = 2572007265;	// fixed seed to repeat test
@@ -98,15 +112,17 @@ int main()
 	varray_vec img_vec;
 	varray_vec lab_vec;
 	varray_vec test_img_vec;
-	index_vec test_lab_vec;
+	varray_vec test_lab_vec;
 
-	std::string relate_data_path = "../../dataset/mnist/";
-	mnist_dataset_parser mnist(relate_data_path, "train-images.idx3-ubyte", "train-labels.idx1-ubyte"
-		, "t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte");
-	mnist.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
+	//mnist_parser mnist("../../dataset/fashion/");
+	//mnist.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
+
+	cifar_10_parser cifar_10("../../dataset/cifar-10/");
+	cifar_10.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
 	// define neural network
-	network nn = create_cnn();
+	//network nn = create_mnist_fnn();
+	network nn = create_cifar_10_cnn();
 
 	cout << "total paramters count:" << nn.paramters_count() << endl;
 

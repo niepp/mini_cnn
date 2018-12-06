@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\source\avg_pooling_layer.h" />
+    <ClInclude Include="..\source\cifar_10_parser.h" />
     <ClInclude Include="..\source\common_define.h" />
     <ClInclude Include="..\source\convolutional_layer.h" />
     <ClInclude Include="..\source\dropout_layer.h" />
@@ -22,7 +23,7 @@
     <ClInclude Include="..\source\layer.h" />
     <ClInclude Include="..\source\max_pooling_layer.h" />
     <ClInclude Include="..\source\mini_cnn.h" />
-    <ClInclude Include="..\source\mnist_dataset_parser.h" />
+    <ClInclude Include="..\source\mnist_parser.h" />
     <ClInclude Include="..\source\network.h" />
     <ClInclude Include="..\source\output_layer.h" />
     <ClInclude Include="..\source\utils.h" />
