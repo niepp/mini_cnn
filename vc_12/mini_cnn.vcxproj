@@ -26,6 +26,7 @@
     <ClInclude Include="..\source\mnist_parser.h" />
     <ClInclude Include="..\source\network.h" />
     <ClInclude Include="..\source\output_layer.h" />
+    <ClInclude Include="..\source\relu_layer.h" />
     <ClInclude Include="..\source\utils.h" />
     <ClInclude Include="..\source\varray.h" />
     <ClInclude Include="..\source\weight_initializer.h" />

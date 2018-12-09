@@ -188,12 +188,7 @@ public:
 		varray &out_x = m_task_storage[task_idx].m_x;
 
 		mem_block &block = m_conv_task_storage[task_idx].m_img_block;
-
-#ifdef nnGEMM
 		conv_input_w(input, block, m_w, m_stride_w, m_stride_h, out_z);
-#else
-		conv_input_w(input, block, m_w, m_stride_w, m_stride_h, out_z);
-#endif
 
 		for (nn_int k = 0; k < m_out_shape.m_d; ++k)
 		{
@@ -239,11 +234,7 @@ public:
 			dw_k := conv2d(input_d, delta_k)
 		*/
 		mem_block &block = m_conv_task_storage[task_idx].m_img_block;
-#ifdef nnGEMM
 		conv_input_delta(input, block, ts.m_delta, m_stride_w, m_stride_h, ts.m_dw);
-#else
-		conv_input_delta(input, block, ts.m_delta, m_stride_w, m_stride_h, ts.m_dw);
-#endif
 
 		/*
 			db_k := sum(delta_k)
@@ -269,12 +260,7 @@ public:
 		nn_int out_h = m_out_shape.m_h;
 		nn_int offset_w = input.width() - out_w;
 		nn_int offset_h = input.height() - out_h;
-
-#ifdef nnGEMM
 		conv_delta_w(ts.m_delta, block, m_index_map, m_w, m_stride_w, m_stride_h, ts.m_wd);
-#else
-		conv_delta_w(ts.m_delta, block, m_index_map, m_w, m_stride_w, m_stride_h, ts.m_wd);
-#endif
 		m_prev->back_prop(ts.m_wd, task_idx);
 
 	}

@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "fast_matrix_operation.h"
 #include "layer.h"
+#include "relu_layer.h"
 #include "fully_connected_layer.h"
 #include "input_layer.h"
 #include "output_layer.h"
