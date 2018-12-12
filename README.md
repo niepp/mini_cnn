@@ -175,7 +175,7 @@ epoch 9/10  accuracy: 0.9917  train elapse: 843.356(s)  test elapse: 77.73(s)</b
 |----|----|----|----|----|----|----|----|----|----|</br>
 **************************************************</br>
 epoch 10/10  accuracy: 0.993  train elapse: 838.781(s)  test elapse: 75.225(s)</br>
-<font color=#0099ff size=3 face="黑体">max_accuracy: 0.993</font>
+##max_accuracy: 0.993##</br>
 time_cost: 9457.42(s)</br>
 
 
