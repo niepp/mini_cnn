@@ -19,6 +19,8 @@ enum padding_type
 
 enum activation_type
 {
+	eNone,
+	eIdentity,
 	eSigmod,
 	eTanh,
 	eRelu,
@@ -78,6 +80,10 @@ class layer_base
 protected:
 	layer_base* m_next;
 	layer_base* m_prev;
+
+	active_func m_f;
+	active_func m_df;
+
 public:
 	shape3d m_out_shape;
 	varray m_w;          // weight vector
@@ -97,8 +103,33 @@ protected:
 	std::vector<task_storage> m_task_storage;
 
 public:
-	layer_base()
+	layer_base(activation_type ac_type = activation_type::eNone)
 	{
+		switch (ac_type)
+		{
+		case activation_type::eNone:
+			m_f = nullptr;
+			m_df = nullptr;
+			break;
+		case activation_type::eIdentity:
+			m_f = identity;
+			m_df = deriv_identity;
+			break;
+		case activation_type::eSigmod:
+			m_f = sigmoid;
+			m_df = deriv_sigmoid;
+			break;
+		case activation_type::eRelu:
+			m_f = relu;
+			m_df = deriv_relu;
+			break;
+		case activation_type::eSoftMax:
+			m_f = softmax;
+			m_df = nullptr;
+			break;
+		default:
+			break;
+		}
 	}
 
 	nn_int out_size() const

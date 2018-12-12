@@ -97,6 +97,32 @@ inline void align_free(void *aptr)
 
 typedef void (*active_func)(const varray &v, varray &retv);
 
+inline void identity(const varray &v, varray &retv)
+{
+	nn_int len = v.size();
+	nn_assert(len == retv.size());
+
+	const nn_float * nn_restrict src = &v[0];
+	nn_float * nn_restrict dst = &retv[0];
+	for (nn_int i = 0; i < len; ++i)
+	{
+		dst[i] = src[i];
+	}
+}
+
+inline void deriv_identity(const varray &v, varray &retv)
+{
+	nn_int len = v.size();
+	nn_assert(len == retv.size());
+
+	const nn_float * nn_restrict src = &v[0];
+	nn_float * nn_restrict dst = &retv[0];
+	for (nn_int i = 0; i < len; ++i)
+	{
+		dst[i] = cOne;
+	}
+}
+
 inline void sigmoid(const varray &v, varray &retv)
 {
 	nn_int len = v.size();

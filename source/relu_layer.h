@@ -1,5 +1,5 @@
-#ifndef __RELU_H__
-#define __RELU_H__
+#ifndef __RELU_LAYER_H__
+#define __RELU_LAYER_H__
 
 namespace mini_cnn
 {
@@ -19,14 +19,10 @@ namespace mini_cnn
 
 class relu_layer : public layer_base
 {
-protected:
-	nn_int m_neural_count;
-
 public:
-	relu_layer(nn_int neural_count)
+	relu_layer()
 		: layer_base()
 	{
-		m_neural_count = neural_count;
 	}
 
 	virtual nn_int fan_in_size() const
@@ -42,7 +38,10 @@ public:
 	virtual void connect(layer_base *next)
 	{
 		layer_base::connect(next);
-		m_out_shape.set(m_neural_count, 1, 1);
+		nn_int in_w = m_prev->m_out_shape.m_w;
+		nn_int in_h = m_prev->m_out_shape.m_h;
+		nn_int in_d = m_prev->m_out_shape.m_d;
+		m_out_shape.set(in_w, in_h, in_d);
 	}
 
 	virtual void set_task_count(nn_int task_count)
@@ -50,38 +49,32 @@ public:
 		nn_int in_w = m_prev->m_out_shape.m_w;
 		nn_int in_h = m_prev->m_out_shape.m_h;
 		nn_int in_d = m_prev->m_out_shape.m_d;
+		nn_int in_size = m_prev->m_out_shape.size();
 
-		nn_int in_sz = m_w.width();
-		nn_int out_sz = m_w.height();
 		m_task_storage.resize(task_count);
 		for (auto& ts : m_task_storage)
 		{
-			ts.m_z.resize(out_sz);
-			ts.m_x.resize(out_sz);
-			ts.m_delta.resize(out_sz);
-			if (m_prev->m_out_shape.is_img())
+			if (!m_out_shape.is_img())
 			{
-				ts.m_wd.resize(in_w, in_h, in_d);
+				ts.m_x.resize(in_w * in_h * in_d);
 			}
 			else
 			{
-				ts.m_wd.resize(in_sz);
+				ts.m_x.resize(in_w, in_h, in_d);
 			}
+			ts.m_delta.resize(in_size);
 		}
 	}
 
 	virtual void forw_prop(const varray &input, nn_int task_idx)
 	{
-		nn_int height = m_w.height();
-		nn_int width = m_w.width();
-
-		nn_assert(width == input.size());
+		nn_assert(input.size() == m_out_shape.size());
 
 		layer_base::task_storage &ts = m_task_storage[task_idx];
 
-		nn_assert(ts.m_z.width() == height);
+		nn_assert(input.size() == ts.m_x.size());
 
-		relu(ts.m_z, ts.m_x);
+		relu(input, ts.m_x);
 
 		if (m_next != nullptr)
 		{
@@ -93,24 +86,17 @@ public:
 	{
 		layer_base::task_storage &ts = m_task_storage[task_idx];
 
-		nn_assert(m_w.dim() == 2);
-		nn_assert(next_wd.size() == ts.m_z.size());
-
-		const varray &input = m_prev->get_output(task_idx);
+		nn_assert(next_wd.size() == ts.m_x.size());
 
 		nn_int out_sz = next_wd.size();
-		nn_int in_sz = input.size();
-
-		nn_assert(in_sz == m_w.width());
-		nn_assert(out_sz == m_w.height());
 
 		/*
 			prev delta := w * delta กั df(z)
 		*/
-		deriv_relu(ts.m_z, ts.m_delta);
+		deriv_relu(ts.m_x, ts.m_delta);
 
 		const nn_float *nn_restrict vec_next_wd = &next_wd[0];
-		nn_float *vec_delta = &ts.m_delta[0];
+		nn_float *nn_restrict vec_delta = &ts.m_delta[0];
 		for (nn_int i = 0; i < out_sz; ++i)
 		{
 			vec_delta[i] *= vec_next_wd[i];
@@ -124,4 +110,4 @@ public:
 
 }
 
-#endif //__RELU_H__
+#endif //__RELU_LAYER_H__

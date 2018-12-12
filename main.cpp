@@ -58,8 +58,18 @@ network create_mnist_fnn()
 {
 	network nn;
 	nn.add_layer(new input_layer(mnist_parser::N_inputCount));
-	nn.add_layer(new fully_connected_layer(100, activation_type::eRelu));
-	nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
+	nn.add_layer(new fully_connected_layer(100, activation_type::eIdentity));
+	nn.add_layer(new relu_layer());
+
+	nn.add_layer(new reshape_layer(10, 10, 1));
+
+	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::eValid));
+	nn.add_layer(new relu_layer());
+
+	nn.add_layer(new flatten_layer());
+
+	nn.add_layer(new fully_connected_layer(30, activation_type::eIdentity));
+	nn.add_layer(new relu_layer());
 	nn.add_layer(new output_layer(mnist_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 	return nn;
 }
@@ -78,29 +88,30 @@ network create_mnist_cnn()
 	return nn;
 }
 
-network create_cifar_10_fnn()
-{
-	network nn;
-	nn.add_layer(new input_layer(cifar_10_parser::Size_img));
-	nn.add_layer(new fully_connected_layer(100, activation_type::eRelu));
-	nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
-	nn.add_layer(new output_layer(cifar_10_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
-	return nn;
-}
-
-network create_cifar_10_cnn()
-{
-	network nn;
-	nn.add_layer(new input_layer(cifar_10_parser::W_img, cifar_10_parser::H_img, cifar_10_parser::D_img));
-	nn.add_layer(new convolutional_layer(3, 3, 3, 32, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new fully_connected_layer(1024, activation_type::eRelu));
-	nn.add_layer(new dropout_layer((nn_float)0.5));
-	nn.add_layer(new output_layer(cifar_10_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
-	return nn;
-}
+//
+//network create_cifar_10_fnn()
+//{
+//	network nn;
+//	nn.add_layer(new input_layer(cifar_10_parser::Size_img));
+//	nn.add_layer(new fully_connected_layer(100, activation_type::eRelu));
+//	nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
+//	nn.add_layer(new output_layer(cifar_10_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+//	return nn;
+//}
+//
+//network create_cifar_10_cnn()
+//{
+//	network nn;
+//	nn.add_layer(new input_layer(cifar_10_parser::W_img, cifar_10_parser::H_img, cifar_10_parser::D_img));
+//	nn.add_layer(new convolutional_layer(3, 3, 3, 32, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+//	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+//	nn.add_layer(new fully_connected_layer(1024, activation_type::eRelu));
+//	nn.add_layer(new dropout_layer((nn_float)0.5));
+//	nn.add_layer(new output_layer(cifar_10_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+//	return nn;
+//}
 
 
 // random init
@@ -114,15 +125,15 @@ int main()
 	varray_vec test_img_vec;
 	varray_vec test_lab_vec;
 
-	//mnist_parser mnist("../../dataset/fashion/");
-	//mnist.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
+	mnist_parser mnist("../../dataset/mnist/");
+	mnist.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
-	cifar_10_parser cifar_10("../../dataset/cifar-10/");
-	cifar_10.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
+	//cifar_10_parser cifar_10("../../dataset/cifar-10/");
+	//cifar_10.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
 	// define neural network
-	//network nn = create_mnist_fnn();
-	network nn = create_cifar_10_cnn();
+	network nn = create_mnist_LeNet5();
+	//network nn = create_cifar_10_cnn();
 
 	cout << "total paramters count:" << nn.paramters_count() << endl;
 

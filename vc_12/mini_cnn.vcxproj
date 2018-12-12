@@ -17,6 +17,7 @@
     <ClInclude Include="..\source\convolutional_layer.h" />
     <ClInclude Include="..\source\dropout_layer.h" />
     <ClInclude Include="..\source\fast_matrix_operation.h" />
+    <ClInclude Include="..\source\flatten_layer.h" />
     <ClInclude Include="..\source\fully_connected_layer.h" />
     <ClInclude Include="..\source\global_setting.h" />
     <ClInclude Include="..\source\input_layer.h" />
@@ -27,6 +28,7 @@
     <ClInclude Include="..\source\network.h" />
     <ClInclude Include="..\source\output_layer.h" />
     <ClInclude Include="..\source\relu_layer.h" />
+    <ClInclude Include="..\source\reshape_layer.h" />
     <ClInclude Include="..\source\utils.h" />
     <ClInclude Include="..\source\varray.h" />
     <ClInclude Include="..\source\weight_initializer.h" />

@@ -62,8 +62,6 @@ protected:
 	nn_int m_stride_w;
 	nn_int m_stride_h;
 	padding_type m_padding;
-	active_func m_f;
-	active_func m_df;
 
 	struct conv_task_storage
 	{
@@ -73,28 +71,11 @@ protected:
 	std::vector<nn_int> m_index_map;
 
 public:
-	convolutional_layer(nn_int filter_w, nn_int filter_h, nn_int filter_c, nn_int filter_n, nn_int stride_w, nn_int stride_h, padding_type padding, activation_type ac_type)
-		: layer_base()
+	convolutional_layer(nn_int filter_w, nn_int filter_h, nn_int filter_c, nn_int filter_n, nn_int stride_w, nn_int stride_h
+		, padding_type padding, activation_type ac_type = activation_type::eIdentity) : layer_base(ac_type)
 		, m_filter_shape(filter_w, filter_h, filter_c)
 		, m_filter_count(filter_n), m_stride_w(stride_w), m_stride_h(stride_h), m_padding(padding)
 	{
-		switch (ac_type)
-		{
-		case activation_type::eSigmod:
-			m_f = sigmoid;
-			m_df = deriv_sigmoid;
-			break;
-		case activation_type::eRelu:
-			m_f = relu;
-			m_df = deriv_relu;
-			break;
-		case activation_type::eSoftMax:
-			m_f = softmax;
-			m_df = nullptr;
-			break;
-		default:
-			break;
-		}
 	}
 
 	virtual void connect(layer_base *next)

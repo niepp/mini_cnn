@@ -7,31 +7,12 @@ class fully_connected_layer : public layer_base
 {
 protected:
 	nn_int m_neural_count;
-	active_func m_f;
-	active_func m_df;
 
 public:
-	fully_connected_layer(nn_int neural_count, activation_type ac_type)
-		: layer_base()
+	fully_connected_layer(nn_int neural_count, activation_type ac_type = activation_type::eIdentity)
+		: layer_base(ac_type)
 	{
 		m_neural_count = neural_count;
-		switch (ac_type)
-		{
-		case activation_type::eSigmod:
-			m_f = sigmoid;
-			m_df = deriv_sigmoid;
-			break;
-		case activation_type::eRelu:
-			m_f = relu;
-			m_df = deriv_relu;
-			break;
-		case activation_type::eSoftMax:
-			m_f = softmax;
-			m_df = nullptr;
-			break;
-		default:
-			break;
-		}
 	}
 
 	virtual nn_int fan_in_size() const
@@ -132,7 +113,8 @@ public:
 		}
 
 		/*
-			dw := db * input
+			db := delta
+			dw := delta * input
 		*/
 		nn_float *nn_restrict vec_db = &ts.m_db[0];
 		for (nn_int i = 0; i < out_sz; ++i)

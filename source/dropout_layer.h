@@ -21,7 +21,7 @@ public:
 	dropout_layer(nn_float drop_prob)
 		: layer_base()
 		, m_drop_prob(drop_prob)
-		, m_uniform_rand((nn_float)(0), (nn_float)(1))
+		, m_uniform_rand(cZero, cOne)
 	{
 	}
 
@@ -87,7 +87,7 @@ public:
 		{
 			for (nn_int i = 0; i < in_sz; ++i)
 			{
-				out_x[i] = drop_mask[i] > 0 ? input[i] : nn_float(0);
+				out_x[i] = drop_mask[i] > 0 ? input[i] : cZero;
 			}
 		}
 		else
