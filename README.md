@@ -146,7 +146,7 @@ epoch 2/10  accuracy: 0.9881  train elapse: 893.153(s)  test elapse: 81.549(s)</
 0%   10   20   30   40   50   60   70   80   90   100%</br>
 |----|----|----|----|----|----|----|----|----|----|</br>
 **************************************************</br>
-epoch 3/10  accuracy: 0.9897  train elapse: 897.536(s)  test elapse: 80.905(s)</br></br>
+epoch 3/10  accuracy: 0.9897  train elapse: 897.536(s)  test elapse: 80.905(s)</br>
 0%   10   20   30   40   50   60   70   80   90   100%</br>
 |----|----|----|----|----|----|----|----|----|----|</br>
 **************************************************</br>
@@ -175,7 +175,7 @@ epoch 9/10  accuracy: 0.9917  train elapse: 843.356(s)  test elapse: 77.73(s)</b
 |----|----|----|----|----|----|----|----|----|----|</br>
 **************************************************</br>
 epoch 10/10  accuracy: 0.993  train elapse: 838.781(s)  test elapse: 75.225(s)</br>
-<font color=#00ffff>max_accuracy: 0.993</font></br>
+<font color=#0099ff size=3 face="黑体">max_accuracy: 0.993</font>
 time_cost: 9457.42(s)</br>
 
 
