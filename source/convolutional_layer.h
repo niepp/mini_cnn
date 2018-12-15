@@ -88,8 +88,19 @@ public:
 
 		nn_int in_w = m_prev->m_out_shape.m_w;
 		nn_int in_h = m_prev->m_out_shape.m_h;
-		nn_int out_w = static_cast<nn_int>(::floorf(1.0f * (in_w - m_filter_shape.m_w) / m_stride_w)) + 1;
-		nn_int out_h = static_cast<nn_int>(::floorf(1.0f * (in_h - m_filter_shape.m_h) / m_stride_h)) + 1;
+
+		nn_int out_w = 0;
+		nn_int out_h = 0;
+		if (m_padding == padding_type::eValid)
+		{
+			out_w = static_cast<nn_int>(::floorf(1.0f * (in_w - m_filter_shape.m_w) / m_stride_w)) + 1;
+			out_h = static_cast<nn_int>(::floorf(1.0f * (in_h - m_filter_shape.m_h) / m_stride_h)) + 1;
+		}
+		else
+		{
+			out_w = in_w;
+			out_h = in_h;
+		}
 		m_out_shape.set(out_w, out_h, m_filter_count);
 
 		nn_int fw = m_filter_shape.m_w;
@@ -239,8 +250,7 @@ public:
 		*/
 		nn_int out_w = m_out_shape.m_w;
 		nn_int out_h = m_out_shape.m_h;
-		nn_int offset_w = input.width() - out_w;
-		nn_int offset_h = input.height() - out_h;
+
 		conv_delta_w(ts.m_delta, block, m_index_map, m_w, m_stride_w, m_stride_h, ts.m_wd);
 		m_prev->back_prop(ts.m_wd, task_idx);
 
@@ -313,9 +323,12 @@ private:
 		{
 			im2col(&in_img(0, 0, 0), in_w, in_h, in_d, filter_w, filter_h, 1, 1, w, h, stride_w, stride_h, block);
 
-			gemm(block.data, block.w, block.h
-				, (nn_float*)&filters(0, 0, 0, k), 1, filter_w * filter_h * filter_d
-				, &out_img(0, 0, k), 1, w * h);
+			nn_assert(block.w == filter_w * filter_h * filter_d);
+			nn_assert(block.h == w * h);
+
+			fo_mv_v(block.data, block.h, block.w
+				, (nn_float*)&filters(0, 0, 0, k) 
+				, &out_img(0, 0, k));
 
 		}
 	}
@@ -352,9 +365,12 @@ private:
 
 				im2col(&in_img(0, 0, c), in_w, in_h, 1, delta_w, delta_h, stride_w, stride_h, w, h, 1, 1, block);
 
-				gemm(block.data, block.w, block.h
-					, (nn_float*)&delta(0, 0, k), 1, delta_w * delta_h
-					, &dw(0, 0, c, k), 1, w * h);
+				nn_assert(block.w == delta_w * delta_h);
+				nn_assert(block.h == w * h);
+
+				fo_mv_v(block.data, block.h, block.w
+					, (nn_float*)&delta(0, 0, k)
+					, &dw(0, 0, c, k));
 
 			}
 		}
@@ -415,9 +431,9 @@ private:
 					}
 				}
 
-				gemm(block.data, block.w, block.h
-					, (nn_float*)&filters(0, 0, c, k), 1, filter_w * filter_h
-					, ret_c, 1, w * h);
+				fo_mv_v(block.data, block.h, block.w
+					, (nn_float*)&filters(0, 0, c, k)
+					, ret_c);
 
 			}
 		}

@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\source\avg_pooling_layer.h" />
+    <ClInclude Include="..\source\cifar_100_parser.h" />
     <ClInclude Include="..\source\cifar_10_parser.h" />
     <ClInclude Include="..\source\common_define.h" />
     <ClInclude Include="..\source\convolutional_layer.h" />

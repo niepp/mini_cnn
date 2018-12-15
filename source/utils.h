@@ -95,6 +95,26 @@ inline void align_free(void *aptr)
 	}
 }
 
+inline void transpose(const varray &mat, varray &retm)
+{
+	nn_assert(mat.dim() == 2);
+	nn_assert(retm.dim() == 2);
+
+	nn_assert(mat.width() == retm.height());
+	nn_assert(mat.height() == retm.width());
+
+	nn_int h = retm.height();
+	nn_int w = retm.width();
+
+	for (int i = 0; i < h; ++i)
+	{
+		for (int j = 0; j < w; ++j)
+		{
+			retm[i * w + j] = mat[j * h + i];
+		}
+	}
+}
+
 typedef void (*active_func)(const varray &v, varray &retv);
 
 inline void identity(const varray &v, varray &retv)

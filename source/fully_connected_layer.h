@@ -8,6 +8,12 @@ class fully_connected_layer : public layer_base
 protected:
 	nn_int m_neural_count;
 
+	struct fc_task_storage
+	{
+		varray m_w_t;
+	};
+	std::vector<fc_task_storage> m_fc_task_storage;
+
 public:
 	fully_connected_layer(nn_int neural_count, activation_type ac_type = activation_type::eIdentity)
 		: layer_base(ac_type)
@@ -58,6 +64,13 @@ public:
 				ts.m_wd.resize(in_sz);
 			}
 		}
+
+		m_fc_task_storage.resize(task_count);
+		for (auto &fcts : m_fc_task_storage)
+		{
+			fcts.m_w_t.resize(out_sz, in_sz);
+		}
+
 	}
 
 	virtual void forw_prop(const varray &input, nn_int task_idx)
@@ -130,7 +143,10 @@ public:
 			m_w : out_sz X in_sz
 			wd := w.transpose * delta
 		*/
-		fo_mtv_v(&m_w[0], in_sz, out_sz
+		fc_task_storage &fcts = m_fc_task_storage[task_idx];
+		transpose(m_w, fcts.m_w_t);
+
+		fo_mv_v(&fcts.m_w_t[0], in_sz, out_sz
 			, vec_delta
 			, &ts.m_wd[0]);
 
