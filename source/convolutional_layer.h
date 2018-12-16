@@ -1,7 +1,7 @@
 #ifndef __CONVOLUTIONAL_LAYER_H__
 #define __CONVOLUTIONAL_LAYER_H__
 
-//#define nnGEMM
+#define nnGEMM
 
 namespace mini_cnn 
 {
@@ -114,6 +114,7 @@ public:
 		}
 		else
 		{
+			// todo add padding size around img
 			out_w = in_w;
 			out_h = in_h;
 		}

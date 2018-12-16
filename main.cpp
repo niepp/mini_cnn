@@ -79,9 +79,9 @@ network create_mnist_cnn()
 {
 	network nn;
 	nn.add_layer(new input_layer(mnist_parser::W_input, mnist_parser::H_input, mnist_parser::D_input));
-	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::eSame, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::eValid, activation_type::eRelu));
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eSame, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
 	nn.add_layer(new fully_connected_layer(1024, activation_type::eRelu));
 	nn.add_layer(new dropout_layer((nn_float)0.5));
@@ -170,7 +170,6 @@ int main()
 	//cifar_100.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
 	// define neural network
-	//network nn = create_mnist_cnn();
 	network nn = create_mnist_cnn();
 	//network nn = create_cifar_100_VGG16();
 
