@@ -111,9 +111,18 @@ public:
 				}
 				train_one_batch(batch_img_vec, batch_label_vec, learning_rate, nthreads);
 				minibatch_callback((i + 1) * batch_size, img_count);
+
+				//if (i == 99) {
+				//	break;
+				//}
+
 			}
 			auto train_end = get_now_ms();
 			nn_float train_elapse = (train_end - tstart) * 0.001f;
+
+			//epoch_callback(c + 1, epoch, 0, 0, train_elapse, 0);
+			//break;
+			
 			nn_int correct = test(test_img_vec, test_lab_vec, nthreads);
 			nn_float cur_accuracy = (1.0f * correct / test_img_count);
 			max_accuracy = std::max(max_accuracy, cur_accuracy);

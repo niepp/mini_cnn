@@ -3,6 +3,7 @@
 #include "source/mini_cnn.h"
 #include "source/mnist_parser.h"
 #include "source/cifar_10_parser.h"
+#include "source/cifar_100_parser.h"
 
 using namespace std;
 using namespace mini_cnn;
@@ -78,9 +79,9 @@ network create_mnist_cnn()
 {
 	network nn;
 	nn.add_layer(new input_layer(mnist_parser::W_input, mnist_parser::H_input, mnist_parser::D_input));
-	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::eSame, activation_type::eRelu));
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eSame, activation_type::eRelu));
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
 	nn.add_layer(new fully_connected_layer(1024, activation_type::eRelu));
 	nn.add_layer(new dropout_layer((nn_float)0.5));
@@ -88,16 +89,50 @@ network create_mnist_cnn()
 	return nn;
 }
 
-//
-//network create_cifar_10_fnn()
-//{
-//	network nn;
-//	nn.add_layer(new input_layer(cifar_10_parser::Size_img));
-//	nn.add_layer(new fully_connected_layer(100, activation_type::eRelu));
-//	nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
-//	nn.add_layer(new output_layer(cifar_10_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
-//	return nn;
-//}
+network create_cifar_100_VGG16()
+{
+	network nn;
+	nn.add_layer(new input_layer(cifar_100_parser::W_img, cifar_100_parser::H_img, cifar_100_parser::D_img));
+	nn.add_layer(new convolutional_layer(3, 3, 3, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 64, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+	nn.add_layer(new convolutional_layer(3, 3, 64, 128, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 128, 128, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+
+	nn.add_layer(new convolutional_layer(3, 3, 128, 256, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 256, 256, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 256, 256, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+
+	nn.add_layer(new convolutional_layer(3, 3, 256, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+
+	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+
+	nn.add_layer(new fully_connected_layer(4096, activation_type::eRelu));
+	nn.add_layer(new fully_connected_layer(4096, activation_type::eRelu));
+	nn.add_layer(new dropout_layer((nn_float)0.5));
+	nn.add_layer(new output_layer(cifar_100_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+	return nn;
+}
+
+
+network create_cifar_10_fnn()
+{
+	network nn;
+	nn.add_layer(new input_layer(cifar_10_parser::Size_img));
+	nn.add_layer(new fully_connected_layer(100, activation_type::eRelu));
+	nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
+	nn.add_layer(new output_layer(cifar_10_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+	return nn;
+}
+
 //
 //network create_cifar_10_cnn()
 //{
@@ -131,9 +166,13 @@ int main()
 	//cifar_10_parser cifar_10("../../dataset/cifar-10/");
 	//cifar_10.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
+	//cifar_100_parser cifar_100("../../dataset/cifar-100/");
+	//cifar_100.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
+
 	// define neural network
-	network nn = create_mnist_LeNet5();
-	//network nn = create_cifar_10_cnn();
+	//network nn = create_mnist_cnn();
+	network nn = create_mnist_cnn();
+	//network nn = create_cifar_100_VGG16();
 
 	cout << "total paramters count:" << nn.paramters_count() << endl;
 

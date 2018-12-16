@@ -1,7 +1,7 @@
 #ifndef __CONVOLUTIONAL_LAYER_H__
 #define __CONVOLUTIONAL_LAYER_H__
 
-#define nnGEMM
+//#define nnGEMM
 
 namespace mini_cnn 
 {
@@ -497,13 +497,14 @@ static void conv_input_w(const varray &in_img, mem_block &block, const varray &f
 	{
 		for (nn_int c = 0; c < in_d; ++c)
 		{
-			conv_2d(&in_img(0, 0, c), in_w, in_h, block.data
-				, 1, 1
-				, &filters(0, 0, c, k), filter_w, filter_h
+			conv_2d(&in_img(0, 0, c), in_w, in_h, block.data()
 				, stride_w, stride_h
+				, &filters(0, 0, c, k), filter_w, filter_h
+				, 1, 1
 				, &out_img(0, 0, k), w, h);
 		}
 	}
+
 }
 
 static void conv_input_delta(const varray &in_img, mem_block &block, const varray &delta, nn_int stride_w, nn_int stride_h, varray &dw)
@@ -532,13 +533,14 @@ static void conv_input_delta(const varray &in_img, mem_block &block, const varra
 	{
 		for (nn_int c = 0; c < d; ++c)
 		{
-			conv_2d(&in_img(0, 0, c), in_w, in_h, block.data
+			conv_2d(&in_img(0, 0, c), in_w, in_h, block.data()
 				, stride_w, stride_h
 				, &delta(0, 0, k), delta_w, delta_h
 				, 1, 1
 				, &dw(0, 0, c, k), w, h);
 		}
 	}
+
 }
 
 static void conv_delta_w(const varray &delta, mem_block &block, std::vector<nn_int> &index_map, const varray &filters, nn_int stride_w, nn_int stride_h, varray &ret)
@@ -570,12 +572,13 @@ static void conv_delta_w(const varray &delta, mem_block &block, std::vector<nn_i
 	{
 		for (nn_int k = 0; k < filter_count; ++k)
 		{
-			conv_2d_flip(&delta(0, 0, k), delta_w, delta_h, block.data
+			conv_2d_flip(&delta(0, 0, k), delta_w, delta_h, block.data()
 				, index_map
 				, &filters(0, 0, c, k), filter_w, filter_h
 				, &ret(0, 0, c), w, h);
 		}
 	}
+
 }
 
 /*
@@ -593,14 +596,13 @@ static inline void conv_2d(const nn_float *img, nn_int iw, nn_int ih, nn_float *
 		{
 			nn_int start_h = i * stride_oh;
 			nn_int start_w = j * stride_ow;
-			nn_float dot = 0;
 			for (nn_int r = 0; r < fh; ++r)
 			{
 				nn_int v = start_h + r * stride_ih;
 				for (nn_int c = 0; c < fw; ++c)
 				{
 					nn_int u = start_w + c * stride_iw;
-					data[c + r * fw] = img[u + v * iw];
+					data[c + r * fw] = (u >= iw || v >= ih) ? 0 : img[u + v * iw];
 				}
 			}
 			out[j + i * ow] += vec_dot(data, filter, fw * fh);
