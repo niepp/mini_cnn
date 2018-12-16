@@ -93,5 +93,14 @@ namespace mini_cnn
 		}
 	}
 
+	static inline void fo_mv_v_accum(nn_float *nn_restrict m, nn_int h, nn_int w, nn_float *nn_restrict x, nn_float *nn_restrict y)
+	{
+		for (nn_int i = 0; i < h; ++i)
+		{
+			nn_float *nn_restrict vec_i = &m[i * w];
+			y[i] += vec_dot(vec_i, x, w);
+		}
+	}
+
 }
 #endif //__FAST_MATRIX_OPERATION_H__

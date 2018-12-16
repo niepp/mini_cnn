@@ -1,7 +1,7 @@
 #ifndef __CONVOLUTIONAL_LAYER_H__
 #define __CONVOLUTIONAL_LAYER_H__
 
-//#define nnGEMM
+#define nnGEMM
 
 namespace mini_cnn 
 {
@@ -65,7 +65,7 @@ protected:
 
 	struct conv_task_storage
 	{
-		mem_block m_img_block;
+		mem_block m_block_img;
 	};
 	std::vector<conv_task_storage> m_conv_task_storage;
 	std::vector<nn_int> m_index_map;
@@ -157,21 +157,20 @@ public:
 		}
 
 #ifdef nnGEMM
-		nn_int temp_w = in_w + in_w - out_w;
-		nn_int temp_h = in_h + in_h - out_h;
-		nn_int im2col_size = temp_w * temp_h * m_filter_shape.m_w * m_filter_shape.m_h * m_filter_shape.m_d;
-		m_conv_task_storage.resize(task_count);
-		for (auto &cts : m_conv_task_storage)
-		{
-			cts.m_img_block.resize(im2col_size);
-		}
+		nn_int fw = m_filter_shape.m_w;
+		nn_int fh = m_filter_shape.m_h;
+		nn_int fd = m_filter_shape.m_d;
+		nn_int im2col_size1 = (fw * fh * fd) * (out_w * out_h);
+		nn_int im2col_size2 = (out_w * out_h * out_d) * (m_w.width() * m_w.height());
+		nn_int block_size = std::max(im2col_size1, im2col_size2);
 #else
+		nn_int block_size = std::max(out_w * out_h, m_filter_shape.m_w * m_filter_shape.m_h);
+#endif
 		m_conv_task_storage.resize(task_count);
 		for (auto &cts : m_conv_task_storage)
 		{
-			cts.m_img_block.resize(in_w * in_h);
+			cts.m_block_img.resize(block_size);
 		}
-#endif
 	}
 
 	virtual void forw_prop(const varray &input, nn_int task_idx)
@@ -179,7 +178,7 @@ public:
 		varray &out_z = m_task_storage[task_idx].m_z;
 		varray &out_x = m_task_storage[task_idx].m_x;
 
-		mem_block &block = m_conv_task_storage[task_idx].m_img_block;
+		mem_block &block = m_conv_task_storage[task_idx].m_block_img;
 		conv_input_w(input, block, m_w, m_stride_w, m_stride_h, out_z);
 
 		for (nn_int k = 0; k < m_out_shape.m_d; ++k)
@@ -225,7 +224,7 @@ public:
 		/*
 			dw_k := conv2d(input_d, delta_k)
 		*/
-		mem_block &block = m_conv_task_storage[task_idx].m_img_block;
+		mem_block &block = m_conv_task_storage[task_idx].m_block_img;
 		conv_input_delta(input, block, ts.m_delta, m_stride_w, m_stride_h, ts.m_dw);
 
 		/*
@@ -248,9 +247,6 @@ public:
 		/*
 			wd := conv(delta, w)
 		*/
-		nn_int out_w = m_out_shape.m_w;
-		nn_int out_h = m_out_shape.m_h;
-
 		conv_delta_w(ts.m_delta, block, m_index_map, m_w, m_stride_w, m_stride_h, ts.m_wd);
 		m_prev->back_prop(ts.m_wd, task_idx);
 
@@ -275,21 +271,21 @@ private:
 			{
 				nn_int start_h = i * stride_oh;
 				nn_int start_w = j * stride_ow;
+				nn_int idx = 0;
 				for (nn_int c = 0; c < channels; ++c)
 				{
-					nn_float *prow_c = prow + fw * fh * c;
 					nn_float *pimg = (nn_float*)img + iw * ih * c;
 					for (nn_int v = 0; v < fh; ++v)
 					{
-						nn_int ir = start_h + v * stride_iw;
+						nn_int ir = start_h + v * stride_ih;
 						for (nn_int u = 0; u < fw; ++u)
 						{
-							nn_int ic = start_w + u * stride_ih;
-							prow_c[u + v * fw] = pimg[ic + ir * iw];
+							nn_int ic = start_w + u * stride_iw;
+							prow[idx++] = (ir >= ih || ic >= iw) ? 0 : pimg[ic + ir * iw];
 						}
 					}
 				}
-				prow += fw * fh * channels;
+				prow += block.w;
 			}
 		}
 
@@ -319,18 +315,18 @@ private:
 
 		out_img.make_zero();
 
+		im2col(&in_img(0, 0, 0), in_w, in_h, in_d, filter_w, filter_h, 1, 1, w, h, stride_w, stride_h, block);
+	
+		nn_assert(block.w == filter_w * filter_h * filter_d);
+		nn_assert(block.h == w * h);
+
 		for (nn_int k = 0; k < filter_count; ++k)
 		{
-			im2col(&in_img(0, 0, 0), in_w, in_h, in_d, filter_w, filter_h, 1, 1, w, h, stride_w, stride_h, block);
-
-			nn_assert(block.w == filter_w * filter_h * filter_d);
-			nn_assert(block.h == w * h);
-
 			fo_mv_v(block.data, block.h, block.w
 				, (nn_float*)&filters(0, 0, 0, k) 
 				, &out_img(0, 0, k));
-
 		}
+
 	}
 
 	static void conv_input_delta(const varray &in_img, mem_block &block, const varray &delta, nn_int stride_w, nn_int stride_h, varray &dw)
@@ -355,29 +351,25 @@ private:
 
 		dw.make_zero();
 
-		for (nn_int k = 0; k < n; ++k)
+		for (nn_int c = 0; c < d; ++c)
 		{
-			for (nn_int c = 0; c < d; ++c)
+			const nn_float *img_c = &in_img(0, 0, c);
+			im2col(&in_img(0, 0, c), in_w, in_h, 1, delta_w, delta_h, stride_w, stride_h, w, h, 1, 1, block);
+			nn_assert(block.w == delta_w * delta_h);
+			nn_assert(block.h == w * h);
+
+			for (nn_int k = 0; k < n; ++k)
 			{
-				const nn_float *img_c = &in_img(0, 0, c);
 				const nn_float *delta_k = &delta(0, 0, k);
-				nn_float *dw_ck = &dw(0, 0, c, k);
-
-				im2col(&in_img(0, 0, c), in_w, in_h, 1, delta_w, delta_h, stride_w, stride_h, w, h, 1, 1, block);
-
-				nn_assert(block.w == delta_w * delta_h);
-				nn_assert(block.h == w * h);
-
 				fo_mv_v(block.data, block.h, block.w
 					, (nn_float*)&delta(0, 0, k)
 					, &dw(0, 0, c, k));
-
 			}
 		}
+
 	}
 
-	static void conv_delta_w(const varray &delta, mem_block &block
-		, std::vector<nn_int> &index_map
+	static void conv_delta_w(const varray &delta, mem_block &block, std::vector<nn_int> &index_map
 		, const varray &filters, nn_int stride_w, nn_int stride_h, varray &ret)
 	{
 		nn_int delta_w = delta.width();
@@ -413,7 +405,6 @@ private:
 			for (nn_int k = 0; k < filter_count; ++k)
 			{
 				const nn_float *delta_k = &delta(0, 0, k);
-				const nn_float *filter_c_k = &filters(0, 0, c, k);
 
 				block.w = filter_w * filter_h;
 				block.h = w * h;
@@ -431,12 +422,13 @@ private:
 					}
 				}
 
-				fo_mv_v(block.data, block.h, block.w
+				fo_mv_v_accum(block.data, block.h, block.w
 					, (nn_float*)&filters(0, 0, c, k)
 					, ret_c);
 
 			}
 		}
+
 	}
 #else //nnGEMM
 static void conv_input_w(const varray &in_img, mem_block &block, const varray &filters, nn_int stride_w, nn_int stride_h, varray &out_img)
