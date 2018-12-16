@@ -46,7 +46,7 @@ public:
 	}
 
 	nn_int height() const {
-		return m_w;
+		return m_h;
 	}
 
 private:
