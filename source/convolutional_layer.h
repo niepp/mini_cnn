@@ -8,41 +8,57 @@ namespace mini_cnn
 
 class mem_block
 {
+	nn_int m_w;
+	nn_int m_h;
+	nn_float *m_data;
+	nn_int m_data_len;
 public:
-	nn_int w;
-	nn_int h;
-	nn_float *data;
-	nn_int data_len;
-	mem_block() : data(nullptr), data_len(0), w(0), h(0)
+	mem_block() : m_data(nullptr), m_data_len(0), m_w(0), m_h(0)
 	{
 	}
-	void resize(nn_int len)
-	{
-		create(len);
-	}
-	~mem_block()
-	{
-		release();
-	}
-private:
+
 	void create(nn_int len)
 	{
-		data = (nn_float*)align_malloc(len * sizeof(nn_float), nn_align_size);
-		memset(data, 0, len * sizeof(nn_float));
-		data_len = len;
-		w = 0;
-		h = 0;
+		m_data = (nn_float*)align_malloc(len * sizeof(nn_float), nn_align_size);
+		memset(m_data, 0, len * sizeof(nn_float));
+		m_data_len = len;
+		m_w = 0;
+		m_h = 0;
 	}
+
+	void set_size(nn_int w, nn_int h)
+	{
+		nn_assert(m_w * m_h <= m_data_len);
+		m_w = w;
+		m_h = h;
+	}
+
+	~mem_block() {
+		release();
+	}
+
+	nn_float* data() {
+		return m_data;
+	}
+
+	nn_int width() const {
+		return m_w;
+	}
+
+	nn_int height() const {
+		return m_w;
+	}
+
+private:
 	void release()
 	{
-		if (data != nullptr)
-		{
-			align_free(data);
+		if (m_data != nullptr) {
+			align_free(m_data);
 		}
-		data = nullptr;
-		data_len = 0;
-		w = 0;
-		h = 0;
+		m_data = nullptr;
+		m_data_len = 0;
+		m_w = 0;
+		m_h = 0;
 	}
 };
 
@@ -161,7 +177,7 @@ public:
 		nn_int fh = m_filter_shape.m_h;
 		nn_int fd = m_filter_shape.m_d;
 		nn_int im2col_size1 = (fw * fh * fd) * (out_w * out_h);
-		nn_int im2col_size2 = (out_w * out_h * out_d) * (m_w.width() * m_w.height());
+		nn_int im2col_size2 = (in_w * in_h * in_d) * (m_w.width() * m_w.height());
 		nn_int block_size = std::max(im2col_size1, im2col_size2);
 #else
 		nn_int block_size = std::max(out_w * out_h, m_filter_shape.m_w * m_filter_shape.m_h);
@@ -169,7 +185,7 @@ public:
 		m_conv_task_storage.resize(task_count);
 		for (auto &cts : m_conv_task_storage)
 		{
-			cts.m_block_img.resize(block_size);
+			cts.m_block_img.create(block_size);
 		}
 	}
 
@@ -253,6 +269,29 @@ public:
 	}
 
 private:
+	static void bake_index_map(std::vector<nn_int> &index_map, nn_int iw, nn_int ih
+		, nn_int stride_iw, nn_int stride_ih
+		, nn_int fw, nn_int fh
+		, nn_int ow, nn_int oh)
+	{
+		for (nn_int i = 0; i < oh; ++i)
+		{
+			for (nn_int j = 0; j < ow; ++j)
+			{
+				nn_int *pmap = &index_map[(j + i * ow) * fw * fh];
+				for (nn_int r = 0; r < fh; ++r)
+				{
+					nn_int v = (i - r) / stride_ih;
+					bool vpad = (v < 0 || v >= ih || v * stride_ih != i - r);
+					for (nn_int c = 0; c < fw; ++c)
+					{
+						nn_int u = (j - c) / stride_iw;
+						pmap[c + r * fw] = (vpad || (u < 0 || u >= iw || u * stride_iw != j - c)) ? -1 : u + v * iw;
+					}
+				}
+			}
+		}
+	}
 
 #ifdef nnGEMM
 	static inline void im2col(const nn_float *img, nn_int iw, nn_int ih, nn_int channels
@@ -262,9 +301,8 @@ private:
 		, nn_int stride_ow, nn_int stride_oh
 		, mem_block &block)
 	{
-		block.w = fw * fh * channels;
-		block.h = ow * oh;
-		nn_float *prow = block.data;
+		block.set_size(fw * fh * channels, ow * oh);
+		nn_float *prow = block.data();
 		for (nn_int i = 0; i < oh; ++i)
 		{
 			for (nn_int j = 0; j < ow; ++j)
@@ -285,7 +323,7 @@ private:
 						}
 					}
 				}
-				prow += block.w;
+				prow += block.width();
 			}
 		}
 
@@ -317,12 +355,12 @@ private:
 
 		im2col(&in_img(0, 0, 0), in_w, in_h, in_d, filter_w, filter_h, 1, 1, w, h, stride_w, stride_h, block);
 	
-		nn_assert(block.w == filter_w * filter_h * filter_d);
-		nn_assert(block.h == w * h);
+		nn_assert(block.width() == filter_w * filter_h * filter_d);
+		nn_assert(block.height() == w * h);
 
 		for (nn_int k = 0; k < filter_count; ++k)
 		{
-			fo_mv_v(block.data, block.h, block.w
+			fo_mv_v(block.data(), block.height(), block.width()
 				, (nn_float*)&filters(0, 0, 0, k) 
 				, &out_img(0, 0, k));
 		}
@@ -355,13 +393,13 @@ private:
 		{
 			const nn_float *img_c = &in_img(0, 0, c);
 			im2col(&in_img(0, 0, c), in_w, in_h, 1, delta_w, delta_h, stride_w, stride_h, w, h, 1, 1, block);
-			nn_assert(block.w == delta_w * delta_h);
-			nn_assert(block.h == w * h);
+			nn_assert(block.width() == delta_w * delta_h);
+			nn_assert(block.height() == w * h);
 
 			for (nn_int k = 0; k < n; ++k)
 			{
 				const nn_float *delta_k = &delta(0, 0, k);
-				fo_mv_v(block.data, block.h, block.w
+				fo_mv_v(block.data(), block.height(), block.width()
 					, (nn_float*)&delta(0, 0, k)
 					, &dw(0, 0, c, k));
 			}
@@ -405,24 +443,24 @@ private:
 			for (nn_int k = 0; k < filter_count; ++k)
 			{
 				const nn_float *delta_k = &delta(0, 0, k);
+				nn_int filter_size = filter_w * filter_h;
 
-				block.w = filter_w * filter_h;
-				block.h = w * h;
-				nn_float *prow = block.data;
+				block.set_size(filter_size, w * h);
+				nn_float *prow = block.data();
 				for (nn_int i = 0; i < h; ++i)
 				{
 					for (nn_int j = 0; j < w; ++j)
 					{
-						nn_int *pmap = &index_map[(j + i * w) * filter_w * filter_h];
-						for (nn_int idx = 0; idx < filter_w * filter_h; ++idx)
+						nn_int *pmap = &index_map[(j + i * w) * filter_size];
+						for (nn_int idx = 0; idx < filter_size; ++idx)
 						{
 							prow[idx] = pmap[idx] >= 0 ? delta_k[pmap[idx]] : 0;
 						}
-						prow += filter_w * filter_h;
+						prow += filter_size;
 					}
 				}
 
-				fo_mv_v_accum(block.data, block.h, block.w
+				fo_mv_v_accum(block.data(), block.height(), block.width()
 					, (nn_float*)&filters(0, 0, c, k)
 					, ret_c);
 
@@ -590,30 +628,6 @@ static inline void conv_2d_flip(const nn_float *img, nn_int iw, nn_int ih, nn_fl
 }
 
 #endif //nnGEMM
-
-static void bake_index_map(std::vector<nn_int> &index_map, nn_int iw, nn_int ih
-	, nn_int stride_iw, nn_int stride_ih
-	, nn_int fw, nn_int fh
-	, nn_int ow, nn_int oh)
-{
-	for (nn_int i = 0; i < oh; ++i)
-	{
-		for (nn_int j = 0; j < ow; ++j)
-		{
-			nn_int *pmap = &index_map[(j + i * ow) * fw * fh];
-			for (nn_int r = 0; r < fh; ++r)
-			{
-				nn_int v = (i - r) / stride_ih;
-				bool vpad = (v < 0 || v >= ih || v * stride_ih != i - r);
-				for (nn_int c = 0; c < fw; ++c)
-				{
-					nn_int u = (j - c) / stride_iw;
-					pmap[c + r * fw] = (vpad || (u < 0 || u >= iw || u * stride_iw != j - c)) ? -1 : u + v * iw;
-				}
-			}
-		}
-	}
-}
 
 };
 }
