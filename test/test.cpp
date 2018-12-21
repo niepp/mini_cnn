@@ -21,7 +21,7 @@ private:
 
 public:
 #define TEST_GRADIENT(model)\
-	std::cout << std::setw(30) << std::setiosflags(std::ios::left) << #model << "\t" << std::boolalpha << test_nn_gradient_check(model(), input, label) << std::endl;
+	std::cout << std::setw(50) << std::setiosflags(std::ios::left) << #model << "\t" << std::boolalpha << test_nn_gradient_check(model(), input, label) << std::endl;
 
 	gradient_checker()
 	{
@@ -52,6 +52,8 @@ public:
 		TEST_GRADIENT(create_cnn_sigmod_dropout);
 
 		TEST_GRADIENT(create_cnn_stride_2x2_sigmod);
+
+		TEST_GRADIENT(create_cnn_padsame_stride_2x2_sigmod);
 
 		TEST_GRADIENT(create_cnn_sigmod_softmax);
 
@@ -172,6 +174,16 @@ private:
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
 		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 2, 2, padding_type::eValid, activation_type::eSigmod));
 		nn.add_layer(new convolutional_layer(3, 3, 4, 8, 2, 2, padding_type::eValid, activation_type::eSigmod));
+		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eMSE, activation_type::eSigmod));
+		return nn;
+	}
+
+	network create_cnn_padsame_stride_2x2_sigmod()
+	{
+		network nn;
+		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 2, 2, padding_type::eSame, activation_type::eSigmod));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 8, 2, 2, padding_type::eSame, activation_type::eSigmod));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eMSE, activation_type::eSigmod));
 		return nn;
 	}
