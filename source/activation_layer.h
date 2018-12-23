@@ -1,5 +1,5 @@
-#ifndef __RELU_LAYER_H__
-#define __RELU_LAYER_H__
+#ifndef __ACTIVATION_LAYER_H__
+#define __ACTIVATION_LAYER_H__
 
 namespace mini_cnn
 {
@@ -17,11 +17,11 @@ namespace mini_cnn
 	b is zero vector, z of layer l is equal to x
 */
 
-class relu_layer : public layer_base
+class activation_layer : public layer_base
 {
 public:
-	relu_layer()
-		: layer_base()
+	activation_layer(activation_type ac_type)
+		: layer_base(ac_type)
 	{
 	}
 
@@ -74,7 +74,7 @@ public:
 
 		nn_assert(input.size() == ts.m_x.size());
 
-		relu(input, ts.m_x);
+		m_f(input, ts.m_x);
 
 		if (m_next != nullptr)
 		{
@@ -93,7 +93,7 @@ public:
 		/*
 			prev delta := w * delta กั df(z)
 		*/
-		deriv_relu(ts.m_x, ts.m_delta);
+		m_df(ts.m_x, ts.m_delta);
 
 		const nn_float *nn_restrict vec_next_wd = &next_wd[0];
 		nn_float *nn_restrict vec_delta = &ts.m_delta[0];
@@ -110,4 +110,4 @@ public:
 
 }
 
-#endif //__RELU_LAYER_H__
+#endif //__ACTIVATION_LAYER_H__

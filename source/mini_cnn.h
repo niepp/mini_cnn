@@ -9,7 +9,7 @@
 #include "layer.h"
 #include "reshape_layer.h"
 #include "flatten_layer.h"
-#include "relu_layer.h"
+#include "activation_layer.h"
 #include "fully_connected_layer.h"
 #include "input_layer.h"
 #include "output_layer.h"

@@ -60,17 +60,17 @@ network create_mnist_fnn()
 	network nn;
 	nn.add_layer(new input_layer(mnist_parser::N_inputCount));
 	nn.add_layer(new fully_connected_layer(100, activation_type::eIdentity));
-	nn.add_layer(new relu_layer());
+	nn.add_layer(new activation_layer(activation_type::eRelu));
 
 	nn.add_layer(new reshape_layer(10, 10, 1));
 
 	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::eValid));
-	nn.add_layer(new relu_layer());
+	nn.add_layer(new activation_layer(activation_type::eRelu));
 
 	nn.add_layer(new flatten_layer());
 
 	nn.add_layer(new fully_connected_layer(30, activation_type::eIdentity));
-	nn.add_layer(new relu_layer());
+	nn.add_layer(new activation_layer(activation_type::eRelu));
 	nn.add_layer(new output_layer(mnist_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
 	return nn;
 }

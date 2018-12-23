@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\source\activation_layer.h" />
     <ClInclude Include="..\source\avg_pooling_layer.h" />
     <ClInclude Include="..\source\cifar_100_parser.h" />
     <ClInclude Include="..\source\cifar_10_parser.h" />
@@ -28,7 +29,6 @@
     <ClInclude Include="..\source\mnist_parser.h" />
     <ClInclude Include="..\source\network.h" />
     <ClInclude Include="..\source\output_layer.h" />
-    <ClInclude Include="..\source\relu_layer.h" />
     <ClInclude Include="..\source\reshape_layer.h" />
     <ClInclude Include="..\source\utils.h" />
     <ClInclude Include="..\source\varray.h" />
