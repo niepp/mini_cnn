@@ -432,35 +432,33 @@ private:
 		nn_assert(delta_d == filter_count);
 		nn_assert(in_d == filter_d);
 
-		wd.make_zero();
-
 		/*
 			delta(u, v) = sum_i_j( delta(i, j) * w(u - stride_w * i, v - stride_h * j) )
 		*/
-		for (nn_int c = 0; c < in_d; ++c)
-		{
-			nn_float *wd_c = &wd(0, 0, c);
-			nn_int filter_size = filter_w * filter_h;
-			block.set_size(filter_size * filter_count, in_w * in_h);
-			nn_float *prow = block.data();
 
-			for (nn_int i = 0; i < in_h; ++i)
+		nn_int filter_size = filter_w * filter_h;
+		block.set_size(filter_size * filter_count, in_w * in_h);
+		nn_float *prow = block.data();
+
+		for (nn_int i = 0; i < in_h; ++i)
+		{
+			for (nn_int j = 0; j < in_w; ++j)
 			{
-				for (nn_int j = 0; j < in_w; ++j)
+				nn_int *pmap = &index_map[(j + i * in_w) * filter_size];
+				for (nn_int k = 0; k < filter_count; ++k)
 				{
-					nn_int *pmap = &index_map[(j + i * in_w) * filter_size];
-					for (nn_int k = 0; k < filter_count; ++k)
+					const nn_float *delta_k = &delta(0, 0, k);
+					for (nn_int idx = 0; idx < filter_size; ++idx)
 					{
-						const nn_float *delta_k = &delta(0, 0, k);
-						for (nn_int idx = 0; idx < filter_size; ++idx)
-						{
-							prow[idx] = pmap[idx] >= 0 ? delta_k[pmap[idx]] : 0;
-						}
-						prow += filter_size;
+						prow[idx] = pmap[idx] >= 0 ? delta_k[pmap[idx]] : 0;
 					}
+					prow += filter_size;
 				}
 			}
+		}
 
+		for (nn_int c = 0; c < in_d; ++c)
+		{	
 			for (nn_int k = 0; k < filter_count; ++k)
 			{
 				nn_float *nn_restrict filter_cache_k = &filter_cache[k * filter_size];
@@ -473,7 +471,7 @@ private:
 
 			fo_mv_v(block.data(), block.height(), block.width()
 				, &filter_cache[0]
-				, wd_c);
+				, &wd(0, 0, c));
 		}
 	}
 

@@ -60,7 +60,8 @@ public:
 				ts.m_wd.resize(in_sz);
 			}
 		}
-
+		// weight matrix have been initialized
+		transpose(m_w, m_w_t);
 	}
 
 	virtual void forw_prop(const varray &input, nn_int task_idx)
