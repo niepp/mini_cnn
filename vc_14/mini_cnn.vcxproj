@@ -104,7 +104,8 @@
       <AdditionalOptions>/Qvec-report:2 %(AdditionalOptions)</AdditionalOptions>
       <OpenMPSupport>
       </OpenMPSupport>
-      <AdditionalIncludeDirectories>$(SolutionDir)/../thirdparty/eigen_3.3.5/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

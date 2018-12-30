@@ -86,7 +86,7 @@ protected:
 
 public:
 	shape3d m_out_shape;
-	varray m_w;          // weight vector
+	varray m_w;          // weight matrix
 	varray m_b;          // bias vector
 
 protected:

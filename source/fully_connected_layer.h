@@ -7,12 +7,7 @@ class fully_connected_layer : public layer_base
 {
 protected:
 	nn_int m_neural_count;
-
-	struct fc_task_storage
-	{
-		varray m_w_t;
-	};
-	std::vector<fc_task_storage> m_fc_task_storage;
+	varray m_w_t;		 // weight matrix(m_w)'s transpose
 
 public:
 	fully_connected_layer(nn_int neural_count, activation_type ac_type = activation_type::eIdentity)
@@ -37,6 +32,7 @@ public:
 		m_out_shape.set(m_neural_count, 1, 1);
 		m_b.resize(out_size());
 		m_w.resize(m_prev->out_size(), out_size());
+		m_w_t.resize(out_size(), m_prev->out_size());
 	}
 
 	virtual void set_task_count(nn_int task_count)
@@ -63,12 +59,6 @@ public:
 			{
 				ts.m_wd.resize(in_sz);
 			}
-		}
-
-		m_fc_task_storage.resize(task_count);
-		for (auto &fcts : m_fc_task_storage)
-		{
-			fcts.m_w_t.resize(out_sz, in_sz);
 		}
 
 	}
@@ -143,15 +133,18 @@ public:
 			m_w : out_sz X in_sz
 			wd := w.transpose * delta
 		*/
-		fc_task_storage &fcts = m_fc_task_storage[task_idx];
-		transpose(m_w, fcts.m_w_t);
-
-		fo_mv_v(&fcts.m_w_t[0], in_sz, out_sz
+		fo_mv_v(&m_w_t[0], in_sz, out_sz
 			, vec_delta
 			, &ts.m_wd[0]);
 
 		m_prev->back_prop(ts.m_wd, task_idx);
 
+	}
+
+	virtual void update_weights(nn_float eff)
+	{
+		layer_base::update_weights(eff);
+		transpose(m_w, m_w_t);
 	}
 
 };
