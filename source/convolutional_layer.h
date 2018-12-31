@@ -191,7 +191,7 @@ public:
 		for (auto &cts : m_conv_task_storage)
 		{
 			cts.m_block_img.create(block_size);
-			cts.m_filter_cache.resize(fw * fh * m_filter_count);
+			cts.m_filter_cache.resize(fw * fh * fd * m_filter_count);
 		}
 	}
 
@@ -457,22 +457,25 @@ private:
 			}
 		}
 
+		nn_float *nn_restrict pfilter = &filter_cache[0];
 		for (nn_int c = 0; c < in_d; ++c)
-		{	
+		{
 			for (nn_int k = 0; k < filter_count; ++k)
 			{
-				nn_float *nn_restrict filter_cache_k = &filter_cache[k * filter_size];
+				nn_float *nn_restrict filter_cache_k = pfilter + k * filter_size;
 				const nn_float *nn_restrict filter_c_k = &filters(0, 0, c, k);
 				for (nn_int idx = 0; idx < filter_size; ++idx)
 				{
 					filter_cache_k[idx] = filter_c_k[idx];
 				}
 			}
-
-			fo_mv_v(block.data(), block.height(), block.width()
-				, &filter_cache[0]
-				, &wd(0, 0, c));
+			pfilter += filter_count * filter_size;
 		}
+
+		gemm(&filter_cache[0], filter_count * filter_size, in_d
+			, block.data(), block.width(), block.height()
+			, &wd(0, 0, 0), in_w * in_h, in_d);
+
 	}
 
 #else //nnGEMM
