@@ -610,7 +610,7 @@ static inline void conv_3d(const nn_float *img, nn_int iw, nn_int ih, nn_int id,
 					}
 				}
 			}
-			out[j + i * ow] += vec_dot(data, filter, fitler_sz);
+			out[j + i * ow] = vec_dot(data, filter, fitler_sz);
 		}
 	}
 }
