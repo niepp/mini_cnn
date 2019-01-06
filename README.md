@@ -11,6 +11,8 @@
 - layer-types
 	- fully connected layer
 	- convolutional layer
+	- activation layer
+	- flatten layer
 	- softmax loglikelihood output layer
 	- sigmod cross entropy output layer
 	- average pooling layer
@@ -25,8 +27,9 @@
 	- mean squared error
 - optimization algorithms
 	- stochastic gradient descent
+- fast convolution(im2col + gemm)
 ### Todo list
-	- fast convolution(gemm, winograd)
+	- fast convolution(winograd)
 	- train on gpu
 	- batch normalization
 	- more optimization algorithms such as adagrad，momentum etc	
