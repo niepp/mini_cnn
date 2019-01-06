@@ -23,8 +23,9 @@
 	- softmax
 	- rectified linear(relu)
 - loss functions
-	- cross-entropy
 	- mean squared error
+	- cross-entropy
+	- loglikelihood
 - optimization algorithms
 	- stochastic gradient descent
 - fast convolution(im2col + gemm)
