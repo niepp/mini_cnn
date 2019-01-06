@@ -1,9 +1,9 @@
 #include <iostream>
 
 #include "source/mini_cnn.h"
-#include "source/mnist_parser.h"
-#include "source/cifar_10_parser.h"
-#include "source/cifar_100_parser.h"
+#include "source/data_parser/mnist_parser.h"
+#include "source/data_parser/cifar_10_parser.h"
+#include "source/data_parser/cifar_100_parser.h"
 
 using namespace std;
 using namespace mini_cnn;

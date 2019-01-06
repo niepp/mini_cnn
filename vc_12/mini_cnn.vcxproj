@@ -11,31 +11,32 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\source\activation_layer.h" />
-    <ClInclude Include="..\source\avg_pooling_layer.h" />
-    <ClInclude Include="..\source\cifar_100_parser.h" />
-    <ClInclude Include="..\source\cifar_10_parser.h" />
+    <ClCompile Include="..\main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="..\source\common_define.h" />
-    <ClInclude Include="..\source\convolutional_layer.h" />
-    <ClInclude Include="..\source\dropout_layer.h" />
+    <ClInclude Include="..\source\data_parser\cifar_100_parser.h" />
+    <ClInclude Include="..\source\data_parser\cifar_10_parser.h" />
+    <ClInclude Include="..\source\data_parser\mnist_parser.h" />
     <ClInclude Include="..\source\fast_matrix_operation.h" />
-    <ClInclude Include="..\source\flatten_layer.h" />
-    <ClInclude Include="..\source\fully_connected_layer.h" />
     <ClInclude Include="..\source\global_setting.h" />
-    <ClInclude Include="..\source\input_layer.h" />
-    <ClInclude Include="..\source\layer.h" />
-    <ClInclude Include="..\source\max_pooling_layer.h" />
+    <ClInclude Include="..\source\layer\activation_layer.h" />
+    <ClInclude Include="..\source\layer\avg_pooling_layer.h" />
+    <ClInclude Include="..\source\layer\batch_normalization_layer.h" />
+    <ClInclude Include="..\source\layer\convolutional_layer.h" />
+    <ClInclude Include="..\source\layer\dropout_layer.h" />
+    <ClInclude Include="..\source\layer\flatten_layer.h" />
+    <ClInclude Include="..\source\layer\fully_connected_layer.h" />
+    <ClInclude Include="..\source\layer\input_layer.h" />
+    <ClInclude Include="..\source\layer\layer.h" />
+    <ClInclude Include="..\source\layer\max_pooling_layer.h" />
+    <ClInclude Include="..\source\layer\output_layer.h" />
+    <ClInclude Include="..\source\layer\reshape_layer.h" />
     <ClInclude Include="..\source\mini_cnn.h" />
-    <ClInclude Include="..\source\mnist_parser.h" />
     <ClInclude Include="..\source\network.h" />
-    <ClInclude Include="..\source\output_layer.h" />
-    <ClInclude Include="..\source\reshape_layer.h" />
     <ClInclude Include="..\source\utils.h" />
     <ClInclude Include="..\source\varray.h" />
     <ClInclude Include="..\source\weight_initializer.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\main.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{11E077A1-FFCA-4174-9376-9BF85220218B}</ProjectGuid>
