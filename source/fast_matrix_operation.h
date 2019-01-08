@@ -8,14 +8,14 @@
 
 namespace mini_cnn
 {
-	static inline nn_float vec_dot(const nn_float *nn_restrict v1, const nn_float *nn_restrict v2, nn_int len)
+	static inline nn_float vec_dot(const nn_float *nn_restrict x_vec, const nn_float *nn_restrict y_vec, nn_int len)
 	{
-		nn_float s = 0;
+		nn_float res = 0;
 		for (nn_int i = 0; i < len; ++i)
 		{
-			s += v1[i] * v2[i];
+			res += x_vec[i] * y_vec[i];
 		}
-		return s;
+		return res;
 	}
 
 	// m: = m1 * m2
@@ -23,8 +23,8 @@ namespace mini_cnn
 	// gemm (general matrix multiply matrix) 
 	// m1: h1 X w1
 	// m2: h2 X w2, and m2 is transposed
-	static inline void gemm(nn_float *nn_restrict m1, nn_int w1, nn_int h1
-		, nn_float *nn_restrict m2, nn_int w2, nn_int h2
+	static inline void gemm(const nn_float *nn_restrict m1, nn_int w1, nn_int h1
+		, const nn_float *nn_restrict m2, nn_int w2, nn_int h2
 		, nn_float *nn_restrict m, nn_int w, nn_int h)
 	{
 		nn_assert(w1 == w2);

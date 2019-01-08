@@ -364,12 +364,13 @@ private:
 		block.set_size(filter_w * filter_h * filter_d, w * h);
 		im2col(&in_img(0, 0, 0), in_w, in_h, in_d, filter_w, filter_h, 1, 1, w, h, stride_w, stride_h, block.data(), block.width());
 
-		for (nn_int k = 0; k < filter_count; ++k)
-		{
-			fo_mv_v(block.data(), block.height(), block.width()
-				, &filters(0, 0, 0, k)
-				, &out_img(0, 0, k));
-		}
+		const nn_float *nn_restrict bptr = block.data();
+		nn_int bh = block.height();
+		nn_int bw = block.width();
+
+		gemm(bptr, bw, bh
+			, &filters(0, 0, 0, 0), bw, filter_count
+			, &out_img(0, 0, 0), filter_count, bh);
 
 	}
 
