@@ -32,10 +32,11 @@ namespace mini_cnn
 		nn_assert(h1 == h && h2 == w);
 		for (nn_int i = 0; i < h; ++i)
 		{
-			nn_float *nn_restrict mi = m + i * w;
+			const nn_float *nn_restrict pm1 = m1 + i * w1;
+			nn_float *nn_restrict pm = m + i * w;
 			for (nn_int j = 0; j < w; ++j)
 			{
-				mi[j] = vec_dot(&m1[i * w1], &m2[j * w2], w1);
+				pm[j] = vec_dot(pm1, &m2[j * w2], w1);
 			}
 		}
 	}
@@ -52,8 +53,13 @@ namespace mini_cnn
 	{
 		for (nn_int i = 0; i < h; ++i)
 		{
-			nn_float dot = vec_dot(&m[i * w], &x[0], w);
-			z[i] = dot + y[i];
+			const nn_float *nn_restrict vec = m + i * w;
+			nn_float res = y[i];
+			for (nn_int j = 0; j < w; ++j)
+			{
+				res += vec[j] * x[j];
+			}
+			z[i] = res;
 		}
 	}
 
@@ -66,11 +72,11 @@ namespace mini_cnn
 	{
 		for (nn_int i = 0; i < h; ++i)
 		{
-			nn_float *nn_restrict vec_m = &m[i * w];
+			nn_float *nn_restrict vec = m + i * w;
 			nn_float xi = x[i];
 			for (nn_int j = 0; j < w; ++j)
 			{
-				vec_m[j] = xi * y[j];
+				vec[j] = xi * y[j];
 			}
 		}
 	}
@@ -84,8 +90,15 @@ namespace mini_cnn
 	{
 		for (nn_int i = 0; i < h; ++i)
 		{
-			const nn_float *nn_restrict vec_i = &m[i * w];
-			y[i] = vec_dot(vec_i, x, w);
+			//y[i] = vec_dot(px, x, w);
+
+			const nn_float *nn_restrict vec = m + i * w;
+			nn_float res = 0;
+			for (nn_int j = 0; j < w; ++j)
+			{
+				res += vec[j] * x[j];
+			}
+			y[i] = res;
 		}
 	}
 
