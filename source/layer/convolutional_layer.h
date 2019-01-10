@@ -401,12 +401,19 @@ private:
 			im2col(&in_img(0, 0, c), in_w, in_h, 1, delta_w, delta_h, stride_w, stride_h, w, h, 1, 1, prow, block.width());
 		}
 
-		for (nn_int k = 0; k < n; ++k)
-		{
-			fo_mv_v(block.data(), block.height(), block.width()
-				, &delta(0, 0, k)
-				, &dw(0, 0, 0, k));
-		}
+		//for (nn_int k = 0; k < n; ++k)
+		//{
+		//	fo_mv_v(block.data(), block.height(), block.width()
+		//		, &delta(0, 0, k)
+		//		, &dw(0, 0, 0, k));
+		//}
+
+		const nn_float *nn_restrict bptr = block.data();
+		nn_int bh = block.height();
+		nn_int bw = block.width();
+		gemm(&delta(0, 0, 0), bw, n
+			, bptr, bw, bh
+			, &dw(0, 0, 0, 0), bh, n);
 
 	}
 
