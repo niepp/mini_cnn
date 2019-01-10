@@ -368,9 +368,9 @@ private:
 		nn_int bh = block.height();
 		nn_int bw = block.width();
 
-		gemm(bptr, bw, bh
-			, &filters(0, 0, 0, 0), bw, filter_count
-			, &out_img(0, 0, 0), filter_count, bh);
+		gemm(&filters(0, 0, 0, 0), bw, filter_count
+			, bptr, bw, bh
+			, &out_img(0, 0, 0), bh, filter_count);
 
 	}
 

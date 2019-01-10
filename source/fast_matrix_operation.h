@@ -23,6 +23,7 @@ namespace mini_cnn
 	// gemm (general matrix multiply matrix) 
 	// m1: h1 X w1
 	// m2: h2 X w2, and m2 is transposed
+	// m : h1 X h2
 	static inline void gemm(const nn_float *nn_restrict m1, nn_int w1, nn_int h1
 		, const nn_float *nn_restrict m2, nn_int w2, nn_int h2
 		, nn_float *nn_restrict m, nn_int w, nn_int h)
