@@ -232,7 +232,7 @@ inline void softmax(const varray &v, varray &retv)
 	nn_float * nn_restrict dst = &retv[0];
 	for (nn_int i = 0; i < len; ++i)
 	{
-		dst[i] = fast_exp(src[i] - maxv);
+		dst[i] = exp(src[i] - maxv);
 	}
 	nn_float s = 0;
 	for (nn_int i = 0; i < len; ++i)

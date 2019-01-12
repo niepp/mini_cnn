@@ -112,8 +112,13 @@ public:
 				train_one_batch(batch_img_vec, batch_label_vec, learning_rate, nthreads);
 				minibatch_callback((i + 1) * batch_size, img_count);
 
-				//if (i == 99) {
-				//	break;
+				//if ((i + 1) % 100 == 0) {
+				//	auto tend = get_now_ms();
+				//	std::cout << (tend - tstart) * 0.001f << std::endl;
+				//	tstart = tend;
+				//	std::cout << g_count1 << "\t" << g_count2 << std::endl;
+				//	g_count1 = 0;
+				//	g_count2 = 0;
 				//}
 
 			}
@@ -364,7 +369,7 @@ private:
 		bool correct = absError <= Precision;
 		if (!correct)
 		{
-			std::cout << "bprop:" << delta_by_bprop << "\tnumerical:" << delta_by_numerical << std::endl;
+		//	std::cout << "bprop:" << delta_by_bprop << "\tnumerical:" << delta_by_numerical << std::endl;
 		}
 		return correct;
 	}

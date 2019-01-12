@@ -76,10 +76,14 @@ public:
 		nn_assert(ts.m_z.width() == height);
 
 		// z = w * input + b
-		fo_mvv_v(&m_w[0], width, height
-			, (nn_float*)&input[0]
-			, &m_b[0]
+		fo_mv_v(&m_w[0], width, height
+			, &input[0]
 			, &ts.m_z[0]);
+
+		for (nn_int i = 0; i < height; ++i)
+		{
+			ts.m_z[i] += m_b[i];
+		}
 
 		m_f(ts.m_z, ts.m_x);
 
@@ -127,14 +131,14 @@ public:
 		}
 
 		fo_vv_m(vec_delta, out_sz
-			, (nn_float*)&input[0], in_sz
+			, &input[0], in_sz
 			, &ts.m_dw[0]);
 
 		/*
 			m_w : out_sz X in_sz
 			wd := w.transpose * delta
 		*/
-		fo_mv_v(&m_w_t[0], in_sz, out_sz
+		fo_mv_v(&m_w_t[0], out_sz, in_sz
 			, vec_delta
 			, &ts.m_wd[0]);
 
