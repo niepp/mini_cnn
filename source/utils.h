@@ -95,21 +95,11 @@ inline void align_free(void *aptr)
 	}
 }
 
-inline float fast_pow2(float p)
-{
-	float clipp = (p < -126) ? -126.0f : p;
-	union fi
-	{
-		unsigned int i;
-		float f;
-	};
-	fi v = { (unsigned int)((1 << 23) * (clipp + 126.94269504f)) };
-	return v.f;
-}
-
 inline float fast_exp(float x)
 {
-	return fast_pow2(1.442695040f * x);
+	union { uint32_t i; float f; } v;
+	v.i = (1 << 23)*(1.4426950409*x + 126.93490512f);
+	return v.f;
 }
 
 inline double fast_exp(double x)
