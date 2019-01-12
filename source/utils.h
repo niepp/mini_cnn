@@ -95,6 +95,31 @@ inline void align_free(void *aptr)
 	}
 }
 
+inline float fast_pow2(float p)
+{
+	float clipp = (p < -126) ? -126.0f : p;
+	union fi
+	{
+		unsigned int i;
+		float f;
+	};
+	fi v = { (unsigned int)((1 << 23) * (clipp + 126.94269504f)) };
+	return v.f;
+}
+
+inline float fast_exp(float x)
+{
+	return fast_pow2(1.442695040f * x);
+}
+
+inline double fast_exp(double x)
+{
+	double d;
+	*(reinterpret_cast<int*>(&d) + 0) = 0;
+	*(reinterpret_cast<int*>(&d) + 1) = static_cast<int>(1512775 * x + 1072632447);
+	return d;
+}
+
 inline void transpose(const varray &mat, varray &retm)
 {
 	nn_assert(mat.dim() == 2);
@@ -207,7 +232,7 @@ inline void softmax(const varray &v, varray &retv)
 	nn_float * nn_restrict dst = &retv[0];
 	for (nn_int i = 0; i < len; ++i)
 	{
-		dst[i] = exp(src[i] - maxv);
+		dst[i] = fast_exp(src[i] - maxv);
 	}
 	nn_float s = 0;
 	for (nn_int i = 0; i < len; ++i)
