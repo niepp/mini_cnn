@@ -146,10 +146,11 @@ public:
 
 	}
 
-	virtual void update_weights(nn_float eff)
+	virtual bool update_weights(nn_float eff)
 	{
-		layer_base::update_weights(eff);
+		bool succ = layer_base::update_weights(eff);
 		transpose(m_w, m_w_t);
+		return succ;
 	}
 
 };

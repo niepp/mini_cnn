@@ -200,25 +200,31 @@ public:
 	*/
 	virtual void back_prop(const varray &next_wd, nn_int task_idx) = 0;
 
-	virtual void update_weights(nn_float eff)
+	virtual bool update_weights(nn_float eff)
 	{
 		nn_int b_sz = m_b.size();
 		nn_int w_sz = m_w.size();
 		if (b_sz == 0 || w_sz == 0)
 		{
-			return;
+			return true;
 		}
 
 		// merge weights from all task
 		nn_int task_count = (nn_int)m_task_storage.size();
 		auto& ts_sum = m_task_storage[0];
-		
+
 		nn_float *nn_restrict vec_sum_db = &ts_sum.m_db[0];
 		nn_float *nn_restrict vec_sum_dw = &ts_sum.m_dw[0];
 
 		for (nn_int k = 1; k < task_count; ++k)
 		{
 			auto& ts = m_task_storage[k];
+
+			if (!is_valid(ts.m_db) || !is_valid(ts.m_dw))
+			{
+				return false;
+			}
+
 			const nn_float *nn_restrict vec_task_db = &ts.m_db[0];
 			for (nn_int i = 0; i < b_sz; ++i)
 			{
@@ -251,6 +257,8 @@ public:
 			ts.m_dw.make_zero();
 			ts.m_db.make_zero();
 		}
+
+		return true;
 
 	}
 

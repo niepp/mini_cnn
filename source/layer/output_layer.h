@@ -37,29 +37,27 @@ public:
 		nn_assert(out_sz == m_w.height());
 
 		/*
-			dw = db * input
+			db := delta
+			dw := delta * input
 		*/
+		nn_float *nn_restrict vec_delta = &ts.m_delta[0];
+		nn_float *nn_restrict vec_db = &ts.m_db[0];
 		for (nn_int i = 0; i < out_sz; ++i)
 		{
-			ts.m_db(i) += ts.m_delta(i);
-			for (nn_int j = 0; j < in_sz; ++j)
-			{
-				ts.m_dw(j, i) += ts.m_delta(i) * input[j];
-			}
+			vec_db[i] = vec_delta[i];
 		}
+
+		fo_vv_m(vec_delta, out_sz
+			, &input[0], in_sz
+			, &ts.m_dw[0]);
 
 		/*
 			m_w : out_sz X in_sz
+			wd := w.transpose * delta
 		*/
-		for (nn_int i = 0; i < in_sz; ++i)
-		{
-			nn_float dot = 0;
-			for (nn_int j = 0; j < out_sz; ++j)
-			{
-				dot += m_w(i, j) * ts.m_delta(j);
-			}
-			ts.m_wd[i] = dot;
-		}
+		fo_mv_v(&m_w_t[0], out_sz, in_sz
+			, vec_delta
+			, &ts.m_wd[0]);
 
 		m_prev->back_prop(ts.m_wd, task_idx);
 
@@ -68,6 +66,9 @@ public:
 	nn_float calc_cost(bool check_gradient, const varray &label, nn_int task_idx) const
 	{
 		const varray &output = get_output(task_idx);
+
+		const nn_float *nn_restrict vec_output = &output[0];
+		const nn_float *nn_restrict vec_label = &label[0];
 
 		nn_int out_sz = output.size();
 		nn_assert(out_sz == output.size());
@@ -80,7 +81,7 @@ public:
 			{
 				for (nn_int i = 0; i < out_sz; ++i)
 				{
-					nn_float s = output(i) - label(i);
+					nn_float s = vec_output[i] - vec_label[i];
 					cost += s * s;
 				}
 				cost *= (nn_float)(0.5);
@@ -90,8 +91,8 @@ public:
 			{
 				for (nn_int i = 0; i < out_sz; ++i)
 				{
-					nn_float p = label(i); // p is only 0 or 1
-					nn_float q = output(i);
+					nn_float p = vec_label[i]; // p is only 0 or 1
+					nn_float q = vec_output[i];
 					nn_float c = p > 0 ? -log(q + e) : -log((nn_float)(1.0) - q + e);
 					cost += c;
 				}
@@ -100,7 +101,7 @@ public:
 		case lossfunc_type::eSoftMax_LogLikelihood:
 			{
 				nn_int idx = label.arg_max();
-				cost = -log(output(idx) + e);
+				cost = -log(vec_output[idx] + e);
 			}
 			break;
 		default:
@@ -118,6 +119,10 @@ private:
 		nn_int out_sz = label.size();
 		nn_assert(out_sz == ts.m_z.size());
 
+		nn_float *nn_restrict vec_delta = &ts.m_delta[0];
+		const nn_float *nn_restrict vec_x = &ts.m_x[0];
+		const nn_float *nn_restrict vec_label = &label[0];
+
 		switch (m_lossfunc_type)
 		{
 		case lossfunc_type::eMSE:
@@ -125,7 +130,7 @@ private:
 				m_df(ts.m_z, ts.m_delta);
 				for (nn_int i = 0; i < out_sz; ++i)
 				{
-					ts.m_delta(i) *= ts.m_x(i) - label(i); // 均方误差损失函数对输出层的输出值的偏导数
+					vec_delta[i] *= vec_x[i] - label[i]; // 均方误差损失函数对输出层的输出值的偏导数
 				}
 			}
 			break;
@@ -137,7 +142,7 @@ private:
 				// ref： http://neuralnetworksanddeeplearning.com/chap3.html#introducing_the_cross-entropy_cost_function
 				for (nn_int i = 0; i < out_sz; ++i)
 				{
-					ts.m_delta(i) = ts.m_x(i) - label(i);
+					vec_delta[i] = vec_x[i] - label[i];
 				}
 			}
 			break;
@@ -150,7 +155,7 @@ private:
 				// ref： https://www.cnblogs.com/ZJUT-jiangnan/p/5489047.html
 				for (nn_int i = 0; i < out_sz; ++i)
 				{
-					ts.m_delta(i) = ts.m_x(i) - label(i);
+					vec_delta[i] = vec_x[i] - label[i];
 				}
 			}
 			break;

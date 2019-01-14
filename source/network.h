@@ -116,9 +116,6 @@ public:
 				//	auto tend = get_now_ms();
 				//	std::cout << (tend - tstart) * 0.001f << std::endl;
 				//	tstart = tend;
-				//	std::cout << g_count1 << "\t" << g_count2 << std::endl;
-				//	g_count1 = 0;
-				//	g_count2 = 0;
 				//}
 
 			}
@@ -127,7 +124,7 @@ public:
 
 			//epoch_callback(c + 1, epoch, 0, 0, train_elapse, 0);
 			//break;
-			
+
 			nn_int correct = test(test_img_vec, test_lab_vec, nthreads);
 			nn_float cur_accuracy = (1.0f * correct / test_img_count);
 			max_accuracy = std::max(max_accuracy, cur_accuracy);
@@ -160,7 +157,10 @@ public:
 			future.wait();
 		}
 		nn_float eff = eta / batch_size;
-		update_all_weight(eff);
+		if (!update_all_weight(eff))
+		{
+			std::cout << "[Error] Detected infinite value in weight. stop train!" << std::endl;
+		}
 	}
 
 	nn_int test(const varray_vec &test_img_vec, const varray_vec &test_lab_vec, const nn_int max_threads)
@@ -289,12 +289,15 @@ private:
 		m_output_layer->backward(label, task_idx);
 	}
 
-	void update_all_weight(nn_float eff)
+	bool update_all_weight(nn_float eff)
 	{
 		for (auto &layer : m_layers)
 		{
-			layer->update_weights(eff);
+			if (!layer->update_weights(eff)) {
+				return false;
+			}
 		}
+		return true;
 	}
 
 	void train_task(const varray_vec &batch_img_vec, const varray_vec &batch_label_vec, nn_int begin, nn_int end, nn_int task_idx)

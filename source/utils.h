@@ -4,6 +4,7 @@
 #include <cassert>
 #include <random>
 #include <chrono>
+#include <algorithm>
 
 namespace mini_cnn
 {
@@ -63,9 +64,10 @@ inline long long get_now_ms()
 	return std::chrono::duration_cast<std::chrono::milliseconds>(tp_now.time_since_epoch()).count();
 }
 
-inline bool f_is_valid(nn_float f)
+inline long long get_now_microseconds()
 {
-	return f == f;
+	auto tp_now = std::chrono::high_resolution_clock::now();
+	return std::chrono::duration_cast<std::chrono::microseconds>(tp_now.time_since_epoch()).count();
 }
 
 inline unsigned char* align_address(size_t address, int align_size)
@@ -95,11 +97,29 @@ inline void align_free(void *aptr)
 	}
 }
 
+inline bool f_is_valid(nn_float f)
+{
+	return f == f;
+}
+
+inline bool is_valid(const varray &vec)
+{
+	nn_int len = vec.size();
+	for (nn_int i = 0; i < len; ++i)
+	{
+		if (!f_is_valid(vec[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
 inline float fast_exp(float x)
 {
-	union { uint32_t i; float f; } v;
-	v.i = (1 << 23)*(1.4426950409*x + 126.93490512f);
-	return v.f;
+	int a = 185 * (int)x + 16249;
+	a <<= 16;
+	float f = *(reinterpret_cast<float*>(&a));
+	return f;
 }
 
 inline double fast_exp(double x)
@@ -121,9 +141,9 @@ inline void transpose(const varray &mat, varray &retm)
 	nn_int h = retm.height();
 	nn_int w = retm.width();
 
-	for (int i = 0; i < h; ++i)
+	for (nn_int i = 0; i < h; ++i)
 	{
-		for (int j = 0; j < w; ++j)
+		for (nn_int j = 0; j < w; ++j)
 		{
 			retm[i * w + j] = mat[j * h + i];
 		}
