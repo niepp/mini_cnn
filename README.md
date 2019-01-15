@@ -187,6 +187,7 @@ int main()
 	   |
 	log-likelihood softmax 10
 ```
+![mnist](https://github.com/niepp/mini_cnn/blob/master/mini_cnn.png "result")
 total paramters count:1668490</br>
 0%   10   20   30   40   50   60   70   80   90   100%</br>
 |----|----|----|----|----|----|----|----|----|----|</br>
