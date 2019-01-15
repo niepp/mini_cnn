@@ -368,9 +368,9 @@ private:
 		nn_int bh = block.height();
 		nn_int bw = block.width();
 
-		gemm(&filters(0, 0, 0, 0), bw, filter_count
-			, bptr, bw, bh
-			, &out_img(0, 0, 0), bh, filter_count);
+		gemm(&filters(0, 0, 0, 0), filter_count, bw
+			, bptr, bh, bw
+			, &out_img(0, 0, 0), filter_count, bh);
 
 	}
 
@@ -411,9 +411,9 @@ private:
 		const nn_float *nn_restrict bptr = block.data();
 		nn_int bh = block.height();
 		nn_int bw = block.width();
-		gemm(&delta(0, 0, 0), bw, n
-			, bptr, bw, bh
-			, &dw(0, 0, 0, 0), bh, n);
+		gemm(&delta(0, 0, 0), n, bw
+			, bptr, bh, bw
+			, &dw(0, 0, 0, 0), n, bh);
 
 	}
 
@@ -480,9 +480,9 @@ private:
 			pfilter += filter_count * filter_size;
 		}
 
-		gemm(&filter_cache[0], filter_count * filter_size, in_d
-			, block.data(), block.width(), block.height()
-			, &wd(0, 0, 0), in_w * in_h, in_d);
+		gemm(&filter_cache[0], in_d, filter_count * filter_size
+			, block.data(), block.height(), block.width()
+			, &wd(0, 0, 0), in_d, in_w * in_h);
 
 	}
 

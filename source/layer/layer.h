@@ -219,37 +219,19 @@ public:
 		for (nn_int k = 1; k < task_count; ++k)
 		{
 			auto& ts = m_task_storage[k];
-
+#ifdef _DEBUG
 			if (!is_valid(ts.m_db) || !is_valid(ts.m_dw))
 			{
 				return false;
 			}
-
-			const nn_float *nn_restrict vec_task_db = &ts.m_db[0];
-			for (nn_int i = 0; i < b_sz; ++i)
-			{
-				vec_sum_db[i] += vec_task_db[i];
-			}
-
-			const nn_float *nn_restrict vec_task_dw = &ts.m_dw[0];
-			for (nn_int i = 0; i < w_sz; ++i)
-			{
-				vec_sum_dw[i] += vec_task_dw[i];
-			}
+#endif
+			fo_vv(&ts.m_db[0], b_sz, 1.0, vec_sum_db, b_sz);
+			fo_vv(&ts.m_dw[0], w_sz, 1.0, vec_sum_dw, w_sz);
 		}
 
 		// update weights
-		nn_float *nn_restrict vec_b = &m_b[0];
-		for (nn_int i = 0; i < b_sz; ++i)
-		{
-			vec_b[i] -= vec_sum_db[i] * eff;
-		}
-
-		nn_float *nn_restrict vec_w = &m_w[0];
-		for (nn_int i = 0; i < w_sz; ++i)
-		{
-			vec_w[i] -= vec_sum_dw[i] * eff;
-		}
+		fo_vv(vec_sum_db, b_sz, -eff, &m_b[0], b_sz);
+		fo_vv(vec_sum_dw, w_sz, -eff, &m_w[0], w_sz);
 
 		// clear task storage
 		for (auto& ts : m_task_storage)
