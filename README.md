@@ -66,7 +66,7 @@ network create_cnn()
 	return nn;
 }
 ```
-[main.cpp](main.cpp)
+more details in [main.cpp](main.cpp)
 ## Result</br>
 ![](mini_cnn.png "mnist")
 
