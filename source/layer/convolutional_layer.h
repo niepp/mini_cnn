@@ -182,10 +182,10 @@ public:
 		nn_int im2col_size1 = (fw * fh * fd) * (out_w * out_h);
 		nn_int im2col_size2 = (in_w * in_h * in_d) * (fw * fh);
 		nn_int im2col_size3 = (fw * fh * m_filter_count) * (in_w * in_h);
-		nn_int block_size = std::max(im2col_size1, im2col_size2);
-		block_size = std::max(block_size, im2col_size3);
+		nn_int block_size = std::max<nn_int>(im2col_size1, im2col_size2);
+		block_size = std::max<nn_int>(block_size, im2col_size3);
 #else
-		nn_int block_size = std::max(out_w * out_h, m_filter_shape.size());
+		nn_int block_size = std::max<nn_int>(out_w * out_h, m_filter_shape.size());
 #endif
 		m_conv_task_storage.resize(task_count);
 		for (auto &cts : m_conv_task_storage)

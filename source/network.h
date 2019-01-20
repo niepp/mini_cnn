@@ -127,7 +127,7 @@ public:
 
 			nn_int correct = test(test_img_vec, test_lab_vec, nthreads);
 			nn_float cur_accuracy = (1.0f * correct / test_img_count);
-			max_accuracy = std::max(max_accuracy, cur_accuracy);
+			max_accuracy = std::max<nn_float>(max_accuracy, cur_accuracy);
 			nn_float tot_cost = calc_cost ? get_cost(img_vec, lab_vec, nthreads) : (nn_float)(-1.0);
 			auto test_end = get_now_ms();
 			nn_float test_elapse = (test_end - train_end) * 0.001f;
@@ -140,14 +140,14 @@ public:
 	{
 		nn_assert(batch_img_vec.size() == batch_label_vec.size());
 		nn_int batch_size = batch_img_vec.size();
-		nn_int nthreads = std::min(max_threads, batch_size);
+		nn_int nthreads = std::min<nn_int>(max_threads, batch_size);
 		nn_int nstep = (batch_size + nthreads - 1) / nthreads;
 
 		std::vector<std::future<void>> futures;
 		for (nn_int k = 0; k < nthreads && k * nstep < batch_size; ++k)
 		{
 			nn_int begin = k * nstep;
-			nn_int end = std::min(batch_size, begin + nstep);
+			nn_int end = std::min<nn_int>(batch_size, begin + nstep);
 			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
 				train_task(batch_img_vec, batch_label_vec, begin, end, k);
 			})));
@@ -175,7 +175,7 @@ public:
 		for (nn_int k = 0; k < nthreads && k * nstep < test_count; ++k)
 		{
 			nn_int begin = k * nstep;
-			nn_int end = std::min(test_count, begin + nstep);
+			nn_int end = std::min<nn_int>(test_count, begin + nstep);
 			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
 				return test_task(test_img_vec, test_lab_vec, begin, end, k);
 			})));
@@ -200,7 +200,7 @@ public:
 		for (nn_int k = 0; k < nthreads && k * nstep < tot_count; ++k)
 		{
 			nn_int begin = k * nstep;
-			nn_int end = std::min(tot_count, begin + nstep);
+			nn_int end = std::min<nn_int>(tot_count, begin + nstep);
 			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
 				return cost_task(img_vec, lab_vec, begin, end, k);
 			})));
