@@ -7,7 +7,7 @@
 #include <ratio>
 #include <chrono>
 
-//#define USE_BLAS
+#define USE_BLAS
 
 #ifdef USE_BLAS
 #include "mkl.h"

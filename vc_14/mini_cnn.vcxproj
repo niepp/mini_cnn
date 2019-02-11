@@ -29,6 +29,7 @@
     <ClInclude Include="..\source\layer\max_pooling_layer.h" />
     <ClInclude Include="..\source\layer\output_layer.h" />
     <ClInclude Include="..\source\layer\reshape_layer.h" />
+    <ClInclude Include="..\source\layer\yolo_output_layer.h" />
     <ClInclude Include="..\source\mini_cnn.h" />
     <ClInclude Include="..\source\network.h" />
     <ClInclude Include="..\source\utils.h" />
@@ -56,6 +57,7 @@
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
