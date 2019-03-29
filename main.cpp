@@ -4,6 +4,7 @@
 #include "source/data_parser/mnist_parser.h"
 #include "source/data_parser/cifar_10_parser.h"
 #include "source/data_parser/cifar_100_parser.h"
+#include "source/data_parser/voc2007_parser.h"
 
 using namespace std;
 using namespace mini_cnn;
@@ -59,19 +60,9 @@ network create_mnist_fnn()
 {
 	network nn;
 	nn.add_layer(new input_layer(mnist_parser::N_inputCount));
-	nn.add_layer(new fully_connected_layer(100, activation_type::eIdentity));
-	nn.add_layer(new activation_layer(activation_type::eRelu));
-
-	nn.add_layer(new reshape_layer(10, 10, 1));
-
-	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::eValid));
-	nn.add_layer(new activation_layer(activation_type::eRelu));
-
-	nn.add_layer(new flatten_layer());
-
-	nn.add_layer(new fully_connected_layer(30, activation_type::eIdentity));
-	nn.add_layer(new activation_layer(activation_type::eRelu));
-	nn.add_layer(new output_layer(mnist_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+	nn.add_layer(new fully_connected_layer(100, new activation_relu()));
+	nn.add_layer(new fully_connected_layer(30, new activation_relu()));
+	nn.add_layer(new output_layer(mnist_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
 	return nn;
 }
 
@@ -79,59 +70,59 @@ network create_mnist_cnn()
 {
 	network nn;
 	nn.add_layer(new input_layer(mnist_parser::W_input, mnist_parser::H_input, mnist_parser::D_input));
-	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::eValid, new activation_relu()));
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
+	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eValid, new activation_relu()));
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new fully_connected_layer(1024, activation_type::eRelu));
+	nn.add_layer(new fully_connected_layer(1024, new activation_relu()));
 	nn.add_layer(new dropout_layer((nn_float)0.5));
-	nn.add_layer(new output_layer(mnist_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+	nn.add_layer(new output_layer(mnist_parser::C_classCount, lossfunc_type::eMSE, new activation_relu()));
 	return nn;
 }
 
-network create_cifar_100_VGG16()
-{
-	network nn;
-	nn.add_layer(new input_layer(cifar_100_parser::W_img, cifar_100_parser::H_img, cifar_100_parser::D_img));
-	nn.add_layer(new convolutional_layer(3, 3, 3, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new convolutional_layer(3, 3, 64, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new convolutional_layer(3, 3, 64, 128, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new convolutional_layer(3, 3, 128, 128, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-
-	nn.add_layer(new convolutional_layer(3, 3, 128, 256, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new convolutional_layer(3, 3, 256, 256, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new convolutional_layer(3, 3, 256, 256, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-
-	nn.add_layer(new convolutional_layer(3, 3, 256, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-
-	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
-	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-
-	nn.add_layer(new fully_connected_layer(4096, activation_type::eRelu));
-	nn.add_layer(new fully_connected_layer(4096, activation_type::eRelu));
-	nn.add_layer(new dropout_layer((nn_float)0.5));
-	nn.add_layer(new output_layer(cifar_100_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
-	return nn;
-}
-
-
-network create_cifar_10_fnn()
-{
-	network nn;
-	nn.add_layer(new input_layer(cifar_10_parser::Size_img));
-	nn.add_layer(new fully_connected_layer(100, activation_type::eRelu));
-	nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
-	nn.add_layer(new output_layer(cifar_10_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
-	return nn;
-}
+//network create_cifar_100_VGG16()
+//{
+//	network nn;
+//	nn.add_layer(new input_layer(cifar_100_parser::W_img, cifar_100_parser::H_img, cifar_100_parser::D_img));
+//	nn.add_layer(new convolutional_layer(3, 3, 3, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new convolutional_layer(3, 3, 64, 64, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+//	nn.add_layer(new convolutional_layer(3, 3, 64, 128, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new convolutional_layer(3, 3, 128, 128, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+//
+//	nn.add_layer(new convolutional_layer(3, 3, 128, 256, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new convolutional_layer(3, 3, 256, 256, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new convolutional_layer(3, 3, 256, 256, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+//
+//	nn.add_layer(new convolutional_layer(3, 3, 256, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+//
+//	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new convolutional_layer(3, 3, 512, 512, 1, 1, padding_type::eValid, activation_type::eRelu));
+//	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+//
+//	nn.add_layer(new fully_connected_layer(4096, activation_type::eRelu));
+//	nn.add_layer(new fully_connected_layer(4096, activation_type::eRelu));
+//	nn.add_layer(new dropout_layer((nn_float)0.5));
+//	nn.add_layer(new output_layer(cifar_100_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+//	return nn;
+//}
+//
+//
+//network create_cifar_10_fnn()
+//{
+//	network nn;
+//	nn.add_layer(new input_layer(cifar_10_parser::Size_img));
+//	nn.add_layer(new fully_connected_layer(100, activation_type::eRelu));
+//	nn.add_layer(new fully_connected_layer(30, activation_type::eRelu));
+//	nn.add_layer(new output_layer(cifar_10_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, activation_type::eSoftMax));
+//	return nn;
+//}
 
 //
 //network create_cifar_10_cnn()
@@ -150,8 +141,8 @@ network create_cifar_10_fnn()
 
 
 // random init
-// seed = 2572007265;	// fixed seed to repeat test
-std::mt19937_64 global_setting::m_rand_generator = std::mt19937_64(get_now_ms());
+std::mt19937_64 global_setting::m_rand_generator = std::mt19937_64(2572007265);// fixed seed to repeat test
+//std::mt19937_64 global_setting::m_rand_generator = std::mt19937_64(get_now_ms());
 
 int main()
 {
@@ -163,13 +154,8 @@ int main()
 	mnist_parser mnist("../../dataset/mnist/");
 	mnist.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
 
-	//cifar_10_parser cifar_10("../../dataset/cifar-10/");
-	//cifar_10.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
-
-	//cifar_100_parser cifar_100("../../dataset/cifar-100/");
-	//cifar_100.read_dataset(img_vec, lab_vec, test_img_vec, test_lab_vec);
-
 	// define neural network
+	//network nn = create_mnist_fnn();
 	network nn = create_mnist_cnn();
 	//network nn = create_cifar_100_VGG16();
 
@@ -181,10 +167,10 @@ int main()
 	nn.init_all_weight(he_normal_initializer());
 
 	float learning_rate = 0.1f;
-	int epoch = 10;
+	int epoch = 30;
 	int batch_size = 10;
 	nn_int nthreads = std::thread::hardware_concurrency();
-	nthreads = 12;
+	nthreads = 8;
 
 	auto epoch_callback = [&train_progress_bar](nn_int c, nn_int epoch, nn_float cur_accuracy, nn_float tot_cost, nn_float train_elapse, nn_float test_elapse)
 	{
@@ -209,7 +195,7 @@ int main()
 
 	auto t0 = get_now_ms();
 
-	nn_float max_accuracy = nn.SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, epoch, batch_size, learning_rate, false, nthreads, minibatch_callback, epoch_callback);
+	nn_float max_accuracy = nn.mini_batch_SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, epoch, batch_size, learning_rate, false, nthreads, minibatch_callback, epoch_callback);
 
 	cout << "max_accuracy: " << max_accuracy << endl;
 

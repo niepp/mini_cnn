@@ -31,44 +31,43 @@ public:
 
 	virtual void set_task_count(nn_int task_count)
 	{
+		layer_base::set_task_count(task_count);
 		nn_int out_w = m_out_shape.m_w;
 		nn_int out_h = m_out_shape.m_h;
 		nn_int out_d = m_out_shape.m_d;
 		m_task_storage.resize(task_count);
-		for (auto& ts : m_task_storage)
-		{
-			ts.m_x.resize(out_w, out_h, out_d);
-			ts.m_wd.resize(m_prev->out_size());
-		}
 	}
 
-	virtual void forw_prop(const varray &input, nn_int task_idx)
+	virtual void set_batch_size(nn_int batch_size)
 	{
-		nn_assert(input.size() == m_out_shape.size());
+		nn_int out_w = m_out_shape.m_w;
+		nn_int out_h = m_out_shape.m_h;
+		nn_int out_d = m_out_shape.m_d;
+		m_x_vec.resize(out_w, out_h, out_d, batch_size);
+		m_wd_vec.resize(m_prev->out_size(), 1, 1, batch_size);
+	}
 
-		layer_base::task_storage &ts = m_task_storage[task_idx];
+	virtual void forw_prop(const varray &input_batch)
+	{
+		nn_assert(input_batch.img_size() == m_out_shape.size());
+		nn_assert(input_batch.size() == m_x_vec.size());
 
-		nn_assert(input.size() == ts.m_x.size());
-
-		identity(input, ts.m_x);
+		m_x_vec.copy(input_batch);
 
 		if (m_next != nullptr)
 		{
-			m_next->forw_prop(ts.m_x, task_idx);
+			m_next->forw_prop(m_x_vec);
 		}
 	}
 
-	virtual void back_prop(const varray &next_wd, nn_int task_idx)
+	virtual void back_prop(const varray &next_wd)
 	{
-		layer_base::task_storage &ts = m_task_storage[task_idx];
+		nn_int batch_size = next_wd.count();
+		nn_assert(next_wd.size() == m_x_vec.size());
 
-		nn_assert(next_wd.size() == ts.m_x.size());
+		m_wd_vec.copy(next_wd);
 
-		nn_int out_sz = next_wd.size();
-
-		identity(next_wd, ts.m_wd);
-
-		m_prev->back_prop(ts.m_wd, task_idx);
+		m_prev->back_prop(m_wd_vec);
 
 	}
 

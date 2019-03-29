@@ -56,6 +56,7 @@ public:
 
 	virtual void set_task_count(nn_int task_count)
 	{
+		layer_base::set_task_count(task_count);
 		nn_int in_w = m_prev->m_out_shape.m_w;
 		nn_int in_h = m_prev->m_out_shape.m_h;
 		nn_int in_d = m_prev->m_out_shape.m_d;
@@ -65,20 +66,8 @@ public:
 		nn_int out_d = m_out_shape.m_d;
 
 		m_task_storage.resize(task_count);
-		for (auto& ts : m_task_storage)
-		{
-			if (!m_out_shape.is_img())
-			{
-				ts.m_x.resize(out_w * out_h * out_d);
-			}
-			else
-			{
-				ts.m_x.resize(out_w, out_h, out_d);
-			}
-			ts.m_wd.resize(in_w, in_h, in_d);
-		}
-
 		m_max_pooling_task_storage.resize(task_count);
+
 		for (auto &pooling_ts : m_max_pooling_task_storage)
 		{
 			pooling_ts.m_idx_maps.resize(in_d);
@@ -89,44 +78,86 @@ public:
 		}
 	}
 
-	virtual void forw_prop(const varray &input, nn_int task_idx)
+	virtual void set_batch_size(nn_int batch_size)
 	{
-		varray &out_x = m_task_storage[task_idx].m_x;
+		nn_int in_w = m_prev->m_out_shape.m_w;
+		nn_int in_h = m_prev->m_out_shape.m_h;
+		nn_int in_d = m_prev->m_out_shape.m_d;
+		nn_int out_w = m_out_shape.m_w;
+		nn_int out_h = m_out_shape.m_h;
+		nn_int out_d = m_out_shape.m_d;
+		if (!m_out_shape.is_img())
+		{
+			m_x_vec.resize(out_w * out_h * out_d, 1, 1, batch_size);
+		}
+		else
+		{
+			m_x_vec.resize(out_w, out_h, out_d, batch_size);
+		}
+		m_wd_vec.resize(in_w, in_h, in_d, batch_size);
+	}
 
-		std::vector<index_vec> &idx_maps = m_max_pooling_task_storage[task_idx].m_idx_maps;
+	virtual void forw_prop(const varray &input_batch)
+	{
+		nn_int in_w = input_batch.width();
+		nn_int in_h = input_batch.height();
+		nn_int in_d = input_batch.depth();
+		nn_int batch_size = input_batch.count();
 
-		down_sample(input, out_x, idx_maps, m_pool_w, m_pool_h, m_stride_w, m_stride_h);
+		nn_int w = m_x_vec.width();
+		nn_int h = m_x_vec.height();
+		nn_int d = m_x_vec.depth();
+
+		parallel_task(batch_size, m_task_count, [&](nn_int begin, nn_int end, nn_int task_idx) {
+			std::vector<index_vec> &idx_maps = m_max_pooling_task_storage[task_idx].m_idx_maps;
+			for (int b = begin; b < end; ++b)
+			{
+				down_sample(input_batch.data(b), in_w, in_h, in_d
+					, m_x_vec.data(b), w, h, d
+					, idx_maps, m_pool_w, m_pool_h, m_stride_w, m_stride_h);
+			}
+		});
 
 		if (m_next != nullptr)
 		{
-			m_next->forw_prop(out_x, task_idx);
+			m_next->forw_prop(m_x_vec);
 		}
 	}
 
-	virtual void back_prop(const varray &next_wd, nn_int task_idx)
+	virtual void back_prop(const varray &next_wd)
 	{
-		layer_base::task_storage &ts = m_task_storage[task_idx];
-		std::vector<index_vec> &idx_maps = m_max_pooling_task_storage[task_idx].m_idx_maps;
+		nn_int in_w = next_wd.width();
+		nn_int in_h = next_wd.height();
+		nn_int in_d = next_wd.depth();
+		nn_int batch_size = next_wd.count();
 
-		up_sample(next_wd, ts.m_wd, idx_maps, m_pool_w, m_pool_h, m_stride_w, m_stride_h);
+		nn_int w = m_wd_vec.width();
+		nn_int h = m_wd_vec.height();
+		nn_int d = m_wd_vec.depth();
 
-		m_prev->back_prop(ts.m_wd, task_idx);
+		m_wd_vec.make_zero();
+
+		parallel_task(batch_size, m_task_count, [&](nn_int begin, nn_int end, nn_int task_idx) {
+			std::vector<index_vec> &idx_maps = m_max_pooling_task_storage[task_idx].m_idx_maps;
+			for (int b = begin; b < end; ++b)
+			{				
+				up_sample(next_wd.data(b), in_w, in_h, in_d
+					, m_wd_vec.data(b), w, h, d
+					, idx_maps, m_pool_w, m_pool_h, m_stride_w, m_stride_h);
+			}
+		});
+
+		m_prev->back_prop(m_wd_vec);
 
 	}
 
 private:
-	static void down_sample(const varray &in_img, varray &out, std::vector<index_vec> &idx_map,
+	static void down_sample(const nn_float *nn_restrict in_img, nn_int in_w, nn_int in_h, nn_int in_d
+		, nn_float *nn_restrict out, nn_int w, nn_int h, nn_int d
+		, std::vector<index_vec> &idx_map,
 		nn_int pool_w, nn_int pool_h,
 		nn_int pool_stride_w, nn_int pool_stride_h)
 	{
-
-		nn_int in_w = in_img.width();
-		nn_int in_h = in_img.height();
-		nn_int in_d = in_img.depth();
-		
-		nn_int w = out.width();
-		nn_int h = out.height();
-		nn_int d = out.depth();
 
 		nn_int map_d = static_cast<nn_int>(idx_map.size());
 
@@ -160,7 +191,7 @@ private:
 						for (nn_int u = 0; u < pool_w; ++u)
 						{
 							nn_int x = start_w + u;
-							nn_float t = in_img(x, y, c);
+							nn_float t = in_img[x + y * in_w + c * in_w * in_h];
 							if (t > maxv)
 							{
 								maxv = t;
@@ -168,7 +199,7 @@ private:
 							}
 						}
 					}
-					out(i, j, c) = maxv;
+					out[i + j * w + c * w * h] = maxv;
 					if (pool_idx >= 0)
 					{
 						nn_int out_idx = i + j * w;
@@ -180,18 +211,12 @@ private:
 
 	}
 
-	static void up_sample(const varray &in_img, varray &out, const std::vector<index_vec> &idx_map,
+	static void up_sample(const nn_float *nn_restrict in_img, nn_int in_w, nn_int in_h, nn_int in_d		
+		, nn_float *nn_restrict out, nn_int w, nn_int h, nn_int d
+		, const std::vector<index_vec> &idx_map,
 		nn_int pool_w, nn_int pool_h,
 		nn_int pool_stride_w, nn_int pool_stride_h)
 	{
-		nn_int in_w = in_img.width();
-		nn_int in_h = in_img.height();
-		nn_int in_d = in_img.depth();
-
-		nn_int w = out.width();
-		nn_int h = out.height();
-		nn_int d = out.depth();
-
 		nn_int map_d = static_cast<nn_int>(idx_map.size());
 
 		nn_assert(map_d == in_d && map_d == d && map_d > 0);
@@ -199,8 +224,6 @@ private:
 		nn_int map_sz = static_cast<nn_int>(idx_map[0].size());
 
 		nn_assert(map_sz == in_w * in_h);
-
-		out.make_zero();
 
 		for (nn_int c = 0; c < in_d; ++c)
 		{
@@ -220,7 +243,7 @@ private:
 						nn_int x = start_w + u;
 						nn_int y = start_h + v;
 						nn_assert((x >= 0 && x < w) && (y >= 0 && y < h));
-						out(x, y, c) += in_img(i, j, c);
+						out[x + y * w + c * w * h] = in_img[i + j * in_w + c * in_w * in_h];
 					}
 				}
 			}

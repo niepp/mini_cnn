@@ -15,60 +15,76 @@ protected:
 	lossfunc_type m_lossfunc_type;
 
 public:
-	output_layer(nn_int neural_count, lossfunc_type lf_type, activation_type ac_type) : fully_connected_layer(neural_count, ac_type)
+	output_layer(nn_int neural_count, lossfunc_type lf_type, activation_base *activation)
+		: fully_connected_layer(neural_count, activation)
 	{
-		nn_assert(!(lf_type == lossfunc_type::eSigmod_CrossEntropy && ac_type != activation_type::eSigmod)
-			&& !(lf_type == lossfunc_type::eSoftMax_LogLikelihood && ac_type != activation_type::eSoftMax)
+		nn_assert(activation != nullptr);
+		nn_assert(!(lf_type == lossfunc_type::eSigmod_CrossEntropy && activation->act_type() != activation_type::eSigmod)
+			&& !(lf_type == lossfunc_type::eSoftMax_LogLikelihood && activation->act_type() != activation_type::eSoftmax)
 			);
 		m_lossfunc_type = lf_type;
 	}
 
-	void backward(const varray &label, nn_int task_idx)
+	void back_prop(const varray &lab_batch)
 	{
-		calc_delta(label, task_idx);
 
-		layer_base::task_storage &ts = m_task_storage[task_idx];
-		const varray &input = m_prev->get_output(task_idx);
-		nn_int out_sz = get_output(task_idx).size();
-		nn_int in_sz = input.size();
+		nn_int in_sz = m_w.width();
+		nn_int out_sz = m_w.height();
 
 		nn_assert(m_w.check_dim(2));
-		nn_assert(in_sz == m_w.width());
-		nn_assert(out_sz == m_w.height());
 
-		/*
-			db := delta
-			dw := delta * input
-		*/
-		nn_float *nn_restrict vec_delta = &ts.m_delta[0];
-		nn_float *nn_restrict vec_db = &ts.m_db[0];
-		for (nn_int i = 0; i < out_sz; ++i)
+		nn_int lab_sz = lab_batch.img_size();
+		nn_int batch_size = lab_batch.count();
+
+		parallel_task(batch_size, m_task_count, [&](nn_int begin, nn_int end, nn_int task_idx)
 		{
-			vec_db[i] = vec_delta[i];
-		}
+			layer_base::task_storage &ts = m_task_storage[task_idx];
+			const varray &input_batch = m_prev->get_output();
 
-		fo_vv_m(vec_delta, out_sz
-			, &input[0], in_sz
-			, &ts.m_dw[0]);
+			for (int b = begin; b < end; ++b)
+			{
+				const nn_float *vec_input = input_batch.data(b);
+				const nn_float *vec_lab = lab_batch.data(b);
 
-		/*
-			m_w : out_sz X in_sz
-			wd := w.transpose * delta
-		*/
-		fo_mv_v(&m_w_t[0], out_sz, in_sz
-			, vec_delta
-			, &ts.m_wd[0]);
+				calc_delta(vec_lab, lab_sz, task_idx, b);
 
-		m_prev->back_prop(ts.m_wd, task_idx);
+				/*
+					db := delta
+					dw := delta * input
+					*/
+				nn_float *nn_restrict vec_delta = ts.m_delta.data();
+				nn_float *nn_restrict vec_db = ts.m_db.data();
+				for (nn_int i = 0; i < out_sz; ++i)
+				{
+					vec_db[i] += vec_delta[i];
+				}
+
+				fo_vv_m(vec_delta, out_sz
+					, vec_input, in_sz
+					, ts.m_dw.data());
+
+				/*
+					m_w : out_sz X in_sz
+					wd := w.transpose * delta
+					*/
+
+				fo_mv_v(m_w_t.data(), out_sz, in_sz
+					, vec_delta
+					, m_wd_vec.data(b));
+
+			}
+		});
+
+		m_prev->back_prop(m_wd_vec);
 
 	}
 
-	nn_float calc_cost(bool check_gradient, const varray &label, nn_int task_idx) const
+	nn_float calc_cost(bool check_gradient, const varray &label) const
 	{
-		const varray &output = get_output(task_idx);
+		const varray &output = get_output();
 
-		const nn_float *nn_restrict vec_output = &output[0];
-		const nn_float *nn_restrict vec_label = &label[0];
+		const nn_float *nn_restrict vec_output = output.data();
+		const nn_float *nn_restrict vec_label = label.data();
 
 		nn_int out_sz = output.size();
 		nn_assert(out_sz == output.size());
@@ -112,25 +128,22 @@ public:
 	}
 
 private:
-	const varray& calc_delta(const varray &label, nn_int task_idx)
+	const varray& calc_delta(const nn_float *nn_restrict vec_lab, nn_int lab_sz, nn_int task_idx, nn_int b_idx)
 	{
 		layer_base::task_storage &ts = m_task_storage[task_idx];
 
-		nn_int out_sz = label.size();
-		nn_assert(out_sz == ts.m_z.size());
-
-		nn_float *nn_restrict vec_delta = &ts.m_delta[0];
-		const nn_float *nn_restrict vec_x = &ts.m_x[0];
-		const nn_float *nn_restrict vec_label = &label[0];
+		nn_float *nn_restrict vec_delta = ts.m_delta.data();
+		const nn_float *nn_restrict vec_x = m_x_vec.data(b_idx);
+		nn_float *nn_restrict vec_z = m_z_vec.data(b_idx);
 
 		switch (m_lossfunc_type)
 		{
 		case lossfunc_type::eMSE:
 			{
-				m_df(ts.m_z, ts.m_delta);
-				for (nn_int i = 0; i < out_sz; ++i)
+				m_activation->df(vec_z, vec_delta, lab_sz);
+				for (nn_int i = 0; i < lab_sz; ++i)
 				{
-					vec_delta[i] *= vec_x[i] - label[i]; // 均方误差损失函数对输出层的输出值的偏导数
+					vec_delta[i] *= vec_x[i] - vec_lab[i]; // 均方误差损失函数对输出层的输出值的偏导数
 				}
 			}
 			break;
@@ -140,9 +153,9 @@ private:
 				// 交叉熵CrossEntropy损失函数和Sigmod激活函数的组合：
 				// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
 				// ref： http://neuralnetworksanddeeplearning.com/chap3.html#introducing_the_cross-entropy_cost_function
-				for (nn_int i = 0; i < out_sz; ++i)
+				for (nn_int i = 0; i < lab_sz; ++i)
 				{
-					vec_delta[i] = vec_x[i] - label[i];
+					vec_delta[i] = vec_x[i] - vec_lab[i];
 				}
 			}
 			break;
@@ -153,9 +166,9 @@ private:
 				// 损失函数对输出层残差的偏导数与激活函数的导数恰好无关
 				// delta = output - label
 				// ref： https://www.cnblogs.com/ZJUT-jiangnan/p/5489047.html
-				for (nn_int i = 0; i < out_sz; ++i)
+				for (nn_int i = 0; i < lab_sz; ++i)
 				{
-					vec_delta[i] = vec_x[i] - label[i];
+					vec_delta[i] = vec_x[i] - vec_lab[i];
 				}
 			}
 			break;

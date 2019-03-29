@@ -22,6 +22,52 @@ public:
 	{
 	}
 
+	//void copy_weights(network *nn)
+	//{
+	//	for (int i = 0; i < nn->m_layers.size(); ++i)
+	//	{
+	//		auto this_layer = this->m_layers[i];
+	//		auto other_layer = nn->m_layers[i];
+	//		for (int j = 0; j < this_layer->m_w.size(); ++j)
+	//		{
+	//			this_layer->m_w[j] = other_layer->m_w[j];
+	//		}
+	//		for (int j = 0; j < this_layer->m_b.size(); ++j)
+	//		{
+	//			this_layer->m_b[j] = other_layer->m_b[j];
+	//		}
+	//	}
+	//}
+
+	//bool test_weights(network *nn)
+	//{
+	//	for (int i = 0; i < nn->m_layers.size(); ++i)
+	//	{
+	//		auto this_layer = this->m_layers[i];
+	//		auto other_layer = nn->m_layers[i];
+	//		for (int j = 0; j < this_layer->m_w.size(); ++j)
+	//		{
+	//			auto dw = this_layer->m_task_storage[0].m_dw[j] - other_layer->m_task_storage[0].m_dw[j];
+	//			if (std::abs(dw) > 0.01f)
+	//			{
+	//				int kkk = 0; 
+	//				return false;
+	//			}
+	//		}
+	//		for (int j = 0; j < this_layer->m_b.size(); ++j)
+	//		{
+	//			auto db = this_layer->m_task_storage[0].m_db[j] - other_layer->m_task_storage[0].m_db[j];
+	//			if (std::abs(db) > 0.01f)
+	//			{
+	//				int kkk = 0;
+	//				return false;
+	//			}
+	//		}
+	//	}
+	//	return true;
+	//}
+
+
 	void add_layer(layer_base *layer)
 	{
 		if (m_output_layer != nullptr)
@@ -77,7 +123,69 @@ public:
 		}
 	}
 
-	nn_float SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const varray_vec &test_lab_vec
+	void set_batch_size(nn_int batch_size)
+	{
+		for (auto &layer : m_layers)
+		{
+			layer->set_batch_size(batch_size);
+		}
+	}
+
+	//void SGD_Test1(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const varray_vec &test_lab_vec, nn_int epoch, nn_int batch_size)
+	//{
+	//	set_task_count(1);
+	//	nn_float max_accuracy = 0;
+	//	nn_int img_count = img_vec.size();
+	//	nn_int test_img_count = test_img_vec.size();
+	//	nn_int batch = img_count / batch_size;
+	//	nn_int img_w = img_vec[0]->width();
+	//	nn_int img_h = img_vec[0]->height();
+	//	nn_int img_channel = img_vec[0]->depth();
+	//	nn_int img_size = img_w * img_h * img_channel;
+	//	nn_int lab_w = lab_vec[0]->width();
+	//	nn_int lab_h = lab_vec[0]->height();
+	//	nn_int lab_channel = lab_vec[0]->depth();
+	//	nn_int lab_size = lab_w * lab_h * lab_channel;
+	//	set_batch_size(batch_size);
+	//	varray img_batch(img_w, img_h, img_channel, batch_size);
+	//	varray lab_batch(lab_w, lab_h, lab_channel, batch_size);
+	//	for (nn_int k = 0; k < batch_size; ++k)
+	//	{
+	//		std::memcpy(&img_batch(0, 0, 0, k), &(*img_vec[k])[0], img_size * sizeof(nn_float));
+	//		std::memcpy(&lab_batch(0, 0, 0, k), &(*lab_vec[k])[0], lab_size * sizeof(nn_float));
+	//	}
+	//	train_task(img_batch, lab_batch, 0);
+	//}
+
+
+	//void SGD_Test2(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const varray_vec &test_lab_vec, nn_int epoch, nn_int batch_size)
+	//{
+	//	set_task_count(1);
+	//	nn_float max_accuracy = 0;
+	//	nn_int img_count = img_vec.size();
+	//	nn_int test_img_count = test_img_vec.size();
+	//	nn_int batch = img_count / batch_size;
+	//	nn_int img_w = img_vec[0]->width();
+	//	nn_int img_h = img_vec[0]->height();
+	//	nn_int img_channel = img_vec[0]->depth();
+	//	nn_int img_size = img_w * img_h * img_channel;
+	//	nn_int lab_w = lab_vec[0]->width();
+	//	nn_int lab_h = lab_vec[0]->height();
+	//	nn_int lab_channel = lab_vec[0]->depth();
+	//	nn_int lab_size = lab_w * lab_h * lab_channel;
+	//	set_batch_size(1);
+	//	varray img_batch(img_w, img_h, img_channel, 1);
+	//	varray lab_batch(lab_w, lab_h, lab_channel, 1);
+	//	for (nn_int k = 0; k < batch_size; ++k)
+	//	{
+	//		std::memcpy(&img_batch(0, 0, 0, 0), &(*img_vec[k])[0], img_size * sizeof(nn_float));
+	//		std::memcpy(&lab_batch(0, 0, 0, 0), &(*lab_vec[k])[0], lab_size * sizeof(nn_float));
+	//		train_task(img_batch, lab_batch, 0);
+	//	}
+	//}
+
+
+	nn_float mini_batch_SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const varray_vec &test_lab_vec
 		, nn_int epoch, nn_int batch_size, nn_float learning_rate, bool calc_cost, nn_int nthreads
 		, std::function<void(nn_int, nn_int)> minibatch_callback
 		, std::function<void(nn_int, nn_int, nn_float, nn_float, nn_float, nn_float)> epoch_callback)
@@ -87,7 +195,17 @@ public:
 		nn_float max_accuracy = 0;
 		nn_int img_count = img_vec.size();
 		nn_int test_img_count = test_img_vec.size();
-		nn_int batch = img_count / batch_size;
+		nn_int batch = (img_count + batch_size - 1) / batch_size;
+
+		nn_int img_w = img_vec[0]->width();
+		nn_int img_h = img_vec[0]->height();
+		nn_int img_channel = img_vec[0]->depth();
+		nn_int img_size = img_w * img_h * img_channel;
+
+		nn_int lab_w = lab_vec[0]->width();
+		nn_int lab_h = lab_vec[0]->height();
+		nn_int lab_channel = lab_vec[0]->depth();
+		nn_int lab_size = lab_w * lab_h * lab_channel;
 
 		std::vector<nn_int> idx_vec(img_count);
 		for (nn_int k = 0; k < img_count; ++k)
@@ -98,37 +216,41 @@ public:
 		for (nn_int c = 0; c < epoch; ++c)
 		{
 			auto tstart = get_now_ms();
+
 			std::shuffle(idx_vec.begin(), idx_vec.end(), global_setting::m_rand_generator);
-			varray_vec batch_img_vec(batch_size);
-			varray_vec batch_label_vec(batch_size);
-			for (nn_int i = 0; i < batch; ++i)
+
+			set_batch_size(batch_size);
+
+			for (nn_int i = 0; i < img_count; i += batch_size)
 			{
-				for (nn_int k = 0; k < batch_size; ++k)
+				nn_int start = i;
+				nn_int end = std::min<nn_int>(i + batch_size, img_count);
+				varray img_batch(img_w, img_h, img_channel, batch_size);
+				varray lab_batch(lab_w, lab_h, lab_channel, batch_size);
+				for (nn_int j = start; j < end; ++j)
 				{
-					nn_int j = idx_vec[(i * batch_size + k) % img_count];
-					batch_img_vec[k] = img_vec[j];
-					batch_label_vec[k] = lab_vec[j];
+					nn_int k = idx_vec[j];
+					std::memcpy(&img_batch(0, 0, 0, j - start), &(*img_vec[k])[0], img_size * sizeof(nn_float));
+					std::memcpy(&lab_batch(0, 0, 0, j - start), &(*lab_vec[k])[0], lab_size * sizeof(nn_float));
 				}
-				train_one_batch(batch_img_vec, batch_label_vec, learning_rate, nthreads);
-				minibatch_callback((i + 1) * batch_size, img_count);
 
-				//if ((i + 1) % 100 == 0) {
-				//	auto tend = get_now_ms();
-				//	std::cout << (tend - tstart) * 0.001f << std::endl;
-				//	tstart = tend;
-				//}
+				train_one_batch(img_batch, lab_batch);
 
+				nn_float batch_lr = learning_rate / (end - start);
+				if (!update_all_weight(batch_lr))
+				{
+					std::cout << "[Error] Detected infinite value in weight. stop train!" << std::endl;
+				}
+				minibatch_callback(end, img_count);
 			}
 			auto train_end = get_now_ms();
 			nn_float train_elapse = (train_end - tstart) * 0.001f;
 
-			//epoch_callback(c + 1, epoch, 0, 0, train_elapse, 0);
-			//break;
-
-			nn_int correct = test(test_img_vec, test_lab_vec, nthreads);
+			set_batch_size(1);
+			nn_int correct = test(test_img_vec, test_lab_vec);
 			nn_float cur_accuracy = (1.0f * correct / test_img_count);
 			max_accuracy = std::max<nn_float>(max_accuracy, cur_accuracy);
-			nn_float tot_cost = calc_cost ? get_cost(img_vec, lab_vec, nthreads) : (nn_float)(-1.0);
+			nn_float tot_cost = calc_cost ? get_cost(img_vec, lab_vec) : (nn_float)(-1.0);
 			auto test_end = get_now_ms();
 			nn_float test_elapse = (test_end - train_end) * 0.001f;
 			epoch_callback(c + 1, epoch, cur_accuracy, tot_cost, train_elapse, test_elapse);
@@ -136,83 +258,38 @@ public:
 		return max_accuracy;
 	}
 
-	void train_one_batch(const varray_vec &batch_img_vec, const varray_vec &batch_label_vec, nn_float eta, const nn_int max_threads)
+	nn_int test(const varray_vec &test_img_vec, const varray_vec &test_lab_vec)
 	{
-		nn_assert(batch_img_vec.size() == batch_label_vec.size());
-		nn_int batch_size = batch_img_vec.size();
-		nn_int nthreads = std::min<nn_int>(max_threads, batch_size);
-		nn_int nstep = (batch_size + nthreads - 1) / nthreads;
+		set_phase(phase_type::eTest);
 
-		std::vector<std::future<void>> futures;
-		for (nn_int k = 0; k < nthreads && k * nstep < batch_size; ++k)
-		{
-			nn_int begin = k * nstep;
-			nn_int end = std::min<nn_int>(batch_size, begin + nstep);
-			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
-				train_task(batch_img_vec, batch_label_vec, begin, end, k);
-			})));
-		}
-		for (auto &future : futures)
-		{
-			future.wait();
-		}
-		nn_float eff = eta / batch_size;
-		if (!update_all_weight(eff))
-		{
-			std::cout << "[Error] Detected infinite value in weight. stop train!" << std::endl;
-		}
-	}
-
-	nn_int test(const varray_vec &test_img_vec, const varray_vec &test_lab_vec, const nn_int max_threads)
-	{
 		nn_assert(test_img_vec.size() == test_lab_vec.size());
 		nn_int test_count = test_img_vec.size();
 
-		nn_int nthreads = max_threads;
-		nn_int nstep = (test_count + nthreads - 1) / nthreads;
-
-		std::vector<std::future<nn_int>> futures;
-		for (nn_int k = 0; k < nthreads && k * nstep < test_count; ++k)
-		{
-			nn_int begin = k * nstep;
-			nn_int end = std::min<nn_int>(test_count, begin + nstep);
-			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
-				return test_task(test_img_vec, test_lab_vec, begin, end, k);
-			})));
-		}
 		nn_int correct = 0;
-		for (auto &future : futures)
+		for (nn_int i = 0; i < test_count; ++i)
 		{
-			correct += future.get();
+			forward(*test_img_vec[i]);
+			nn_int lab = m_output_layer->get_output().arg_max();
+			if (lab == test_lab_vec[i]->arg_max())
+			{
+				++correct;
+			}
 		}
 		return correct;
 	}
 
-	nn_float get_cost(const varray_vec &img_vec, const varray_vec &lab_vec, const nn_int max_threads)
+	nn_float get_cost(const varray_vec &img_vec, const varray_vec &lab_vec)
 	{
+		set_phase(phase_type::eTest);
+
 		nn_assert(img_vec.size() == lab_vec.size());
 		nn_int tot_count = img_vec.size();
 
-		nn_int nthreads = max_threads;
-		nn_int nstep = (tot_count + nthreads - 1) / nthreads;
-
-		std::vector<std::future<nn_float>> futures;
-		for (nn_int k = 0; k < nthreads && k * nstep < tot_count; ++k)
-		{
-			nn_int begin = k * nstep;
-			nn_int end = std::min<nn_int>(tot_count, begin + nstep);
-			futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
-				return cost_task(img_vec, lab_vec, begin, end, k);
-			})));
-		}
 		nn_float tot_cost = 0;
-		for (auto &future : futures)
+		for (nn_int i = 0; i < tot_count; ++i)
 		{
-			tot_cost += future.get();
-		}
-		if (tot_count > 0)
-		{
-			tot_cost /= tot_count;
+			m_input_layer->forw_prop(*img_vec[i]);
+			tot_cost += m_output_layer->calc_cost(false, *lab_vec[i]);
 		}
 		return tot_cost;
 	}
@@ -223,6 +300,7 @@ public:
 
 		set_phase(phase_type::eGradientCheck);
 		set_task_count(1);
+		set_batch_size(1);
 
 		bool check_ok = true;
 		for (auto &layer : m_layers)
@@ -279,63 +357,49 @@ private:
 		}
 	}
 
-	void forward(const varray& input, nn_int task_idx)
+	void forward(const varray& img_batch)
 	{
-		m_input_layer->forw_prop(input, task_idx);
+		m_input_layer->forw_prop(img_batch);
 	}
 
-	void backward(const varray &label, nn_int task_idx)
+	void backward(const varray &lab_batch)
 	{
-		m_output_layer->backward(label, task_idx);
+		m_output_layer->back_prop(lab_batch);
 	}
 
-	bool update_all_weight(nn_float eff)
+	bool update_all_weight(nn_float batch_lr)
 	{
 		for (auto &layer : m_layers)
 		{
-			if (!layer->update_weights(eff)) {
+			if (!layer->update_weights(batch_lr))
+			{
 				return false;
 			}
 		}
 		return true;
 	}
 
-	void train_task(const varray_vec &batch_img_vec, const varray_vec &batch_label_vec, nn_int begin, nn_int end, nn_int task_idx)
+	void train_one_batch(varray &img_batch, varray &lab_batch)
 	{
 		set_phase(phase_type::eTrain);
-		for (nn_int i = begin; i < end; ++i)
-		{
-			forward(*batch_img_vec[i], task_idx);
-			backward(*batch_label_vec[i], task_idx);
-		}
+		m_input_layer->forw_prop(img_batch);
+		m_output_layer->back_prop(lab_batch);
 	}
 
-	nn_int test_task(const varray_vec &test_img_vec, const varray_vec &test_lab_vec, nn_int begin, nn_int end, nn_int task_idx)
+	nn_int test_task(const varray_vec &test_img_vec, const varray_vec &test_lab_vec, nn_int begin, nn_int end)
 	{
 		set_phase(phase_type::eTest);
 		nn_int c_count = 0;
 		for (nn_int i = begin; i < end; ++i)
 		{
-			forward(*test_img_vec[i], task_idx);
-			nn_int lab = m_output_layer->get_output(task_idx).arg_max();
+			forward(*test_img_vec[i]);
+			nn_int lab = m_output_layer->get_output().arg_max();
 			if (lab == test_lab_vec[i]->arg_max())
 			{
 				++c_count;
 			}
 		}
 		return c_count;
-	}
-
-	nn_float cost_task(const varray_vec &img_vec, const varray_vec &label_vec, nn_int begin, nn_int end, nn_int task_idx)
-	{
-		set_phase(phase_type::eTest);
-		nn_float cost = 0;
-		for (nn_int i = begin; i < end; ++i)
-		{
-			m_input_layer->forw_prop(*img_vec[i], task_idx);
-			cost += m_output_layer->calc_cost(false, *label_vec[i], task_idx);
-		}
-		return cost;
 	}
 
 	bool calc_gradient(const varray &test_img, const varray &test_lab, nn_float &w, nn_float &dw)
@@ -348,17 +412,17 @@ private:
 
 		nn_float prev_w = w;
 		w = prev_w + EPSILON;
-		m_input_layer->forw_prop(test_img, 0);
-		nn_float loss_0 = m_output_layer->calc_cost(true, test_lab, 0);
+		m_input_layer->forw_prop(test_img);
+		nn_float loss_0 = m_output_layer->calc_cost(true, test_lab);
 
 		w = prev_w - EPSILON;
-		m_input_layer->forw_prop(test_img, 0);
-		nn_float loss_1 = m_output_layer->calc_cost(true, test_lab, 0);
+		m_input_layer->forw_prop(test_img);
+		nn_float loss_1 = m_output_layer->calc_cost(true, test_lab);
 		nn_float delta_by_numerical = (loss_0 - loss_1) / (nn_float(2.0) * EPSILON);
 
 		w = prev_w;
-		m_input_layer->forw_prop(test_img, 0);
-		m_output_layer->backward(test_lab, 0);
+		m_input_layer->forw_prop(test_img);
+		m_output_layer->back_prop(test_lab);
 
 		nn_float delta_by_bprop = dw;
 

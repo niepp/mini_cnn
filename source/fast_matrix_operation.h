@@ -30,25 +30,31 @@ namespace mini_cnn
 		blas_gemm
 	*/
 	template<typename T>
-	static inline void blas_gemm(const T *nn_restrict mat_a, nn_int h1, nn_int w1
+	static inline void blas_gemm(T alpha
+		, const T *nn_restrict mat_a, nn_int h1, nn_int w1
 		, const T *nn_restrict mat_b, nn_int h2, nn_int w2
+		, T beta
 		, T *nn_restrict mat_c, nn_int h, nn_int w);
 
 	template<>
-	static inline void blas_gemm<float>(const float *nn_restrict mat_a, nn_int h1, nn_int w1
+	static inline void blas_gemm<float>(float alpha
+		, const float *nn_restrict mat_a, nn_int h1, nn_int w1
 		, const float *nn_restrict mat_b, nn_int h2, nn_int w2
+		, float beta
 		, float *nn_restrict mat_c, nn_int h, nn_int w)
 	{
 		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-			h1, w, w1, 1.0, mat_a, w1, mat_b, w2, 0, mat_c, w);
+			h1, w, w1, alpha, mat_a, w1, mat_b, w2, beta, mat_c, w);
 	}
 	template<>
-	static inline void blas_gemm<double>(const double *nn_restrict mat_a, nn_int h1, nn_int w1
+	static inline void blas_gemm<double>(double alpha
+		, const double *nn_restrict mat_a, nn_int h1, nn_int w1
 		, const double *nn_restrict mat_b, nn_int h2, nn_int w2
+		, double beta
 		, double *nn_restrict mat_c, nn_int h, nn_int w)
 	{
 		cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-			h1, w, w1, 1.0, mat_a, w1, mat_b, w2, 0, mat_c, w);
+			h1, w, w1, alpha, mat_a, w1, mat_b, w2, beta, mat_c, w);
 	}
 
 	/*
@@ -127,22 +133,26 @@ namespace mini_cnn
 
 #endif
 
-	// mat_c : = mat_a * mat_b
+	// mat_c : = alpha * mat_a * mat_b + beta * mat_c
 	//
 	// gemm (general matrix multiply matrix) 
 	// mat_a : h1 X w1
 	// mat_b : h2 X w2, and m2 is transposed
 	// mat_c : h1 X h2
-	static inline void gemm(const nn_float *nn_restrict mat_a, nn_int h1, nn_int w1
+	static inline void gemm(nn_float alpha
+		, const nn_float *nn_restrict mat_a, nn_int h1, nn_int w1
 		, const nn_float *nn_restrict mat_b, nn_int h2, nn_int w2
+		, nn_float beta
 		, nn_float *nn_restrict mat_c, nn_int h, nn_int w)
 	{
 		nn_assert(w1 == w2);
 		nn_assert(h1 == h && h2 == w);
 
 #ifdef USE_BLAS
-		blas_gemm<nn_float>(mat_a, h1, w1
+		blas_gemm<nn_float>(alpha
+			, mat_a, h1, w1
 			, mat_b, h2, w2
+			, beta
 			, mat_c, h, w);
 #else
 		for (nn_int i = 0; i < h; ++i)
@@ -151,7 +161,7 @@ namespace mini_cnn
 			nn_float *nn_restrict pc = mat_c + i * w;
 			for (nn_int j = 0; j < w; ++j)
 			{
-				pc[j] = vec_dot(pa, &mat_b[j * w2], w1);
+				pc[j] = beta * pc[j] + alpha * vec_dot(pa, &mat_b[j * w2], w1);
 			}
 		}
 #endif
@@ -183,7 +193,7 @@ namespace mini_cnn
 #endif
 	}
 
-	// m := x * y
+	// m := x * y + m
 	// 
 	// get matrix by vector multiply vector
 	// m: matrix with shape of h X w
@@ -201,7 +211,7 @@ namespace mini_cnn
 			nn_float xi = x[i];
 			for (nn_int j = 0; j < w; ++j)
 			{
-				vec[j] = xi * y[j];
+				vec[j] += xi * y[j];
 			}
 		}
 #endif

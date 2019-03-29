@@ -17,16 +17,6 @@ enum padding_type
 	eSame   // padding zero around input to keep image size
 };
 
-enum activation_type
-{
-	eNone,
-	eIdentity,
-	eSigmod,
-	eTanh,
-	eRelu,
-	eSoftMax,
-};
-
 enum lossfunc_type
 {
 	eMSE,
@@ -81,8 +71,8 @@ protected:
 	layer_base* m_next;
 	layer_base* m_prev;
 
-	active_func m_f;
-	active_func m_df;
+	activation_base *m_activation;
+	phase_type m_phase_type;
 
 public:
 	shape3d m_out_shape;
@@ -90,46 +80,22 @@ public:
 	varray m_b;          // bias vector
 
 protected:
+	varray m_z_vec;      // z of a batch
+	varray m_x_vec;      // output of a batch
+	varray m_wd_vec;	 // w' * delta of a batch
+
 	struct task_storage
 	{
 		varray m_dw;
 		varray m_db;
-		varray m_z;      // z vector
-		varray m_x;      // output vector
 		varray m_delta;
-		varray m_wd;	 // w' * delta
 	};
-
 	std::vector<task_storage> m_task_storage;
+	nn_int m_task_count;
 
 public:
-	layer_base(activation_type ac_type = activation_type::eNone)
+	layer_base(activation_base *activation = nullptr) : m_activation(activation)
 	{
-		switch (ac_type)
-		{
-		case activation_type::eNone:
-			m_f = nullptr;
-			m_df = nullptr;
-			break;
-		case activation_type::eIdentity:
-			m_f = identity;
-			m_df = deriv_identity;
-			break;
-		case activation_type::eSigmod:
-			m_f = sigmoid;
-			m_df = deriv_sigmoid;
-			break;
-		case activation_type::eRelu:
-			m_f = relu;
-			m_df = deriv_relu;
-			break;
-		case activation_type::eSoftMax:
-			m_f = softmax;
-			m_df = nullptr;
-			break;
-		default:
-			break;
-		}
 	}
 
 	nn_int out_size() const
@@ -142,9 +108,9 @@ public:
 		return m_w.size() + m_b.size();
 	}
 
-	const varray& get_output(nn_int task_idx) const
+	const varray& get_output() const
 	{
-		return m_task_storage[task_idx].m_x;
+		return m_x_vec;
 	}
 
 	task_storage& get_task_storage(nn_int task_idx)
@@ -172,6 +138,7 @@ public:
 
 	virtual void set_phase_type(phase_type phase)
 	{
+		m_phase_type = phase;
 	}
 
 	virtual void set_fixed_prop(nn_int task_idx)
@@ -188,19 +155,26 @@ public:
 		return out_size();
 	}
 
-	virtual void set_task_count(nn_int task_count) = 0;
+	virtual void set_task_count(nn_int task_count)
+	{
+		m_task_count = task_count;
+	}
+
+	virtual void set_batch_size(nn_int batch_size)
+	{
+	}
 
 	/*
 		input: input of this layer
 	*/
-	virtual void forw_prop(const varray &input, nn_int task_idx) = 0;
+	virtual void forw_prop(const varray &input) = 0;
 
 	/*
 		next_wd: next layer's transpose(weight) * delta
 	*/
-	virtual void back_prop(const varray &next_wd, nn_int task_idx) = 0;
+	virtual void back_prop(const varray &next_wd) = 0;
 
-	virtual bool update_weights(nn_float eff)
+	virtual bool update_weights(nn_float batch_lr)
 	{
 		nn_int b_sz = m_b.size();
 		nn_int w_sz = m_w.size();
@@ -209,36 +183,22 @@ public:
 			return true;
 		}
 
-		// merge weights from all task
-		nn_int task_count = (nn_int)m_task_storage.size();
-		auto& ts_sum = m_task_storage[0];
+		auto& ts = m_task_storage[0];
 
-		nn_float *nn_restrict vec_sum_db = &ts_sum.m_db[0];
-		nn_float *nn_restrict vec_sum_dw = &ts_sum.m_dw[0];
-
-		for (nn_int k = 1; k < task_count; ++k)
+//#ifdef _DEBUG
+		if (!is_valid(ts.m_db) || !is_valid(ts.m_dw))
 		{
-			auto& ts = m_task_storage[k];
-#ifdef _DEBUG
-			if (!is_valid(ts.m_db) || !is_valid(ts.m_dw))
-			{
-				return false;
-			}
-#endif
-			fo_vv(&ts.m_db[0], b_sz, 1.0, vec_sum_db, b_sz);
-			fo_vv(&ts.m_dw[0], w_sz, 1.0, vec_sum_dw, w_sz);
+			return false;
 		}
+//#endif
 
 		// update weights
-		fo_vv(vec_sum_db, b_sz, -eff, &m_b[0], b_sz);
-		fo_vv(vec_sum_dw, w_sz, -eff, &m_w[0], w_sz);
+		fo_vv(&ts.m_db[0], b_sz, -batch_lr, &m_b[0], b_sz);
+		fo_vv(&ts.m_dw[0], w_sz, -batch_lr, &m_w[0], w_sz);
 
 		// clear task storage
-		for (auto& ts : m_task_storage)
-		{
-			ts.m_dw.make_zero();
-			ts.m_db.make_zero();
-		}
+		ts.m_dw.make_zero();
+		ts.m_db.make_zero();
 
 		return true;
 

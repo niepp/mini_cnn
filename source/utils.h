@@ -5,6 +5,8 @@
 #include <random>
 #include <chrono>
 #include <algorithm>
+#include <thread>
+#include <future>
 
 namespace mini_cnn
 {
@@ -62,12 +64,6 @@ inline long long get_now_ms()
 {
 	auto tp_now = std::chrono::high_resolution_clock::now();
 	return std::chrono::duration_cast<std::chrono::milliseconds>(tp_now.time_since_epoch()).count();
-}
-
-inline long long get_now_microseconds()
-{
-	auto tp_now = std::chrono::high_resolution_clock::now();
-	return std::chrono::duration_cast<std::chrono::microseconds>(tp_now.time_since_epoch()).count();
 }
 
 inline unsigned char* align_address(size_t address, int align_size)
@@ -147,6 +143,24 @@ inline void transpose(const varray &mat, varray &retm)
 		{
 			retm[i * w + j] = mat[j * h + i];
 		}
+	}
+}
+
+void parallel_task(nn_int batch_size, nn_int task_count, std::function<void(nn_int, nn_int, nn_int)> func)
+{
+	nn_int nstep = (batch_size + task_count - 1) / task_count;
+	std::vector<std::future<void>> futures;
+	for (nn_int k = 0; k < task_count && k * nstep < batch_size; ++k)
+	{
+		nn_int begin = k * nstep;
+		nn_int end = std::min(batch_size, begin + nstep);
+		futures.push_back(std::move(std::async(std::launch::async, [&, begin, end, k]() {
+			func(begin, end, k);
+		})));
+	}
+	for (auto &future : futures)
+	{
+		future.get();
 	}
 }
 

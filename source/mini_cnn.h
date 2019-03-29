@@ -5,6 +5,7 @@
 #include "global_setting.h"
 #include "varray.h"
 #include "utils.h"
+#include "activation.h"
 #include "fast_matrix_operation.h"
 #include "layer/layer.h"
 #include "layer/reshape_layer.h"

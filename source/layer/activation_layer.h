@@ -20,9 +20,10 @@ namespace mini_cnn
 class activation_layer : public layer_base
 {
 public:
-	activation_layer(activation_type ac_type)
-		: layer_base(ac_type)
+	activation_layer(activation_base *activation)
+		: layer_base(activation)
 	{
+		nn_assert(activation != nullptr);
 	}
 
 	virtual nn_int fan_in_size() const
@@ -46,63 +47,84 @@ public:
 
 	virtual void set_task_count(nn_int task_count)
 	{
-		nn_int in_w = m_prev->m_out_shape.m_w;
-		nn_int in_h = m_prev->m_out_shape.m_h;
-		nn_int in_d = m_prev->m_out_shape.m_d;
+		layer_base::set_task_count(task_count);
 		nn_int in_size = m_prev->m_out_shape.size();
 
 		m_task_storage.resize(task_count);
+
 		for (auto& ts : m_task_storage)
 		{
-			if (!m_out_shape.is_img())
-			{
-				ts.m_x.resize(in_w * in_h * in_d);
-			}
-			else
-			{
-				ts.m_x.resize(in_w, in_h, in_d);
-			}
 			ts.m_delta.resize(in_size);
 		}
 	}
 
-	virtual void forw_prop(const varray &input, nn_int task_idx)
+	virtual void set_batch_size(nn_int batch_size)
 	{
-		nn_assert(input.size() == m_out_shape.size());
+		nn_int in_w = m_prev->m_out_shape.m_w;
+		nn_int in_h = m_prev->m_out_shape.m_h;
+		nn_int in_d = m_prev->m_out_shape.m_d;
+		if (!m_out_shape.is_img())
+		{
+			m_x_vec.resize(in_w * in_h * in_d);
+		}
+		else
+		{
+			m_x_vec.resize(in_w, in_h, in_d);
+		}
+		m_wd_vec.resize(in_w, in_h, in_d, batch_size);
+	}
 
-		layer_base::task_storage &ts = m_task_storage[task_idx];
+	virtual void forw_prop(const varray &input_batch)
+	{
+		nn_assert(input_batch.img_size() == m_out_shape.size());
+		nn_assert(input_batch.size() == m_x_vec.size());
 
-		nn_assert(input.size() == ts.m_x.size());
-
-		m_f(input, ts.m_x);
+		nn_int batch_size = input_batch.count();
+		parallel_task(batch_size, m_task_count, [&](nn_int begin, nn_int end, nn_int task_idx)
+		{
+			nn_int img_size = input_batch.img_size();
+			for (int b = begin; b < end; ++b)
+			{
+				const nn_float *input = input_batch.data(b);
+				m_activation->f(input, m_x_vec.data(b), img_size);
+			}
+		});
 
 		if (m_next != nullptr)
 		{
-			m_next->forw_prop(ts.m_x, task_idx);
+			m_next->forw_prop(m_x_vec);
 		}
 	}
 
-	virtual void back_prop(const varray &next_wd, nn_int task_idx)
+	virtual void back_prop(const varray &next_wd)
 	{
-		layer_base::task_storage &ts = m_task_storage[task_idx];
+		nn_assert(next_wd.size() == m_x_vec.size());	
+		nn_int out_sz = m_x_vec.img_size();
+		nn_int batch_size = next_wd.count();
 
-		nn_assert(next_wd.size() == ts.m_x.size());
-
-		nn_int out_sz = next_wd.size();
-
-		/*
-			prev delta := w * delta กั df(z)
-		*/
-		m_df(ts.m_x, ts.m_delta);
-
-		const nn_float *nn_restrict vec_next_wd = &next_wd[0];
-		nn_float *nn_restrict vec_delta = &ts.m_delta[0];
-		for (nn_int i = 0; i < out_sz; ++i)
+		parallel_task(batch_size, m_task_count, [&](nn_int begin, nn_int end, nn_int task_idx)
 		{
-			vec_delta[i] *= vec_next_wd[i];
-		}
+			layer_base::task_storage &ts = m_task_storage[task_idx];
+			nn_assert(ts.m_delta.size() == m_x_vec.img_size());
+			for (int b = begin; b < end; ++b)
+			{
+				const nn_float *vec_next_wd = next_wd.data(b);
+				nn_float *vec_wd = m_wd_vec.data(b);
+				nn_float *vec_delta = ts.m_delta.data();
+				/*
+					prev delta := w * delta กั df(z)
+					for activation layer the weight matrix is a identity matrix, so wd := w.transpose * delta = delta
+				*/
+				m_activation->df(m_x_vec.data(b), vec_delta, out_sz);
 
-		m_prev->back_prop(ts.m_delta, task_idx);
+				for (nn_int i = 0; i < out_sz; ++i)
+				{
+					vec_wd[i] = vec_delta[i] * vec_next_wd[i];
+				}
+			}
+		});
+
+		m_prev->back_prop(m_wd_vec);
 
 	}
 

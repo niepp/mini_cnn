@@ -11,10 +11,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\source\activation.h" />
     <ClInclude Include="..\source\common_define.h" />
     <ClInclude Include="..\source\data_parser\cifar_100_parser.h" />
     <ClInclude Include="..\source\data_parser\cifar_10_parser.h" />
     <ClInclude Include="..\source\data_parser\mnist_parser.h" />
+    <ClInclude Include="..\source\data_parser\voc2007_parser.h" />
     <ClInclude Include="..\source\fast_matrix_operation.h" />
     <ClInclude Include="..\source\global_setting.h" />
     <ClInclude Include="..\source\layer\activation_layer.h" />
@@ -50,6 +52,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
+    <UseIntelMKL>Sequential</UseIntelMKL>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>

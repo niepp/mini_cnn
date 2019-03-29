@@ -19,29 +19,29 @@ public:
 	virtual void set_task_count(nn_int task_count)
 	{
 		m_task_storage.resize(task_count);
-		for (auto& ts : m_task_storage)
+	}
+
+	virtual void set_batch_size(nn_int batch_size)
+	{
+		if (m_out_shape.is_img())
 		{
-			if (m_out_shape.is_img())
-			{
-				ts.m_x.resize(m_out_shape.m_w, m_out_shape.m_h, m_out_shape.m_d);
-			}
-			else
-			{
-				ts.m_x.resize(m_out_shape.size());
-			}
+			m_x_vec.resize(m_out_shape.m_w, m_out_shape.m_h, m_out_shape.m_d, batch_size);
+		}
+		else
+		{
+			m_x_vec.resize(m_out_shape.size(), 1, 1, batch_size);
 		}
 	}
 
-	virtual void forw_prop(const varray &input, nn_int task_idx)
+	virtual void forw_prop(const varray &input_batch)
 	{
 		nn_assert(m_next != nullptr);
-
-		varray &in = m_task_storage[task_idx].m_x;
-		in.copy(input);
-		m_next->forw_prop(in, task_idx);
+		varray &in = m_x_vec;
+		in.copy(input_batch);
+		m_next->forw_prop(in);
 	}
 
-	virtual void back_prop(const varray &next_wd, nn_int task_idx)
+	virtual void back_prop(const varray &next_wd)
 	{
 	}
 

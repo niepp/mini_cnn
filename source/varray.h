@@ -78,6 +78,7 @@ public:
 	void make_zero();
 
 	nn_int dim() const;
+	nn_int img_size() const;
 	nn_int size() const;
 	nn_int width() const;
 	nn_int height() const;
@@ -99,13 +100,18 @@ public:
 	T& operator[](nn_int idx);
 	const T& operator[](nn_int idx) const;
 
+	T* data(nn_int n_idx = 0);
+	const T* data(nn_int n_idx = 0) const;
+
 	bool check_dim(nn_int ndim) const;
 
 private:
 	void _create(nn_int w, nn_int h, nn_int d, nn_int n);
+	void _create_inplace(nn_int w, nn_int h, nn_int d, nn_int n);
 	void _release();
 
 private:
+	nn_int m_capcity;
 	nn_int m_w;  // width
 	nn_int m_h;  // height
 	nn_int m_d;  // depth or channel
@@ -121,7 +127,19 @@ inline void _varray<T>::_create(nn_int w, nn_int h, nn_int d, nn_int n)
 	m_h = h;
 	m_d = d;
 	m_n = n;
+	m_capcity = w * h * d * n;
 	m_data = (T*)align_malloc(w * h * d * n * sizeof(T), nn_align_size);
+	this->make_zero();
+}
+
+template <class T>
+inline void _varray<T>::_create_inplace(nn_int w, nn_int h, nn_int d, nn_int n)
+{
+	nn_assert(w >= 0 && h >= 0 && d >= 0 && n >= 0);
+	m_w = w;
+	m_h = h;
+	m_d = d;
+	m_n = n;
 	this->make_zero();
 }
 
@@ -132,6 +150,7 @@ inline void _varray<T>::_release()
 	m_h = 0;
 	m_d = 0;
 	m_n = 0;
+	m_capcity = 0;
 	if (m_data != nullptr)
 	{
 		align_free(m_data);
@@ -140,7 +159,7 @@ inline void _varray<T>::_release()
 }
 
 template <class T>
-inline _varray<T>::_varray() : m_w(0), m_h(0), m_d(0), m_n(0)
+inline _varray<T>::_varray() : m_w(0), m_h(0), m_d(0), m_n(0), m_capcity(0)
 {
 	m_data = nullptr;
 }
@@ -179,6 +198,7 @@ template <class T>
 inline _varray<T>::_varray(const _varray<T> &other) : m_w(other.m_w), m_h(other.m_h), m_d(other.m_d), m_n(other.m_n)
 {
 	nn_int len = other.m_w * other.m_h * other.m_d * other.m_n;
+	m_capcity = len;
 	m_data = (T*)align_malloc(len * sizeof(T), nn_align_size);
 	::memcpy(m_data, other.m_data, len * sizeof(T));
 }
@@ -202,6 +222,7 @@ inline _varray<T>& _varray<T>::operator=(const _varray<T> &other)
 	m_d = other.m_d;
 	m_n = other.m_n;
 	nn_int len = m_w * m_h * m_d * m_n;
+	m_capcity = len;
 	m_data = (T*)align_malloc(len * sizeof(T), nn_align_size);
 	::memcpy(m_data, other.m_data, len * sizeof(T));
 	return *this;
@@ -268,29 +289,34 @@ inline void _varray<T>::make_zero()
 template <class T>
 inline void _varray<T>::resize(nn_int w, nn_int h, nn_int d, nn_int n)
 {
-	_release();
-	_create(w, h, d, n);
+	if (m_capcity < w * h * d * n)
+	{
+		//std::cout << m_capcity << " -> " << w * h * d * n << std::endl;
+		_release();
+		_create(w, h, d, n);
+	}
+	else
+	{
+		_create_inplace(w, h, d, n);
+	}
 }
 
 template <class T>
 inline void _varray<T>::resize(nn_int w, nn_int h, nn_int d)
 {
-	_release();
-	_create(w, h, d, 1);
+	resize(w, h, d, 1);
 }
 
 template <class T>
 inline void _varray<T>::resize(nn_int w, nn_int h)
 {
-	_release();
-	_create(w, h, 1, 1);
+	resize(w, h, 1, 1);
 }
 
 template <class T>
 inline void _varray<T>::resize(nn_int w)
 {
-	_release();
-	_create(w, 1, 1, 1);
+	resize(w, 1, 1, 1);
 }
 
 template <class T>
@@ -298,6 +324,12 @@ inline nn_int _varray<T>::dim() const
 {
 	return m_n > 1 ? 4 :
 		(m_d > 1 ? 3 : (m_h > 1 ? 2 : (m_w > 0 ? 1 : 0)));
+}
+
+template <class T>
+inline nn_int _varray<T>::img_size() const
+{
+	return m_d * m_h * m_w;
 }
 
 template <class T>
@@ -434,6 +466,22 @@ inline const T& _varray<T>::operator[](nn_int idx) const
 	nn_assert(dim() > 0);
 	nn_assert(idx >= 0 && idx < size());
 	return m_data[idx];
+}
+
+template <class T>
+inline T* _varray<T>::data(nn_int n_idx)
+{
+	nn_assert(dim() > 0);
+	nn_assert(n_idx >= 0 && n_idx < size());
+	return m_data + n_idx * m_w * m_h * m_d;
+}
+
+template <class T>
+inline const T* _varray<T>::data(nn_int n_idx) const
+{
+	nn_assert(dim() > 0);
+	nn_assert(n_idx >= 0 && n_idx < size());
+	return m_data + n_idx * m_w * m_h * m_d;
 }
 
 template <class T>
