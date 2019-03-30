@@ -70,15 +70,31 @@ network create_mnist_cnn()
 {
 	network nn;
 	nn.add_layer(new input_layer(mnist_parser::W_input, mnist_parser::H_input, mnist_parser::D_input));
-	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::eValid, new activation_relu()));
+	nn.add_layer(new convolutional_layer(3, 3, 1, 8, 1, 1, padding_type::eValid, new activation_relu()));
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eValid, new activation_relu()));
+	nn.add_layer(new convolutional_layer(3, 3, 8, 32, 1, 1, padding_type::eValid, new activation_relu()));
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new fully_connected_layer(1024, new activation_relu()));
+	nn.add_layer(new fully_connected_layer(128, new activation_relu()));
 	nn.add_layer(new dropout_layer((nn_float)0.5));
-	nn.add_layer(new output_layer(mnist_parser::C_classCount, lossfunc_type::eMSE, new activation_relu()));
+	nn.add_layer(new output_layer(mnist_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
 	return nn;
 }
+
+//network create_mnist_cnn1()
+//{
+//	network nn;
+//	nn.add_layer(new input_layer(mnist_parser::W_input, mnist_parser::H_input, mnist_parser::D_input));
+//	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, padding_type::eValid, new activation_relu()));
+//	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+//	nn.add_layer(new batch_normalization_layer());
+//	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, padding_type::eValid, new activation_relu()));
+//	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
+//	nn.add_layer(new batch_normalization_layer());
+//	nn.add_layer(new fully_connected_layer(1024, new activation_relu()));
+//	nn.add_layer(new dropout_layer((nn_float)0.5));
+//	nn.add_layer(new output_layer(mnist_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
+//	return nn;
+//}
 
 //network create_cifar_100_VGG16()
 //{

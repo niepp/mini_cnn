@@ -83,7 +83,8 @@ public:
 		nn_int img_size = input_batch.img_size();
 		nn_assert(img_size == width);
 
-		parallel_task(batch_size, m_task_count, [&](nn_int begin, nn_int end, nn_int task_idx) {
+		parallel_task(batch_size, m_task_count, [&](nn_int begin, nn_int end, nn_int task_idx)
+		{
 			for (int b = begin; b < end; ++b)
 			{
 				const nn_float *input = input_batch.data(b);

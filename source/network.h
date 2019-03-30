@@ -22,52 +22,6 @@ public:
 	{
 	}
 
-	//void copy_weights(network *nn)
-	//{
-	//	for (int i = 0; i < nn->m_layers.size(); ++i)
-	//	{
-	//		auto this_layer = this->m_layers[i];
-	//		auto other_layer = nn->m_layers[i];
-	//		for (int j = 0; j < this_layer->m_w.size(); ++j)
-	//		{
-	//			this_layer->m_w[j] = other_layer->m_w[j];
-	//		}
-	//		for (int j = 0; j < this_layer->m_b.size(); ++j)
-	//		{
-	//			this_layer->m_b[j] = other_layer->m_b[j];
-	//		}
-	//	}
-	//}
-
-	//bool test_weights(network *nn)
-	//{
-	//	for (int i = 0; i < nn->m_layers.size(); ++i)
-	//	{
-	//		auto this_layer = this->m_layers[i];
-	//		auto other_layer = nn->m_layers[i];
-	//		for (int j = 0; j < this_layer->m_w.size(); ++j)
-	//		{
-	//			auto dw = this_layer->m_task_storage[0].m_dw[j] - other_layer->m_task_storage[0].m_dw[j];
-	//			if (std::abs(dw) > 0.01f)
-	//			{
-	//				int kkk = 0; 
-	//				return false;
-	//			}
-	//		}
-	//		for (int j = 0; j < this_layer->m_b.size(); ++j)
-	//		{
-	//			auto db = this_layer->m_task_storage[0].m_db[j] - other_layer->m_task_storage[0].m_db[j];
-	//			if (std::abs(db) > 0.01f)
-	//			{
-	//				int kkk = 0;
-	//				return false;
-	//			}
-	//		}
-	//	}
-	//	return true;
-	//}
-
-
 	void add_layer(layer_base *layer)
 	{
 		if (m_output_layer != nullptr)
@@ -131,60 +85,6 @@ public:
 		}
 	}
 
-	//void SGD_Test1(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const varray_vec &test_lab_vec, nn_int epoch, nn_int batch_size)
-	//{
-	//	set_task_count(1);
-	//	nn_float max_accuracy = 0;
-	//	nn_int img_count = img_vec.size();
-	//	nn_int test_img_count = test_img_vec.size();
-	//	nn_int batch = img_count / batch_size;
-	//	nn_int img_w = img_vec[0]->width();
-	//	nn_int img_h = img_vec[0]->height();
-	//	nn_int img_channel = img_vec[0]->depth();
-	//	nn_int img_size = img_w * img_h * img_channel;
-	//	nn_int lab_w = lab_vec[0]->width();
-	//	nn_int lab_h = lab_vec[0]->height();
-	//	nn_int lab_channel = lab_vec[0]->depth();
-	//	nn_int lab_size = lab_w * lab_h * lab_channel;
-	//	set_batch_size(batch_size);
-	//	varray img_batch(img_w, img_h, img_channel, batch_size);
-	//	varray lab_batch(lab_w, lab_h, lab_channel, batch_size);
-	//	for (nn_int k = 0; k < batch_size; ++k)
-	//	{
-	//		std::memcpy(&img_batch(0, 0, 0, k), &(*img_vec[k])[0], img_size * sizeof(nn_float));
-	//		std::memcpy(&lab_batch(0, 0, 0, k), &(*lab_vec[k])[0], lab_size * sizeof(nn_float));
-	//	}
-	//	train_task(img_batch, lab_batch, 0);
-	//}
-
-
-	//void SGD_Test2(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const varray_vec &test_lab_vec, nn_int epoch, nn_int batch_size)
-	//{
-	//	set_task_count(1);
-	//	nn_float max_accuracy = 0;
-	//	nn_int img_count = img_vec.size();
-	//	nn_int test_img_count = test_img_vec.size();
-	//	nn_int batch = img_count / batch_size;
-	//	nn_int img_w = img_vec[0]->width();
-	//	nn_int img_h = img_vec[0]->height();
-	//	nn_int img_channel = img_vec[0]->depth();
-	//	nn_int img_size = img_w * img_h * img_channel;
-	//	nn_int lab_w = lab_vec[0]->width();
-	//	nn_int lab_h = lab_vec[0]->height();
-	//	nn_int lab_channel = lab_vec[0]->depth();
-	//	nn_int lab_size = lab_w * lab_h * lab_channel;
-	//	set_batch_size(1);
-	//	varray img_batch(img_w, img_h, img_channel, 1);
-	//	varray lab_batch(lab_w, lab_h, lab_channel, 1);
-	//	for (nn_int k = 0; k < batch_size; ++k)
-	//	{
-	//		std::memcpy(&img_batch(0, 0, 0, 0), &(*img_vec[k])[0], img_size * sizeof(nn_float));
-	//		std::memcpy(&lab_batch(0, 0, 0, 0), &(*lab_vec[k])[0], lab_size * sizeof(nn_float));
-	//		train_task(img_batch, lab_batch, 0);
-	//	}
-	//}
-
-
 	nn_float mini_batch_SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const varray_vec &test_lab_vec
 		, nn_int epoch, nn_int batch_size, nn_float learning_rate, bool calc_cost, nn_int nthreads
 		, std::function<void(nn_int, nn_int)> minibatch_callback
@@ -245,12 +145,11 @@ public:
 			}
 			auto train_end = get_now_ms();
 			nn_float train_elapse = (train_end - tstart) * 0.001f;
-
+			nn_float tot_cost = calc_cost ? get_cost(img_vec, lab_vec) : (nn_float)(-1.0);
 			set_batch_size(1);
 			nn_int correct = test(test_img_vec, test_lab_vec);
 			nn_float cur_accuracy = (1.0f * correct / test_img_count);
 			max_accuracy = std::max<nn_float>(max_accuracy, cur_accuracy);
-			nn_float tot_cost = calc_cost ? get_cost(img_vec, lab_vec) : (nn_float)(-1.0);
 			auto test_end = get_now_ms();
 			nn_float test_elapse = (test_end - train_end) * 0.001f;
 			epoch_callback(c + 1, epoch, cur_accuracy, tot_cost, train_elapse, test_elapse);
@@ -282,14 +181,40 @@ public:
 	{
 		set_phase(phase_type::eTest);
 
-		nn_assert(img_vec.size() == lab_vec.size());
-		nn_int tot_count = img_vec.size();
+		nn_int img_w = img_vec[0]->width();
+		nn_int img_h = img_vec[0]->height();
+		nn_int img_channel = img_vec[0]->depth();
+		nn_int batch_size = img_vec[0]->count();
+		nn_int img_size = img_vec[0]->img_size();
 
+		nn_int lab_w = lab_vec[0]->width();
+		nn_int lab_h = lab_vec[0]->height();
+		nn_int lab_channel = lab_vec[0]->depth();
+		nn_int lab_size = lab_vec[0]->img_size();
+
+		nn_assert(img_vec.size() == lab_vec.size());
+		nn_assert(img_vec[0]->count() == lab_vec[0]->count());
+
+		nn_int img_count = img_vec.size();
 		nn_float tot_cost = 0;
-		for (nn_int i = 0; i < tot_count; ++i)
+		for (nn_int i = 0; i < img_count; i += batch_size)
 		{
-			m_input_layer->forw_prop(*img_vec[i]);
-			tot_cost += m_output_layer->calc_cost(false, *lab_vec[i]);
+			nn_int start = i;
+			nn_int end = std::min<nn_int>(i + batch_size, img_count);
+			nn_int bh_size = end - start;
+			varray img_batch(img_w, img_h, img_channel, bh_size);
+			varray lab_batch(lab_w, lab_h, lab_channel, bh_size);
+			for (nn_int j = start; j < end; ++j)
+			{
+				std::memcpy(&img_batch(0, 0, 0, j - start), &(*img_vec[j])[0], img_size * sizeof(nn_float));
+				std::memcpy(&lab_batch(0, 0, 0, j - start), &(*lab_vec[j])[0], lab_size * sizeof(nn_float));
+			}
+			m_input_layer->forw_prop(img_batch);
+			tot_cost += bh_size * m_output_layer->calc_cost(false, lab_batch);
+		}
+		if (img_count > 0)
+		{
+			tot_cost /= img_count;
 		}
 		return tot_cost;
 	}

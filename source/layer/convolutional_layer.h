@@ -293,7 +293,7 @@ public:
 				const nn_float *vec_next_wd = next_wd.data(b);
 				/*
 					delta := next_wd กั df(z)
-					*/
+				*/
 				m_activation->df(m_z_vec.data(b), vec_delta, out_sz);
 
 				for (nn_int i = 0; i < out_sz; ++i)
@@ -303,13 +303,13 @@ public:
 
 				/*
 					dw_k := conv2d(input_d, delta_k)
-					*/
+				*/
 				mem_block &block = m_conv_task_storage[task_idx].m_block_img;
 				conv_input_delta(vec_input, in_w, in_h, in_d, block, vec_delta, delta_w, delta_h, delta_d, m_stride_w, m_stride_h, ts.m_dw);
 
 				/*
 					db_k := sum(delta_k)
-					*/
+				*/
 				for (nn_int k = 0; k < m_filter_count; ++k)
 				{
 					nn_float s = 0;
@@ -326,7 +326,7 @@ public:
 
 				/*
 					wd := conv(delta, w)
-					*/
+				*/
 				nn_float *vec_wd = m_wd_vec.data(b);
 #ifdef nnGEMM
 				varray &filter_cache = m_conv_task_storage[task_idx].m_filter_cache;

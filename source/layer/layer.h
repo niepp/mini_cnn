@@ -183,22 +183,36 @@ public:
 			return true;
 		}
 
-		auto& ts = m_task_storage[0];
+		// merge weights from all task
+		nn_int task_count = (nn_int)m_task_storage.size();
+		auto& ts_sum = m_task_storage[0];
 
-//#ifdef _DEBUG
-		if (!is_valid(ts.m_db) || !is_valid(ts.m_dw))
+		nn_float *nn_restrict vec_sum_db = &ts_sum.m_db[0];
+		nn_float *nn_restrict vec_sum_dw = &ts_sum.m_dw[0];
+
+		for (nn_int k = 1; k < task_count; ++k)
 		{
-			return false;
+			auto& ts = m_task_storage[k];
+#ifdef _DEBUG
+			if (!is_valid(ts.m_db) || !is_valid(ts.m_dw))
+			{
+				return false;
+			}
+#endif
+			fo_vv(&ts.m_db[0], b_sz, 1.0, vec_sum_db, b_sz);
+			fo_vv(&ts.m_dw[0], w_sz, 1.0, vec_sum_dw, w_sz);
 		}
-//#endif
 
 		// update weights
-		fo_vv(&ts.m_db[0], b_sz, -batch_lr, &m_b[0], b_sz);
-		fo_vv(&ts.m_dw[0], w_sz, -batch_lr, &m_w[0], w_sz);
+		fo_vv(vec_sum_db, b_sz, -batch_lr, &m_b[0], b_sz);
+		fo_vv(vec_sum_dw, w_sz, -batch_lr, &m_w[0], w_sz);
 
 		// clear task storage
-		ts.m_dw.make_zero();
-		ts.m_db.make_zero();
+		for (auto& ts : m_task_storage)
+		{
+			ts.m_dw.make_zero();
+			ts.m_db.make_zero();
+		}
 
 		return true;
 

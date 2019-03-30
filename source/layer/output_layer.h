@@ -63,6 +63,7 @@ public:
 					, vec_input, in_sz
 					, ts.m_dw.data());
 
+
 				/*
 					m_w : out_sz X in_sz
 					wd := w.transpose * delta
@@ -79,50 +80,51 @@ public:
 
 	}
 
-	nn_float calc_cost(bool check_gradient, const varray &label) const
+	nn_float calc_cost(bool check_gradient, const varray &lab_batch) const
 	{
-		const varray &output = get_output();
-
-		const nn_float *nn_restrict vec_output = output.data();
-		const nn_float *nn_restrict vec_label = label.data();
-
-		nn_int out_sz = output.size();
-		nn_assert(out_sz == output.size());
-
-		nn_float e = check_gradient ? 0 : cEpsilon;
+		const varray &output_batch = get_output();
+		nn_int out_sz = output_batch.img_size();
+		nn_int batch_size = output_batch.count();
+		nn_assert(out_sz == lab_batch.img_size());
 		nn_float cost = 0;
-		switch (m_lossfunc_type)
+		for (nn_int b = 0; b < batch_size; ++b)
 		{
+			const nn_float *nn_restrict vec_output = output_batch.data(b);
+			const nn_float *nn_restrict vec_label = lab_batch.data(b);
+			nn_float e = check_gradient ? 0 : cEpsilon;
+			switch (m_lossfunc_type)
+			{
 			case lossfunc_type::eMSE:
-			{
-				for (nn_int i = 0; i < out_sz; ++i)
 				{
-					nn_float s = vec_output[i] - vec_label[i];
-					cost += s * s;
+					for (nn_int i = 0; i < out_sz; ++i)
+					{
+						nn_float s = vec_output[i] - vec_label[i];
+						cost += s * s;
+					}
+					cost *= (nn_float)(0.5);
 				}
-				cost *= (nn_float)(0.5);
-			}
-			break;
-		case lossfunc_type::eSigmod_CrossEntropy:
-			{
-				for (nn_int i = 0; i < out_sz; ++i)
+				break;
+			case lossfunc_type::eSigmod_CrossEntropy:
 				{
-					nn_float p = vec_label[i]; // p is only 0 or 1
-					nn_float q = vec_output[i];
-					nn_float c = p > 0 ? -log(q + e) : -log((nn_float)(1.0) - q + e);
-					cost += c;
+					for (nn_int i = 0; i < out_sz; ++i)
+					{
+						nn_float p = vec_label[i]; // p is only 0 or 1
+						nn_float q = vec_output[i];
+						nn_float c = p > 0 ? -log(q + e) : -log((nn_float)(1.0) - q + e);
+						cost += c;
+					}
 				}
+				break;
+			case lossfunc_type::eSoftMax_LogLikelihood:
+				{
+					nn_int idx = arg_max(vec_label, out_sz);
+					cost = -log(vec_output[idx] + e);
+				}
+				break;
+			default:
+				nn_assert(false);
+				break;
 			}
-			break;
-		case lossfunc_type::eSoftMax_LogLikelihood:
-			{
-				nn_int idx = label.arg_max();
-				cost = -log(vec_output[idx] + e);
-			}
-			break;
-		default:
-			nn_assert(false);
-			break;
 		}
 		return cost;
 	}

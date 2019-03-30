@@ -40,6 +40,7 @@ public:
 	virtual void set_task_count(nn_int task_count)
 	{
 		layer_base::set_task_count(task_count);
+		m_task_storage.resize(task_count);
 	}
 
 	virtual void set_batch_size(nn_int batch_size)
@@ -187,7 +188,7 @@ private:
 							{
 								continue;
 							}
-							out[x + y * w + c * w * h] = in_img[i + j * in_w + c * in_w * in_h] * inv_Size;
+							out[x + y * w + c * w * h] += in_img[i + j * in_w + c * in_w * in_h] * inv_Size;
 						}
 					}
 				}

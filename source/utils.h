@@ -110,6 +110,31 @@ inline bool is_valid(const varray &vec)
 	return true;
 }
 
+inline float fast_inv_sqrt(float x)
+{
+	float y = x;
+	float x2 = x * 0.5f;
+	int i = *(int*)&y;  // evil floating point bit level hacking
+	i = 0x5f3759df - (i >> 1); // what the fuck?
+	y = *(float*)&i;
+	y = y * (1.5f - (x2 * y * y)); // 1st iteration
+	// y = y * (1.5f - (x2 * y * y)); // 2nd iteration, this can be removed
+	return y;
+}
+
+inline double fast_inv_sqrt(double x)
+{
+	double y = x;
+	double x2 = y * 0.5;
+	int64_t i = *(int64_t *) &y;
+	// The magic number is for doubles is from https://cs.uwaterloo.ca/~m32rober/rsqrt.pdf
+	i = 0x5fe6eb50c7b537a9 - (i >> 1);
+	y = *(double *)&i;
+	y = y * (1.5 - (x2 * y * y));   // 1st iteration
+	// y  = y * ( 1.5 - ( x2 * y * y ) ); // 2nd iteration, this can be removed
+	return y;
+}
+
 inline float fast_exp(float x)
 {
 	int a = 185 * (int)x + 16249;
@@ -144,6 +169,21 @@ inline void transpose(const varray &mat, varray &retm)
 			retm[i * w + j] = mat[j * h + i];
 		}
 	}
+}
+
+inline nn_int arg_max(const nn_float *nn_restrict vec, nn_int len)
+{
+	nn_int max_idx = 0;
+	nn_float m = vec[0];
+	for (nn_int i = 1; i < len; ++i)
+	{
+		if (vec[i] > m)
+		{
+			m = vec[i];
+			max_idx = i;
+		}
+	}
+	return max_idx;
 }
 
 void parallel_task(nn_int batch_size, nn_int task_count, std::function<void(nn_int, nn_int, nn_int)> func)

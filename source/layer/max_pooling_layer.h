@@ -57,25 +57,7 @@ public:
 	virtual void set_task_count(nn_int task_count)
 	{
 		layer_base::set_task_count(task_count);
-		nn_int in_w = m_prev->m_out_shape.m_w;
-		nn_int in_h = m_prev->m_out_shape.m_h;
-		nn_int in_d = m_prev->m_out_shape.m_d;
-
-		nn_int out_w = m_out_shape.m_w;
-		nn_int out_h = m_out_shape.m_h;
-		nn_int out_d = m_out_shape.m_d;
-
 		m_task_storage.resize(task_count);
-		m_max_pooling_task_storage.resize(task_count);
-
-		for (auto &pooling_ts : m_max_pooling_task_storage)
-		{
-			pooling_ts.m_idx_maps.resize(in_d);
-			for (auto &mp : pooling_ts.m_idx_maps)
-			{
-				mp.resize(out_w * out_h);
-			}
-		}
 	}
 
 	virtual void set_batch_size(nn_int batch_size)
@@ -95,6 +77,17 @@ public:
 			m_x_vec.resize(out_w, out_h, out_d, batch_size);
 		}
 		m_wd_vec.resize(in_w, in_h, in_d, batch_size);
+
+		m_max_pooling_task_storage.resize(batch_size);
+		for (auto &pooling_ts : m_max_pooling_task_storage)
+		{
+			pooling_ts.m_idx_maps.resize(in_d);
+			for (auto &mp : pooling_ts.m_idx_maps)
+			{
+				mp.resize(out_w * out_h);
+			}
+		}
+
 	}
 
 	virtual void forw_prop(const varray &input_batch)
@@ -109,9 +102,9 @@ public:
 		nn_int d = m_x_vec.depth();
 
 		parallel_task(batch_size, m_task_count, [&](nn_int begin, nn_int end, nn_int task_idx) {
-			std::vector<index_vec> &idx_maps = m_max_pooling_task_storage[task_idx].m_idx_maps;
 			for (int b = begin; b < end; ++b)
 			{
+				std::vector<index_vec> &idx_maps = m_max_pooling_task_storage[b].m_idx_maps;
 				down_sample(input_batch.data(b), in_w, in_h, in_d
 					, m_x_vec.data(b), w, h, d
 					, idx_maps, m_pool_w, m_pool_h, m_stride_w, m_stride_h);
@@ -138,9 +131,9 @@ public:
 		m_wd_vec.make_zero();
 
 		parallel_task(batch_size, m_task_count, [&](nn_int begin, nn_int end, nn_int task_idx) {
-			std::vector<index_vec> &idx_maps = m_max_pooling_task_storage[task_idx].m_idx_maps;
 			for (int b = begin; b < end; ++b)
-			{				
+			{
+				std::vector<index_vec> &idx_maps = m_max_pooling_task_storage[b].m_idx_maps;
 				up_sample(next_wd.data(b), in_w, in_h, in_d
 					, m_wd_vec.data(b), w, h, d
 					, idx_maps, m_pool_w, m_pool_h, m_stride_w, m_stride_h);
@@ -243,7 +236,7 @@ private:
 						nn_int x = start_w + u;
 						nn_int y = start_h + v;
 						nn_assert((x >= 0 && x < w) && (y >= 0 && y < h));
-						out[x + y * w + c * w * h] = in_img[i + j * in_w + c * in_w * in_h];
+						out[x + y * w + c * w * h] += in_img[i + j * in_w + c * in_w * in_h];
 					}
 				}
 			}
