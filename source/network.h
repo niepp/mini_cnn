@@ -145,7 +145,7 @@ public:
 			}
 			auto train_end = get_now_ms();
 			nn_float train_elapse = (train_end - tstart) * 0.001f;
-			nn_float tot_cost = calc_cost ? get_cost(img_vec, lab_vec) : (nn_float)(-1.0);
+			nn_float tot_cost = calc_cost ? get_cost(img_vec, lab_vec, batch_size) : (nn_float)(-1.0);
 			set_batch_size(1);
 			nn_int correct = test(test_img_vec, test_lab_vec);
 			nn_float cur_accuracy = (1.0f * correct / test_img_count);
@@ -177,20 +177,19 @@ public:
 		return correct;
 	}
 
-	nn_float get_cost(const varray_vec &img_vec, const varray_vec &lab_vec)
+	nn_float get_cost(const varray_vec &img_vec, const varray_vec &lab_vec, nn_int batch_size)
 	{
 		set_phase(phase_type::eTest);
 
 		nn_int img_w = img_vec[0]->width();
 		nn_int img_h = img_vec[0]->height();
 		nn_int img_channel = img_vec[0]->depth();
-		nn_int batch_size = img_vec[0]->count();
-		nn_int img_size = img_vec[0]->img_size();
+		nn_int img_size = img_vec[0]->size();
 
 		nn_int lab_w = lab_vec[0]->width();
 		nn_int lab_h = lab_vec[0]->height();
 		nn_int lab_channel = lab_vec[0]->depth();
-		nn_int lab_size = lab_vec[0]->img_size();
+		nn_int lab_size = lab_vec[0]->size();
 
 		nn_assert(img_vec.size() == lab_vec.size());
 		nn_assert(img_vec[0]->count() == lab_vec[0]->count());

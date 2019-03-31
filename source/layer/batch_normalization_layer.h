@@ -13,9 +13,15 @@ protected:
 	varray m_total_mean;
 	varray m_total_var;
 
+	varray m_dJ_dvar;
+	varray m_dJ_dmean;
+
+	bool m_total_init;
+	nn_float m_decay;
+
 public:
-	batch_normalization_layer()
-		: layer_base()
+	batch_normalization_layer(nn_float decay = (nn_float)0.99)
+		: layer_base(), m_decay(decay)
 	{
 	}
 
@@ -27,6 +33,14 @@ public:
 		nn_int sz = m_out_shape.size();
 		m_b.resize(sz); // beta
 		m_w.resize(sz); // gamma
+
+		m_batch_mean.resize(sz);
+		m_batch_var.resize(sz);
+
+		m_total_mean.resize(sz);
+		m_total_var.resize(sz);
+		m_dJ_dvar.resize(sz);
+		m_dJ_dmean.resize(sz);
 	}
 
 	virtual void set_task_count(nn_int task_count)
@@ -42,13 +56,6 @@ public:
 			ts.m_dw.resize(sz);
 			ts.m_db.resize(sz);
 		}
-
-		m_batch_mean.resize(sz);
-		m_batch_var.resize(sz);
-
-		m_total_mean.resize(sz);
-		m_total_var.resize(sz);
-
 	}
 
 	virtual void set_batch_size(nn_int batch_size)
@@ -77,11 +84,37 @@ public:
 		}
 	}
 
+	virtual void set_phase_type(phase_type phase)
+	{
+		layer_base::set_phase_type(phase);
+		m_total_init = false;
+	}
+
 	virtual void forw_prop(const varray &input_batch)
 	{
 		nn_int batch_size = input_batch.count();
+		if (m_phase_type == phase_type::eTrain)
+		{
+			bn(input_batch, m_x_vec);
+		}
+		else if (m_phase_type == phase_type::eGradientCheck)
+		{
 
-		bn(input_batch, m_x_vec);
+		}
+		else if (m_phase_type == phase_type::eTest)
+		{
+			nn_int sz = input_batch.img_size();
+			for (nn_int b = 0; b < batch_size; ++b)
+			{
+				const nn_float *nn_restrict input = input_batch.data(b);
+				nn_float *nn_restrict out = m_x_vec.data(b);
+				for (nn_int i = 0; i < sz; ++i)
+				{
+					nn_float norm_x = (input[i] - m_total_mean[i]) * fast_inv_sqrt(m_total_var[i] + cEpsilon);
+					out[i] = m_w[i] * norm_x + m_b[i];
+				}
+			}
+		}
 
 		if (m_next != nullptr)
 		{
@@ -94,15 +127,40 @@ public:
 		nn_int batch_size = next_wd.count();
 		nn_int sz = m_out_shape.size();
 
-		varray &gamma = m_task_storage[0].m_dw;
-		varray &beta = m_task_storage[0].m_db;
+		varray &d_gamma = m_task_storage[0].m_dw;
+		varray &d_beta = m_task_storage[0].m_db;
+
+		nn_float *vec_mean = m_batch_mean.data();
+		nn_float *vec_var = m_batch_var.data();
+
+		const varray &input_batch = m_prev->get_output();
+
+		m_dJ_dvar.make_zero();
+		m_dJ_dmean.make_zero();
+		m_wd_vec.make_zero();
 
 		for (int b = 0; b < batch_size; ++b)
 		{
+			const nn_float *nn_restrict input = input_batch.data(b);
+			const nn_float *vec_next_wd = next_wd.data(b);
+			for (nn_int i = 0; i < sz; ++i)
+			{
+				m_dJ_dvar[i] += (nn_float)(-0.5) * (vec_next_wd[i] * m_w[i]) * (input[i] - vec_mean[i]) * fast_inv_sqrt(vec_var[i] + cEpsilon) / (vec_var[i] + cEpsilon);
+			}
+
+			for (nn_int i = 0; i < sz; ++i)
+			{
+				m_dJ_dmean[i] += -(vec_next_wd[i] * m_w[i]) * fast_inv_sqrt(vec_var[i] + cEpsilon);
+				m_dJ_dmean[i] -= m_dJ_dvar[i] * (nn_float)2.0 * (input[i] - vec_mean[i]) / batch_size;
+			}
+		}
+		
+		for (int b = 0; b < batch_size; ++b)
+		{
+			const nn_float *nn_restrict input = input_batch.data(b);
 			const nn_float *vec_next_wd = next_wd.data(b);
 			nn_float *nn_restrict z = m_z_vec.data(b);
 			nn_float *nn_restrict x = m_x_vec.data(b);
-			
 			nn_float *nn_restrict wd = m_wd_vec.data(b);
 
 			/*
@@ -110,11 +168,28 @@ public:
 			*/
 			for (nn_int i = 0; i < sz; ++i)
 			{
-				wd[i] = vec_next_wd[i] * x[i];
-				beta[i] = vec_next_wd[i] * x[i];
-				gamma[i] = beta[i] * z[i];
+				//wd[i] = vec_next_wd[i] * x[i];
+				d_beta[i] += vec_next_wd[i];
+				d_gamma[i] += vec_next_wd[i] * z[i];
 			}
 
+			for (nn_int i = 0; i < sz; ++i)
+			{
+				// dJ/d(x^)
+				wd[i] = vec_next_wd[i] * m_w[i];
+				wd[i] *= fast_inv_sqrt(vec_var[i] + cEpsilon);
+				wd[i] += m_dJ_dvar[i] * (nn_float)2.0 * (input[i] - vec_mean[i]) / batch_size;
+				wd[i] += m_dJ_dmean[i] / batch_size;
+			}
+
+			//for (nn_int i = 0; i < sz; ++i)
+			//{
+			//	// dJ/d(x^)
+			//	wd[i] = vec_next_wd[i] * m_w[i];
+			//	nn_float inv_v = fast_inv_sqrt(vec_var[i] + cEpsilon);
+			//	nn_float di = (input[i] - m_batch_mean[i]);
+			//	wd[i] *= inv_v * (cOne - cOne / batch_size) + di * inv_v * inv_v * inv_v * ((nn_float)2.0 / batch_size) * di * (cOne - input[i] / batch_size);
+			//}
 		}
 
 		m_prev->back_prop(m_wd_vec);
@@ -153,6 +228,22 @@ public:
 		for (nn_int i = 0; i < sz; ++i)
 		{
 			vec_var[i] -= vec_mean[i] * vec_mean[i];
+		}
+
+		if (!m_total_init)
+		{
+			m_total_init = true;
+			m_total_mean.copy(m_batch_mean);
+			m_total_var.copy(m_batch_var);
+		}
+		else
+		{
+			nn_float var_nobias = (batch_size > 1) ? batch_size / (batch_size - 1) : cOne;
+			for (nn_int i = 0; i < sz; ++i)
+			{
+				m_total_mean[i] = var_nobias * m_total_mean[i] + (cOne - var_nobias) * vec_mean[i];
+				m_total_var[i] = var_nobias * m_total_var[i] + (cOne - var_nobias) * vec_var[i];
+			}
 		}
 
 		for (nn_int b = 0; b < batch_size; ++b)

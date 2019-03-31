@@ -192,6 +192,10 @@ public:
 
 		for (nn_int k = 1; k < task_count; ++k)
 		{
+			if (k >= static_cast<nn_int>(m_task_storage.size()))
+			{
+				continue;
+			}
 			auto& ts = m_task_storage[k];
 #ifdef _DEBUG
 			if (!is_valid(ts.m_db) || !is_valid(ts.m_dw))
