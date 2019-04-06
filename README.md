@@ -18,6 +18,7 @@
 	- average pooling layer
 	- max pooling layer
 	- dropout layer
+	- batch normalization layer
 - activation functions
 	- sigmoid
 	- softmax
@@ -32,7 +33,6 @@
 ### Todo list
 	- fast convolution(winograd)
 	- train on gpu
-	- batch normalization
 	- more optimization algorithms such as adagrad，momentum etc	
 	- serilize/deserilize
 ## Examples</br>
@@ -80,4 +80,4 @@ more details in [main.cpp](main.cpp)
 [7] [Gradient checking](http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization)</br>
 [8] [2D Max Pooling Backward Layer](https://software.intel.com/sites/products/documentation/doclib/daal/daal-user-and-reference-guides/daal_prog_guide/GUID-2C3AA967-AE6A-4162-84EB-93BE438E3A05.htm)</br>
 [9] https://blog.csdn.net/mrhiuser/article/details/52672824
-
+[10] https://kevinzakka.github.io/2016/09/14/batch_normalization/

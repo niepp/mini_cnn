@@ -13,8 +13,9 @@ protected:
 	varray m_total_mean;
 	varray m_total_var;
 
-	varray m_dJ_dvar;
-	varray m_dJ_dmean;
+	varray m_dJ_dxhat;
+	varray m_dJ_dxhat2;
+	varray m_dJ_dxhat3;
 
 	bool m_total_init;
 	nn_float m_decay;
@@ -39,8 +40,7 @@ public:
 
 		m_total_mean.resize(sz);
 		m_total_var.resize(sz);
-		m_dJ_dvar.resize(sz);
-		m_dJ_dmean.resize(sz);
+
 	}
 
 	virtual void set_task_count(nn_int task_count)
@@ -71,9 +71,19 @@ public:
 		nn_assert(in_h == out_h);
 		nn_assert(in_d == out_d);
 
-		nn_int out_sz = m_out_shape.size();
-		m_z_vec.resize(out_sz, 1, 1, batch_size); // used for norm_x
-		m_x_vec.resize(out_sz, 1, 1, batch_size); // bn output
+		nn_int sz = m_out_shape.size();
+
+		if (!m_out_shape.is_img())
+		{
+			m_z_vec.resize(sz, 1, 1, batch_size); // used for norm_x
+			m_x_vec.resize(sz, 1, 1, batch_size); // bn output
+		}
+		else
+		{
+			m_z_vec.resize(out_w, out_h, out_d, batch_size); // used for norm_x
+			m_x_vec.resize(out_w, out_h, out_d, batch_size); // bn output
+		}
+
 		if (m_prev->m_out_shape.is_img())
 		{
 			m_wd_vec.resize(in_w, in_h, in_d, batch_size);
@@ -82,6 +92,11 @@ public:
 		{
 			m_wd_vec.resize(in_w * in_h * in_d, 1, 1, batch_size);
 		}
+
+		m_dJ_dxhat.resize(sz, 1, 1, batch_size);
+		m_dJ_dxhat2.resize(sz);
+		m_dJ_dxhat3.resize(sz);
+
 	}
 
 	virtual void set_phase_type(phase_type phase)
@@ -110,8 +125,8 @@ public:
 				nn_float *nn_restrict out = m_x_vec.data(b);
 				for (nn_int i = 0; i < sz; ++i)
 				{
-					nn_float norm_x = (input[i] - m_total_mean[i]) * fast_inv_sqrt(m_total_var[i] + cEpsilon);
-					out[i] = m_w[i] * norm_x + m_b[i];
+					nn_float x_hat = (input[i] - m_total_mean[i]) * fast_inv_sqrt(m_total_var[i] + cEpsilon);
+					out[i] = m_w[i] * x_hat + m_b[i];
 				}
 			}
 		}
@@ -135,28 +150,48 @@ public:
 
 		const varray &input_batch = m_prev->get_output();
 
-		m_dJ_dvar.make_zero();
-		m_dJ_dmean.make_zero();
+		// [batch normalization backprop] https://kevinzakka.github.io/2016/09/14/batch_normalization/
+		m_dJ_dxhat.make_zero();
+		m_dJ_dxhat2.make_zero();
+		m_dJ_dxhat3.make_zero();
+
 		m_wd_vec.make_zero();
 
+		// dJ/dx^
 		for (int b = 0; b < batch_size; ++b)
 		{
-			const nn_float *nn_restrict input = input_batch.data(b);
+			nn_float *vec_dJ_dxhat = m_dJ_dxhat.data(b);
 			const nn_float *vec_next_wd = next_wd.data(b);
 			for (nn_int i = 0; i < sz; ++i)
 			{
-				m_dJ_dvar[i] += (nn_float)(-0.5) * (vec_next_wd[i] * m_w[i]) * (input[i] - vec_mean[i]) * fast_inv_sqrt(vec_var[i] + cEpsilon) / (vec_var[i] + cEpsilon);
-			}
-
-			for (nn_int i = 0; i < sz; ++i)
-			{
-				m_dJ_dmean[i] += -(vec_next_wd[i] * m_w[i]) * fast_inv_sqrt(vec_var[i] + cEpsilon);
-				m_dJ_dmean[i] -= m_dJ_dvar[i] * (nn_float)2.0 * (input[i] - vec_mean[i]) / batch_size;
+				vec_dJ_dxhat[i] = vec_next_wd[i] * m_w[i];
 			}
 		}
-		
+
+
+		for (nn_int i = 0; i < sz; ++i)
+		{
+			for (int b = 0; b < batch_size; ++b)
+			{
+				const nn_float *vec_dJ_dxhat = m_dJ_dxhat.data(b);
+				m_dJ_dxhat2[i] += vec_dJ_dxhat[i];
+			}
+		}
+
 		for (int b = 0; b < batch_size; ++b)
 		{
+			const nn_float *vec_dJ_dxhat = m_dJ_dxhat.data(b);
+			const nn_float *xhat = m_z_vec.data(b);
+			nn_float *vec_dJ_dxhat3 = m_dJ_dxhat3.data(0);
+			for (nn_int i = 0; i < sz; ++i)
+			{
+				vec_dJ_dxhat3[i] += vec_dJ_dxhat[i] * xhat[i];
+			}
+		}
+
+		for (int b = 0; b < batch_size; ++b)
+		{
+			const nn_float *vec_dJ_dxhat = m_dJ_dxhat.data(b);
 			const nn_float *nn_restrict input = input_batch.data(b);
 			const nn_float *vec_next_wd = next_wd.data(b);
 			nn_float *nn_restrict z = m_z_vec.data(b);
@@ -168,28 +203,18 @@ public:
 			*/
 			for (nn_int i = 0; i < sz; ++i)
 			{
-				//wd[i] = vec_next_wd[i] * x[i];
 				d_beta[i] += vec_next_wd[i];
 				d_gamma[i] += vec_next_wd[i] * z[i];
 			}
 
 			for (nn_int i = 0; i < sz; ++i)
 			{
-				// dJ/d(x^)
-				wd[i] = vec_next_wd[i] * m_w[i];
-				wd[i] *= fast_inv_sqrt(vec_var[i] + cEpsilon);
-				wd[i] += m_dJ_dvar[i] * (nn_float)2.0 * (input[i] - vec_mean[i]) / batch_size;
-				wd[i] += m_dJ_dmean[i] / batch_size;
+				wd[i] = (cOne / batch_size) * fast_inv_sqrt(vec_var[i] + cEpsilon) *
+						 (batch_size * vec_dJ_dxhat[i]
+						- m_dJ_dxhat2[i]
+						- z[i] * m_dJ_dxhat3[i]);
 			}
 
-			//for (nn_int i = 0; i < sz; ++i)
-			//{
-			//	// dJ/d(x^)
-			//	wd[i] = vec_next_wd[i] * m_w[i];
-			//	nn_float inv_v = fast_inv_sqrt(vec_var[i] + cEpsilon);
-			//	nn_float di = (input[i] - m_batch_mean[i]);
-			//	wd[i] *= inv_v * (cOne - cOne / batch_size) + di * inv_v * inv_v * inv_v * ((nn_float)2.0 / batch_size) * di * (cOne - input[i] / batch_size);
-			//}
 		}
 
 		m_prev->back_prop(m_wd_vec);
@@ -238,11 +263,11 @@ public:
 		}
 		else
 		{
-			nn_float var_nobias = (batch_size > 1) ? batch_size / (batch_size - 1) : cOne;
+			nn_float decay = (batch_size > 1) ? m_decay : cOne;
 			for (nn_int i = 0; i < sz; ++i)
 			{
-				m_total_mean[i] = var_nobias * m_total_mean[i] + (cOne - var_nobias) * vec_mean[i];
-				m_total_var[i] = var_nobias * m_total_var[i] + (cOne - var_nobias) * vec_var[i];
+				m_total_mean[i] = decay * m_total_mean[i] + (cOne - decay) * vec_mean[i];
+				m_total_var[i] = decay * m_total_var[i] + (cOne - decay) * vec_var[i];
 			}
 		}
 
@@ -253,9 +278,9 @@ public:
 			nn_float *nn_restrict z = m_z_vec.data(b);
 			for (nn_int i = 0; i < sz; ++i)
 			{
-				nn_float norm_x = (input[i] - vec_mean[i]) * fast_inv_sqrt(vec_var[i] + cEpsilon);
-				z[i] = norm_x;
-				out[i] = m_w[i] * norm_x + m_b[i];
+				nn_float x_hat = (input[i] - vec_mean[i]) * fast_inv_sqrt(vec_var[i] + cEpsilon);
+				z[i] = x_hat;
+				out[i] = m_w[i] * x_hat + m_b[i];
 			}
 		}
 
