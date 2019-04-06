@@ -79,5 +79,5 @@ more details in [main.cpp](main.cpp)
 [6] http://deeplearning.net/software/theano_versions/dev/tutorial/conv_arithmetic.html#transposed-convolution-arithmetic</br>
 [7] [Gradient checking](http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization)</br>
 [8] [2D Max Pooling Backward Layer](https://software.intel.com/sites/products/documentation/doclib/daal/daal-user-and-reference-guides/daal_prog_guide/GUID-2C3AA967-AE6A-4162-84EB-93BE438E3A05.htm)</br>
-[9] https://blog.csdn.net/mrhiuser/article/details/52672824
-[10] https://kevinzakka.github.io/2016/09/14/batch_normalization/
+[9] https://blog.csdn.net/mrhiuser/article/details/52672824</br>
+[10] https://kevinzakka.github.io/2016/09/14/batch_normalization/</br>
