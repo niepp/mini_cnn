@@ -65,11 +65,11 @@ public:
 		nn_int in_d = m_prev->m_out_shape.m_d;
 		if (!m_out_shape.is_img())
 		{
-			m_x_vec.resize(in_w * in_h * in_d);
+			m_x_vec.resize(in_w * in_h * in_d, 1, 1, batch_size);
 		}
 		else
 		{
-			m_x_vec.resize(in_w, in_h, in_d);
+			m_x_vec.resize(in_w, in_h, in_d, batch_size);
 		}
 		m_wd_vec.resize(in_w, in_h, in_d, batch_size);
 	}

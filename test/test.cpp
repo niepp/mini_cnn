@@ -26,14 +26,19 @@ public:
 	gradient_checker()
 	{
 		uniform_random uRand(0, 1.0);
-
-		varray *input = new varray(cInput_n);
-		varray *label = new varray(cOutput_n);
-		for (nn_int i = 0; i < input->size(); ++i)
+		nn_int batch_size = 6;
+		varray *input = new varray(cInput_n, 1, 1, batch_size);
+		varray *label = new varray(cOutput_n, 1, 1, batch_size);
+		for (nn_int b = 0; b < batch_size; ++b)
 		{
-			(*input)[i] = uRand.get_random();
+			nn_float *in = input->data(b);
+			nn_float *lab = label->data(b);
+			for (nn_int i = 0; i < input->img_size(); ++i)
+			{
+				in[i] = uRand.get_random();
+			}
+			lab[b % 10] = cOne;
 		}
-		(*label)[3] = 1.0;
 
 		TEST_GRADIENT(create_fcn_sigmod_mse);
 

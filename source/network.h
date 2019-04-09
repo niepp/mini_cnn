@@ -222,9 +222,12 @@ public:
 	{
 		nn_assert(!m_layers.empty());
 
+		nn_int batch_size = test_img.count();
+		nn_assert(batch_size == test_lab.count());
+
 		set_phase(phase_type::eGradientCheck);
 		set_task_count(1);
-		set_batch_size(1);
+		set_batch_size(batch_size);
 
 		bool check_ok = true;
 		for (auto &layer : m_layers)
@@ -360,7 +363,7 @@ private:
 		bool correct = absError <= Precision;
 		if (!correct)
 		{
-		//	std::cout << "bprop:" << delta_by_bprop << "\tnumerical:" << delta_by_numerical << std::endl;
+			//std::cout << "bprop:" << delta_by_bprop << "\tnumerical:" << delta_by_numerical << std::endl;
 		}
 		return correct;
 	}

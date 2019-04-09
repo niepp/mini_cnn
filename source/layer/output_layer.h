@@ -51,7 +51,7 @@ public:
 				/*
 					db := delta
 					dw := delta * input
-					*/
+				*/
 				nn_float *nn_restrict vec_delta = ts.m_delta.data();
 				nn_float *nn_restrict vec_db = ts.m_db.data();
 				for (nn_int i = 0; i < out_sz; ++i)
@@ -67,7 +67,7 @@ public:
 				/*
 					m_w : out_sz X in_sz
 					wd := w.transpose * delta
-					*/
+				*/
 
 				fo_mv_v(m_w_t.data(), out_sz, in_sz
 					, vec_delta
@@ -96,12 +96,13 @@ public:
 			{
 			case lossfunc_type::eMSE:
 				{
+					nn_float cur_cost = 0;
 					for (nn_int i = 0; i < out_sz; ++i)
 					{
 						nn_float s = vec_output[i] - vec_label[i];
-						cost += s * s;
+						cur_cost += s * s;
 					}
-					cost *= (nn_float)(0.5);
+					cost += cur_cost * (nn_float)(0.5);
 				}
 				break;
 			case lossfunc_type::eSigmod_CrossEntropy:
@@ -118,7 +119,7 @@ public:
 			case lossfunc_type::eSoftMax_LogLikelihood:
 				{
 					nn_int idx = arg_max(vec_label, out_sz);
-					cost = -log(vec_output[idx] + e);
+					cost += -log(vec_output[idx] + e);
 				}
 				break;
 			default:
