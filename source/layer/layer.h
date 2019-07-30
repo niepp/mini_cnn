@@ -1,6 +1,8 @@
 #ifndef __LAYER_H__
 #define __LAYER_H__
 
+#include <fstream>
+
 namespace mini_cnn
 {
 
@@ -96,6 +98,8 @@ protected:
 public:
 	layer_base(activation_base *activation = nullptr) : m_activation(activation)
 	{
+		m_next = nullptr;
+		m_prev = nullptr;
 	}
 
 	nn_int out_size() const
@@ -220,6 +224,38 @@ public:
 
 		return true;
 
+	}
+
+	virtual void load_weights(std::fstream &fread)
+	{
+		nn_int wsize = 0;
+		fread >> wsize;
+		nn_assert(wsize == m_w.size());
+		for (nn_int i = 0; i < wsize; ++i)
+		{
+			fread >> m_w[i];
+		}
+		nn_int bsize = 0;
+		fread >> bsize;
+		nn_assert(bsize == m_b.size());
+		for (nn_int i = 0; i < bsize; ++i)
+		{
+			fread >> m_b[i];
+		}
+	}
+
+	virtual void save_weights(std::fstream &fwrite)
+	{
+		fwrite << m_w.size() << std::endl;
+		for (nn_int i = 0; i < m_w.size(); ++i)
+		{
+			fwrite << m_w[i] << std::endl;
+		}
+		fwrite << m_b.size() << std::endl;
+		for (nn_int i = 0; i < m_b.size(); ++i)
+		{
+			fwrite << m_b[i] << std::endl;
+		}
 	}
 
 };

@@ -13,12 +13,13 @@ namespace mini_cnn
 class network
 {
 private:
+	std::string m_name;
 	input_layer *m_input_layer;
 	output_layer *m_output_layer;
 	std::vector<layer_base*> m_layers;
 
 public:
-	network()
+	network(const char *name = "noname") : m_name(name), m_input_layer(nullptr), m_output_layer(nullptr)
 	{
 	}
 
@@ -85,6 +86,16 @@ public:
 		}
 	}
 
+	void train_update_onebatch(const varray &img_batch, const varray &lab_batch, nn_int batch_size, nn_float learning_rate)
+	{
+		train_one_batch(img_batch, lab_batch);
+		nn_float batch_lr = learning_rate / batch_size;
+		if (!update_all_weight(batch_lr))
+		{
+			std::cout << "[Error] Detected infinite value in weight. stop train!" << std::endl;
+		}
+	}
+
 	nn_float mini_batch_SGD(const varray_vec &img_vec, const varray_vec &lab_vec, const varray_vec &test_img_vec, const varray_vec &test_lab_vec
 		, nn_int epoch, nn_int batch_size, nn_float learning_rate, bool calc_cost, nn_int nthreads
 		, std::function<void(nn_int, nn_int)> minibatch_callback
@@ -143,6 +154,7 @@ public:
 				}
 				minibatch_callback(end, img_count);
 			}
+
 			auto train_end = get_now_ms();
 			nn_float train_elapse = (train_end - tstart) * 0.001f;
 			nn_float tot_cost = calc_cost ? get_cost(img_vec, lab_vec, batch_size) : (nn_float)(-1.0);
@@ -175,6 +187,14 @@ public:
 			}
 		}
 		return correct;
+	}
+
+	void inference(const varray &test_img, varray &output_lab)
+	{
+		set_phase(phase_type::eTest);
+		set_batch_size(1);
+		forward(test_img);
+		output_lab = m_output_layer->get_output();
 	}
 
 	nn_float get_cost(const varray_vec &img_vec, const varray_vec &lab_vec, nn_int batch_size)
@@ -259,6 +279,29 @@ public:
 		return check_ok;
 	}
 
+	void load_weights()
+	{
+		std::fstream fread("../" + m_name, std::fstream::in);
+		if (fread.is_open())
+		{
+			for (auto &layer : m_layers)
+			{
+				layer->load_weights(fread);
+			}
+		}
+		fread.close();
+	}
+
+	void save_weights()
+	{
+		std::fstream fwrite("../" + m_name, std::fstream::out);
+		for (auto &layer : m_layers)
+		{
+			layer->save_weights(fwrite);
+		}
+		fwrite.close();
+	}
+
 private:
 	void clear_all_grident()
 	{
@@ -306,7 +349,7 @@ private:
 		return true;
 	}
 
-	void train_one_batch(varray &img_batch, varray &lab_batch)
+	void train_one_batch(const varray &img_batch, const varray &lab_batch)
 	{
 		set_phase(phase_type::eTrain);
 		m_input_layer->forw_prop(img_batch);

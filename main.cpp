@@ -68,22 +68,6 @@ network create_mnist_fnn()
 	return nn;
 }
 
-network create_mnist_cnn1()
-{
-	network nn;
-	nn.add_layer(new input_layer(mnist_parser::W_input, mnist_parser::H_input, mnist_parser::D_input));
-	nn.add_layer(new convolutional_layer(3, 3, 1, 8, 1, 1, padding_type::eValid, new activation_relu()));
-	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new batch_normalization_layer());
-	nn.add_layer(new convolutional_layer(3, 3, 8, 32, 1, 1, padding_type::eValid, new activation_relu()));
-	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new batch_normalization_layer());
-	nn.add_layer(new fully_connected_layer(128, new activation_relu()));
-	nn.add_layer(new dropout_layer((nn_float)0.5));
-	nn.add_layer(new output_layer(mnist_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
-	return nn;
-}
-
 network create_mnist_cnn()
 {
 	network nn;
@@ -185,9 +169,10 @@ int main()
 	train_progress_bar.begin();
 
 	nn.init_all_weight(truncated_normal_initializer());
+	nn.load_weights();
 
-	float learning_rate = 0.1f;
-	int epoch = 30;
+	float learning_rate = 0.2f;
+	int epoch = 8;
 	int batch_size = 100;
 	nn_int nthreads = std::thread::hardware_concurrency();
 	nthreads = 8;
@@ -196,7 +181,7 @@ int main()
 	{
 		std::cout << "epoch " << c << "/" << epoch
 			<< "  accuracy: " << cur_accuracy;
-		if (tot_cost >= 0)
+		//if (tot_cost >= 0)
 		{
 			std::cout << "  tot_cost: " << tot_cost;
 		}
@@ -215,7 +200,7 @@ int main()
 
 	auto t0 = get_now_ms();
 
-	nn_float max_accuracy = nn.mini_batch_SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, epoch, batch_size, learning_rate, false, nthreads, minibatch_callback, epoch_callback);
+	nn_float max_accuracy = nn.mini_batch_SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, epoch, batch_size, learning_rate, true, nthreads, minibatch_callback, epoch_callback);
 
 	cout << "max_accuracy: " << max_accuracy << endl;
 
@@ -223,6 +208,8 @@ int main()
 
 	nn_float timeCost = (t1 - t0) * 0.001f;
 	cout << "time_cost: " << timeCost << "(s)" << endl;
+
+	nn.save_weights();
 
 	system("pause");
 	return 0;

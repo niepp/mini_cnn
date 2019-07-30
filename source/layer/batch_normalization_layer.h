@@ -1,6 +1,8 @@
 #ifndef __BATCH_NORMALIZATION_LAYER_H__
 #define __BATCH_NORMALIZATION_LAYER_H__
 
+#include <fstream>
+
 namespace mini_cnn 
 {
 
@@ -19,10 +21,11 @@ protected:
 
 	bool m_total_init;
 	nn_float m_decay;
+	nn_float m_epsilon;
 
 public:
-	batch_normalization_layer(nn_float decay = (nn_float)0.99)
-		: layer_base(), m_decay(decay)
+	batch_normalization_layer(nn_float decay = (nn_float)0.99, nn_float epsilon = (nn_float)0.0001)
+		: layer_base(), m_decay(decay), m_epsilon(epsilon)
 	{
 	}
 
@@ -48,9 +51,9 @@ public:
 		layer_base::set_task_count(task_count);
 
 		nn_int sz = m_out_shape.size();
-		m_task_storage.resize(1);
 
 		// beta & gamma is shared in a batch
+		m_task_storage.resize(1);
 		auto& ts = m_task_storage[0];
 		{
 			ts.m_dw.resize(sz);
@@ -105,16 +108,78 @@ public:
 		m_total_init = false;
 	}
 
+	virtual void load_weights(std::fstream &fread)
+	{
+		nn_int wsize = 0;
+		fread >> wsize;
+		nn_assert(wsize == m_w.size());
+		for (nn_int i = 0; i < wsize; ++i)
+		{
+			fread >> m_w[i];
+		}
+		nn_int bsize = 0;
+		fread >> bsize;
+		nn_assert(bsize == m_b.size());
+		for (nn_int i = 0; i < bsize; ++i)
+		{
+			fread >> m_b[i];
+		}
+
+		nn_int tm_size = 0;
+		fread >> tm_size;
+		nn_assert(tm_size == m_total_mean.size());
+		for (nn_int i = 0; i < tm_size; ++i)
+		{
+			fread >> m_total_mean[i];
+		}
+		
+		nn_int tv_size = 0;
+		fread >> tv_size;
+		nn_assert(tv_size == m_total_var.size());
+		for (nn_int i = 0; i < tv_size; ++i)
+		{
+			fread >> m_total_var[i];
+		}
+
+	}
+
+	virtual void save_weights(std::fstream &fwrite)
+	{
+		fwrite << m_w.size() << std::endl;
+		for (nn_int i = 0; i < m_w.size(); ++i)
+		{
+			fwrite << m_w[i] << std::endl;
+		}
+		fwrite << m_b.size() << std::endl;
+		for (nn_int i = 0; i < m_b.size(); ++i)
+		{
+			fwrite << m_b[i] << std::endl;
+		}
+
+		// save mean & var of train set
+		fwrite << m_total_mean.size() << std::endl;
+		for (nn_int i = 0; i < m_total_mean.size(); ++i)
+		{
+			fwrite << m_total_mean[i] << std::endl;
+		}
+		fwrite << m_total_var.size() << std::endl;
+		for (nn_int i = 0; i < m_total_var.size(); ++i)
+		{
+			fwrite << m_total_var[i] << std::endl;
+		}
+
+	}
+
 	virtual void forw_prop(const varray &input_batch)
 	{
 		nn_int batch_size = input_batch.count();
 		if (m_phase_type == phase_type::eTrain)
 		{
-			bn(input_batch, m_x_vec);
+			batch_norm(input_batch, m_x_vec);
 		}
 		else if (m_phase_type == phase_type::eGradientCheck)
 		{
-
+			batch_norm(input_batch, m_x_vec);
 		}
 		else if (m_phase_type == phase_type::eTest)
 		{
@@ -125,7 +190,7 @@ public:
 				nn_float *nn_restrict out = m_x_vec.data(b);
 				for (nn_int i = 0; i < sz; ++i)
 				{
-					nn_float x_hat = (input[i] - m_total_mean[i]) * fast_inv_sqrt(m_total_var[i] + cEpsilon);
+					nn_float x_hat = (input[i] - m_total_mean[i]) * fast_inv_sqrt(m_total_var[i] + m_epsilon);
 					out[i] = m_w[i] * x_hat + m_b[i];
 				}
 			}
@@ -168,12 +233,11 @@ public:
 			}
 		}
 
-
-		for (nn_int i = 0; i < sz; ++i)
+		for (int b = 0; b < batch_size; ++b)
 		{
-			for (int b = 0; b < batch_size; ++b)
+			const nn_float *vec_dJ_dxhat = m_dJ_dxhat.data(b);
+			for (nn_int i = 0; i < sz; ++i)
 			{
-				const nn_float *vec_dJ_dxhat = m_dJ_dxhat.data(b);
 				m_dJ_dxhat2[i] += vec_dJ_dxhat[i];
 			}
 		}
@@ -209,7 +273,7 @@ public:
 
 			for (nn_int i = 0; i < sz; ++i)
 			{
-				wd[i] = (cOne / batch_size) * fast_inv_sqrt(vec_var[i] + cEpsilon) *
+				wd[i] = (cOne / batch_size) * fast_inv_sqrt(vec_var[i] + m_epsilon) *
 						 (batch_size * vec_dJ_dxhat[i]
 						- m_dJ_dxhat2[i]
 						- z[i] * m_dJ_dxhat3[i]);
@@ -221,7 +285,7 @@ public:
 
 	}
 
-	void bn(const varray &input_batch, varray &out_batch)
+	void batch_norm(const varray &input_batch, varray &out_batch)
 	{
 		nn_assert(input_batch.count() == out_batch.count());
 		m_batch_mean.make_zero();
@@ -255,6 +319,9 @@ public:
 			vec_var[i] -= vec_mean[i] * vec_mean[i];
 		}
 
+		// use moving average to compute the Unbiased Estimation of the train set's mean & var
+		// ref https://en.wikipedia.org/wiki/Moving_average
+		// m_total_mean & m_total_var are computed when train and are used when test
 		if (!m_total_init)
 		{
 			m_total_init = true;
@@ -278,7 +345,7 @@ public:
 			nn_float *nn_restrict z = m_z_vec.data(b);
 			for (nn_int i = 0; i < sz; ++i)
 			{
-				nn_float x_hat = (input[i] - vec_mean[i]) * fast_inv_sqrt(vec_var[i] + cEpsilon);
+				nn_float x_hat = (input[i] - vec_mean[i]) * fast_inv_sqrt(vec_var[i] + m_epsilon);
 				z[i] = x_hat;
 				out[i] = m_w[i] * x_hat + m_b[i];
 			}
