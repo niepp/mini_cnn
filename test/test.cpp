@@ -26,7 +26,7 @@ public:
 	gradient_checker()
 	{
 		uniform_random uRand(0, 1.0);
-		nn_int batch_size = 8;
+		nn_int batch_size = 6;
 		varray *input = new varray(cInput_n, 1, 1, batch_size);
 		varray *label = new varray(cOutput_n, 1, 1, batch_size);
 		for (nn_int b = 0; b < batch_size; ++b)
@@ -171,8 +171,8 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 2, 1, 1, padding_type::eValid, new activation_sigmoid()));
-		nn.add_layer(new convolutional_layer(3, 3, 2, 3, 1, 1, padding_type::eValid, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 2, 1, 1, 1, 1, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 2, 3, 1, 1, 1, 1, new activation_sigmoid()));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eMSE, new activation_sigmoid()));
 		return nn;
 	}
@@ -181,8 +181,8 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 2, 1, 1, padding_type::eValid, new activation_sigmoid()));
-		nn.add_layer(new convolutional_layer(3, 3, 2, 3, 1, 1, padding_type::eValid, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 2, 1, 1, 1, 1, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 2, 3, 1, 1, 1, 1, new activation_sigmoid()));
 		nn.add_layer(new fully_connected_layer(30, new activation_sigmoid()));
 		nn.add_layer(new dropout_layer((nn_float)(0.5)));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eMSE, new activation_sigmoid()));
@@ -193,8 +193,8 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 2, 2, padding_type::eValid, new activation_sigmoid()));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 8, 2, 2, padding_type::eValid, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 2, 2, 1, 1, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 8, 2, 2, 1, 1, new activation_sigmoid()));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eMSE, new activation_sigmoid()));
 		return nn;
 	}
@@ -203,8 +203,8 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 2, 2, padding_type::eSame, new activation_sigmoid()));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 8, 2, 2, padding_type::eSame, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 2, 2, 1, 1, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 8, 2, 2, 1, 1, new activation_sigmoid()));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eMSE, new activation_sigmoid()));
 		return nn;
 	}
@@ -213,8 +213,8 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eValid, new activation_sigmoid()));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 8, 1, 1, padding_type::eValid, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 8, 1, 1, 1, 1, new activation_sigmoid()));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
 		return nn;
 	}
@@ -223,9 +223,9 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eValid, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_sigmoid()));
 		nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, padding_type::eValid, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, 1, 1, new activation_sigmoid()));
 		nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
 		return nn;
@@ -235,9 +235,9 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eValid, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_sigmoid()));
 		nn.add_layer(new max_pooling_layer(2, 2, 1, 1));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, padding_type::eValid, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, 1, 1, new activation_sigmoid()));
 		nn.add_layer(new max_pooling_layer(2, 2, 1, 1));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
 		return nn;
@@ -247,9 +247,9 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eValid, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_sigmoid()));
 		nn.add_layer(new avg_pooling_layer(2, 2, 2, 2));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, padding_type::eValid, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, 1, 1, new activation_sigmoid()));
 		nn.add_layer(new avg_pooling_layer(2, 2, 2, 2));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
 		return nn;
@@ -259,9 +259,9 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eValid, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_sigmoid()));
 		nn.add_layer(new avg_pooling_layer(2, 2, 1, 1));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, padding_type::eValid, new activation_sigmoid()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 16, 1, 1, 1, 1, new activation_sigmoid()));
 		nn.add_layer(new avg_pooling_layer(2, 2, 1, 1));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
 		return nn;
@@ -271,9 +271,9 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eValid, new activation_relu()));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, padding_type::eValid, new activation_relu()));
-		nn.add_layer(new convolutional_layer(3, 3, 5, 6, 1, 1, padding_type::eValid, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, 1, 1, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 5, 6, 1, 1, 1, 1, new activation_relu()));
 		nn.add_layer(new fully_connected_layer(16, new activation_relu()));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eMSE, new activation_relu()));
 		return nn;
@@ -283,8 +283,8 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eValid, new activation_relu()));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, padding_type::eValid, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, 1, 1, new activation_relu()));
 		nn.add_layer(new fully_connected_layer(12, new activation_relu()));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
 		return nn;
@@ -294,9 +294,9 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eValid, new activation_identity()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_identity()));
 		nn.add_layer(new activation_layer(new activation_relu()));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, padding_type::eValid, new activation_identity()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, 1, 1, new activation_identity()));
 		nn.add_layer(new activation_layer(new activation_relu()));
 		nn.add_layer(new fully_connected_layer(12, new activation_identity()));
 		nn.add_layer(new activation_layer(new activation_relu()));
@@ -308,8 +308,8 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eSame, new activation_relu()));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, padding_type::eSame, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, 1, 1, new activation_relu()));
 		nn.add_layer(new fully_connected_layer(12, new activation_relu()));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
 		return nn;
@@ -319,9 +319,9 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eValid, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_relu()));
 		nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, padding_type::eValid, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, 1, 1, new activation_relu()));
 		nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
 		nn.add_layer(new fully_connected_layer(12, new activation_relu()));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
@@ -332,9 +332,9 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eValid, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_relu()));
 		nn.add_layer(new avg_pooling_layer(2, 2, 2, 2));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, padding_type::eValid, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, 1, 1, new activation_relu()));
 		nn.add_layer(new avg_pooling_layer(2, 2, 2, 2));
 		nn.add_layer(new fully_connected_layer(12, new activation_relu()));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
@@ -345,9 +345,9 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eSame, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_relu()));
 		nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, padding_type::eSame, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, 1, 1, new activation_relu()));
 		nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
 		nn.add_layer(new fully_connected_layer(12, new activation_relu()));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
@@ -358,9 +358,9 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eSame, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_relu()));
 		nn.add_layer(new avg_pooling_layer(2, 2, 2, 2));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, padding_type::eSame, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, 1, 1, new activation_relu()));
 		nn.add_layer(new avg_pooling_layer(2, 2, 2, 2));
 		nn.add_layer(new fully_connected_layer(12, new activation_relu()));
 		nn.add_layer(new output_layer(cOutput_n, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
@@ -371,10 +371,10 @@ private:
 	{
 		network nn;
 		nn.add_layer(new input_layer(cInput_w, cInput_h, cInput_d));
-		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, padding_type::eSame, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 1, 4, 1, 1, 1, 1, new activation_relu()));
 		nn.add_layer(new batch_normalization_layer(0.99, 0.01));
 		nn.add_layer(new avg_pooling_layer(2, 2, 2, 2));
-		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, padding_type::eSame, new activation_relu()));
+		nn.add_layer(new convolutional_layer(3, 3, 4, 5, 1, 1, 1, 1, new activation_relu()));
 		nn.add_layer(new batch_normalization_layer(0.99, 0.01));
 		nn.add_layer(new avg_pooling_layer(2, 2, 2, 2));
 		nn.add_layer(new fully_connected_layer(12, new activation_relu()));
