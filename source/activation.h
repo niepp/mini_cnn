@@ -101,7 +101,7 @@ public:
 	{
 		for (nn_int i = 0; i < len; ++i)
 		{
-			dst[i] = src[i] > 0 ? src[i] : m_leaky;
+			dst[i] = src[i] > 0 ? src[i] : m_leaky * src[i];
 		}
 	}
 

@@ -153,22 +153,35 @@ inline double fast_exp(double x)
 
 inline void transpose(const varray &mat, varray &retm)
 {
-	nn_assert(mat.dim() == 2);
-	nn_assert(retm.dim() == 2);
+	nn_assert(mat.dim() >= 2);
+	nn_assert(retm.dim() >= 2);
 
 	nn_assert(mat.width() == retm.height());
 	nn_assert(mat.height() == retm.width());
+	nn_assert(mat.depth() == retm.depth());
+	nn_assert(mat.count() == retm.count());
 
 	nn_int h = retm.height();
 	nn_int w = retm.width();
+	nn_int depth = retm.depth();
+	nn_int count = retm.count();
 
-	for (nn_int i = 0; i < h; ++i)
+	for (nn_int n = 0; n < count; ++n)
 	{
-		for (nn_int j = 0; j < w; ++j)
+		for (nn_int d = 0; d < depth; ++d)
 		{
-			retm[i * w + j] = mat[j * h + i];
+			const nn_float *nn_restrict src = &mat(0, 0, d, n);
+			nn_float *nn_restrict dst = &retm(0, 0, d, n);
+			for (nn_int i = 0; i < h; ++i)
+			{
+				for (nn_int j = 0; j < w; ++j)
+				{
+					dst[i * w + j] = src[j * h + i];
+				}
+			}
 		}
 	}
+
 }
 
 inline nn_int arg_max(const nn_float *nn_restrict vec, nn_int len)
@@ -202,6 +215,45 @@ void parallel_task(nn_int batch_size, nn_int task_count, std::function<void(nn_i
 	{
 		future.get();
 	}
+}
+
+template <typename T, nn_int n>
+nn_int array_size(T(&)[n])
+{
+	return n;
+}
+
+template <typename T>
+T clamp(T v, T a, T b)
+{
+	return std::min<T>(std::max<T>(v, a), b);
+}
+
+nn_float calc_iou(nn_float cx1, nn_float cy1, nn_float w1, nn_float h1
+	, nn_float cx2, nn_float cy2, nn_float w2, nn_float h2)
+{
+	nn_float xmin1 = cx1 - w1 * (nn_float)0.5;
+	nn_float ymin1 = cy1 - h1 * (nn_float)0.5;
+	nn_float xmax1 = cx1 + w1 * (nn_float)0.5;
+	nn_float ymax1 = cy1 + h1 * (nn_float)0.5;
+
+	nn_float xmin2 = cx2 - w2 * (nn_float)0.5;
+	nn_float ymin2 = cy2 - h2 * (nn_float)0.5;
+	nn_float xmax2 = cx2 + w2 * (nn_float)0.5;
+	nn_float ymax2 = cy2 + h2 * (nn_float)0.5;
+
+	nn_float dx = std::min(xmax1 - xmin2, xmax2 - xmin1);
+	nn_float dy = std::min(ymax1 - ymin2, ymax2 - ymin1);
+	if (dx <= 0 || dy <= 0)
+	{
+		return 0;
+	}
+
+	nn_float squ_inter = dx * dy;
+	nn_float squ_union = w1 * h1 + w2 * h2 - squ_inter;
+	nn_float iou = squ_inter / squ_union;
+	iou = clamp(iou, (nn_float)0.0, (nn_float)1.0);
+	return iou;
 }
 
 typedef void (*active_func)(const varray &v, varray &retv);

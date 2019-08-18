@@ -5,6 +5,7 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <fstream>
 #include <thread>
 #include <future>
 
@@ -13,13 +14,12 @@ namespace mini_cnn
 class network
 {
 private:
-	std::string m_name;
 	input_layer *m_input_layer;
 	output_layer *m_output_layer;
 	std::vector<layer_base*> m_layers;
 
 public:
-	network(const char *name = "noname") : m_name(name), m_input_layer(nullptr), m_output_layer(nullptr)
+	network() : m_input_layer(nullptr), m_output_layer(nullptr)
 	{
 	}
 
@@ -279,9 +279,9 @@ public:
 		return check_ok;
 	}
 
-	void load_weights()
+	void load_weights(std::string name)
 	{
-		std::fstream fread("../" + m_name, std::fstream::in);
+		std::fstream fread("../" + name, std::ios::binary | std::fstream::in);
 		if (fread.is_open())
 		{
 			for (auto &layer : m_layers)
@@ -292,9 +292,9 @@ public:
 		fread.close();
 	}
 
-	void save_weights()
+	void save_weights(std::string name)
 	{
-		std::fstream fwrite("../" + m_name, std::fstream::out);
+		std::fstream fwrite("../" + name, std::ios::binary | std::fstream::out);
 		for (auto &layer : m_layers)
 		{
 			layer->save_weights(fwrite);

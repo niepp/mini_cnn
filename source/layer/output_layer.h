@@ -41,6 +41,7 @@ public:
 			layer_base::task_storage &ts = m_task_storage[task_idx];
 			const varray &input_batch = m_prev->get_output();
 
+			// loop form batch begin to end
 			for (int b = begin; b < end; ++b)
 			{
 				const nn_float *vec_input = input_batch.data(b);
@@ -137,12 +138,12 @@ private:
 
 		nn_float *nn_restrict vec_delta = ts.m_delta.data();
 		const nn_float *nn_restrict vec_x = m_x_vec.data(b_idx);
-		nn_float *nn_restrict vec_z = m_z_vec.data(b_idx);
 
 		switch (m_lossfunc_type)
 		{
 		case lossfunc_type::eMSE:
 			{
+				nn_float *nn_restrict vec_z = m_z_vec.data(b_idx);
 				m_activation->df(vec_z, vec_delta, lab_sz);
 				for (nn_int i = 0; i < lab_sz; ++i)
 				{

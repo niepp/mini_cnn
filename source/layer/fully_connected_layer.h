@@ -75,6 +75,30 @@ public:
 		}
 	}
 
+	virtual void load_weights(std::fstream &fread)
+	{
+		nn_int wsize = 0;
+		fread.read(reinterpret_cast<char*>(&wsize), sizeof(nn_int));
+		nn_assert(wsize == m_w.size());
+		fread.read(reinterpret_cast<char*>(m_w.data()), wsize * sizeof(nn_float));
+
+		nn_int bsize = 0;
+		fread.read(reinterpret_cast<char*>(&bsize), sizeof(nn_int));
+		nn_assert(bsize == m_b.size());
+		fread.read(reinterpret_cast<char*>(m_b.data()), bsize * sizeof(nn_float));
+	}
+
+	virtual void save_weights(std::fstream &fwrite)
+	{
+		nn_int wsize = m_w.size();
+		fwrite.write(reinterpret_cast<char*>(&wsize), sizeof(nn_int));
+		fwrite.write(reinterpret_cast<char*>(m_w.data()), wsize * sizeof(nn_float));
+
+		nn_int bsize = m_b.size();
+		fwrite.write(reinterpret_cast<char*>(&bsize), sizeof(nn_int));
+		fwrite.write(reinterpret_cast<char*>(m_b.data()), bsize * sizeof(nn_float));
+	}
+
 	virtual void forw_prop(const varray &input_batch)
 	{
 		nn_int height = m_w.height();

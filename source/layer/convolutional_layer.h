@@ -1,8 +1,6 @@
 #ifndef __CONVOLUTIONAL_LAYER_H__
 #define __CONVOLUTIONAL_LAYER_H__
 
-#define nnGEMM
-
 namespace mini_cnn 
 {
 
@@ -119,8 +117,7 @@ public:
 		m_b.resize(m_filter_count);
 		m_w.resize(fw, fh, fd, m_filter_count);
 
-		m_index_map.resize(fw * fh * (in_w + 2 * m_pad_w) * (in_h + 2 * m_pad_h));
-		//m_index_map.resize((fw * fh) * (in_w * in_h));
+		m_index_map.resize((fw * fh) * (in_w * in_h));
 		bake_index_map(m_index_map, out_w, out_h
 			, m_stride_w, m_stride_h
 			, fw, fh
@@ -198,6 +195,30 @@ public:
 			m_x_vec.resize(out_w, out_h, out_d, batch_size);
 		}
 		m_wd_vec.resize(in_w, in_h, in_d, batch_size);
+	}
+
+	virtual void load_weights(std::fstream &fread)
+	{
+		nn_int wsize = 0;
+		fread.read(reinterpret_cast<char*>(&wsize), sizeof(nn_int));
+		nn_assert(wsize == m_w.size());
+		fread.read(reinterpret_cast<char*>(m_w.data()), wsize * sizeof(nn_float));
+
+		nn_int bsize = 0;
+		fread.read(reinterpret_cast<char*>(&bsize), sizeof(nn_int));
+		nn_assert(bsize == m_b.size());
+		fread.read(reinterpret_cast<char*>(m_b.data()), bsize * sizeof(nn_float));
+	}
+
+	virtual void save_weights(std::fstream &fwrite)
+	{
+		nn_int wsize = m_w.size();
+		fwrite.write(reinterpret_cast<char*>(&wsize), sizeof(nn_int));
+		fwrite.write(reinterpret_cast<char*>(m_w.data()), wsize * sizeof(nn_float));
+
+		nn_int bsize = m_b.size();
+		fwrite.write(reinterpret_cast<char*>(&bsize), sizeof(nn_int));
+		fwrite.write(reinterpret_cast<char*>(m_b.data()), bsize * sizeof(nn_float));
 	}
 
 	virtual void forw_prop(const varray &input_batch)

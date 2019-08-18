@@ -1,9 +1,9 @@
-#ifndef __BATCH_NORMALIZATION_LAYER_H__
+ï»¿#ifndef __BATCH_NORMALIZATION_LAYER_H__
 #define __BATCH_NORMALIZATION_LAYER_H__
 
 #include <fstream>
 
-namespace mini_cnn 
+namespace mini_cnn
 {
 
 class batch_normalization_layer : public layer_base
@@ -111,63 +111,45 @@ public:
 	virtual void load_weights(std::fstream &fread)
 	{
 		nn_int wsize = 0;
-		fread >> wsize;
+		fread.read(reinterpret_cast<char*>(&wsize), sizeof(nn_int));
 		nn_assert(wsize == m_w.size());
-		for (nn_int i = 0; i < wsize; ++i)
-		{
-			fread >> m_w[i];
-		}
+		fread.read(reinterpret_cast<char*>(m_w.data()), wsize * sizeof(nn_float));
+
 		nn_int bsize = 0;
-		fread >> bsize;
+		fread.read(reinterpret_cast<char*>(&bsize), sizeof(nn_int));
 		nn_assert(bsize == m_b.size());
-		for (nn_int i = 0; i < bsize; ++i)
-		{
-			fread >> m_b[i];
-		}
+		fread.read(reinterpret_cast<char*>(m_b.data()), bsize * sizeof(nn_float));
 
+		// load mean & var of train set
 		nn_int tm_size = 0;
-		fread >> tm_size;
+		fread.read(reinterpret_cast<char*>(&tm_size), sizeof(nn_int));
 		nn_assert(tm_size == m_total_mean.size());
-		for (nn_int i = 0; i < tm_size; ++i)
-		{
-			fread >> m_total_mean[i];
-		}
-		
-		nn_int tv_size = 0;
-		fread >> tv_size;
-		nn_assert(tv_size == m_total_var.size());
-		for (nn_int i = 0; i < tv_size; ++i)
-		{
-			fread >> m_total_var[i];
-		}
+		fread.read(reinterpret_cast<char*>(m_total_mean.data()), tm_size * sizeof(nn_float));
 
+		nn_int tv_size = 0;
+		fread.read(reinterpret_cast<char*>(&tv_size), sizeof(nn_int));
+		nn_assert(tv_size == m_total_var.size());
+		fread.read(reinterpret_cast<char*>(m_total_var.data()), tv_size * sizeof(nn_float));
 	}
 
 	virtual void save_weights(std::fstream &fwrite)
 	{
-		fwrite << m_w.size() << std::endl;
-		for (nn_int i = 0; i < m_w.size(); ++i)
-		{
-			fwrite << m_w[i] << std::endl;
-		}
-		fwrite << m_b.size() << std::endl;
-		for (nn_int i = 0; i < m_b.size(); ++i)
-		{
-			fwrite << m_b[i] << std::endl;
-		}
+		nn_int wsize = m_w.size();
+		fwrite.write(reinterpret_cast<char*>(&wsize), sizeof(nn_int));
+		fwrite.write(reinterpret_cast<char*>(m_w.data()), wsize * sizeof(nn_float));
+
+		nn_int bsize = m_b.size();
+		fwrite.write(reinterpret_cast<char*>(&bsize), sizeof(nn_int));
+		fwrite.write(reinterpret_cast<char*>(m_b.data()), bsize * sizeof(nn_float));
 
 		// save mean & var of train set
-		fwrite << m_total_mean.size() << std::endl;
-		for (nn_int i = 0; i < m_total_mean.size(); ++i)
-		{
-			fwrite << m_total_mean[i] << std::endl;
-		}
-		fwrite << m_total_var.size() << std::endl;
-		for (nn_int i = 0; i < m_total_var.size(); ++i)
-		{
-			fwrite << m_total_var[i] << std::endl;
-		}
+		nn_int tm_size = m_total_mean.size();
+		fwrite.write(reinterpret_cast<char*>(&tm_size), sizeof(nn_int));
+		fwrite.write(reinterpret_cast<char*>(m_total_mean.data()), tm_size * sizeof(nn_float));
 
+		nn_int tv_size = m_total_var.size();
+		fwrite.write(reinterpret_cast<char*>(&tv_size), sizeof(nn_int));
+		fwrite.write(reinterpret_cast<char*>(m_total_var.data()), tv_size * sizeof(nn_float));
 	}
 
 	virtual void forw_prop(const varray &input_batch)
@@ -263,7 +245,7 @@ public:
 			nn_float *nn_restrict wd = m_wd_vec.data(b);
 
 			/*
-				prev delta := w * delta ¡Ñ df(z)
+				prev delta := w * delta âŠ™ df(z)
 			*/
 			for (nn_int i = 0; i < sz; ++i)
 			{
@@ -274,9 +256,9 @@ public:
 			for (nn_int i = 0; i < sz; ++i)
 			{
 				wd[i] = (cOne / batch_size) * fast_inv_sqrt(vec_var[i] + m_epsilon) *
-						 (batch_size * vec_dJ_dxhat[i]
-						- m_dJ_dxhat2[i]
-						- z[i] * m_dJ_dxhat3[i]);
+					(batch_size * vec_dJ_dxhat[i]
+					- m_dJ_dxhat2[i]
+					- z[i] * m_dJ_dxhat3[i]);
 			}
 
 		}
@@ -356,4 +338,3 @@ public:
 };
 }
 #endif //__BATCH_NORMALIZATION_LAYER_H__
-
