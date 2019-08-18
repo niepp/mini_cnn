@@ -169,7 +169,7 @@ int main()
 	train_progress_bar.begin();
 
 	nn.init_all_weight(truncated_normal_initializer());
-	nn.load_weights();
+	nn.load_weights("nn.weights");
 
 	float learning_rate = 0.2f;
 	int epoch = 8;
@@ -209,7 +209,7 @@ int main()
 	nn_float timeCost = (t1 - t0) * 0.001f;
 	cout << "time_cost: " << timeCost << "(s)" << endl;
 
-	nn.save_weights();
+	nn.save_weights("nn.weights");
 
 	system("pause");
 	return 0;
