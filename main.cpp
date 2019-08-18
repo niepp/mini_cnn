@@ -72,12 +72,12 @@ network create_mnist_cnn()
 {
 	network nn;
 	nn.add_layer(new input_layer(mnist_parser::W_input, mnist_parser::H_input, mnist_parser::D_input));
-	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, 1, 1, new activation_relu()));
+	nn.add_layer(new convolutional_layer(3, 3, 1, 32, 1, 1, 1, 1, new activation_relu()));	
+	//nn.add_layer(new batch_normalization_layer());
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new batch_normalization_layer());
-	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, 1, 1, new activation_relu()));
+	nn.add_layer(new convolutional_layer(3, 3, 32, 64, 1, 1, 1, 1, new activation_relu()));	
+	//nn.add_layer(new batch_normalization_layer());
 	nn.add_layer(new max_pooling_layer(2, 2, 2, 2));
-	nn.add_layer(new batch_normalization_layer());
 	nn.add_layer(new fully_connected_layer(1024, new activation_relu()));
 	nn.add_layer(new dropout_layer((nn_float)0.5));
 	nn.add_layer(new output_layer(mnist_parser::C_classCount, lossfunc_type::eSoftMax_LogLikelihood, new activation_softmax()));
@@ -168,12 +168,12 @@ int main()
 	progress_bar train_progress_bar;
 	train_progress_bar.begin();
 
-	nn.init_all_weight(truncated_normal_initializer());
-	nn.load_weights("nn.weights");
+	nn.init_all_weight(he_normal_initializer());
+	//nn.load_weights("nn.weights");
 
-	float learning_rate = 0.2f;
-	int epoch = 8;
-	int batch_size = 100;
+	float learning_rate = 0.1f;
+	int epoch = 10;
+	int batch_size = 10;
 	nn_int nthreads = std::thread::hardware_concurrency();
 	nthreads = 8;
 
@@ -200,7 +200,7 @@ int main()
 
 	auto t0 = get_now_ms();
 
-	nn_float max_accuracy = nn.mini_batch_SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, epoch, batch_size, learning_rate, true, nthreads, minibatch_callback, epoch_callback);
+	nn_float max_accuracy = nn.mini_batch_SGD(img_vec, lab_vec, test_img_vec, test_lab_vec, epoch, batch_size, learning_rate, false, nthreads, minibatch_callback, epoch_callback);
 
 	cout << "max_accuracy: " << max_accuracy << endl;
 
